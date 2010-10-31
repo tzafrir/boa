@@ -1,0 +1,11 @@
+Project in advanced programming - Outline
+
+We intend to write a static Buffer Overrun Analyzer (boa). Boa receive a C program as an input, and determine whether a buffer overrun is possible during an execution of the code.  Boa will always warn about any possible buffer ovverun under the following conditions -
+- no concurrency
+- no goto statements
+- no pointer manipulation regarding buffers
+
+The implementation will be based on clang [LINK?] as the parser (compiler?), we will use clang API in order to generate integer linear programming constraints for each buffer and integer in the code. The constriants will model the maximal and minimal used (and allocated) index each buffer. Finally we will use GLPK [LINK?] to solve the integer linear programming problem inflected by the constriants, and the solution will determine whether buffer overrun is possible.
+
+Boa will be based on context and flow insensitive analysis. This will ensure the solution is sound (i.e. boa will always warn if buffer overrun is feasible) but is also prone to lots of false alarms, therefore we intend to test limited flow and context sensitivity, which we hope will be able to reduce the flase positives without letting any possible false negative result.
+
