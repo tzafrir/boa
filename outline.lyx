@@ -188,7 +188,7 @@ key "SMT"
 \end_inset
 
 .
- By performing symbolic execution on the locuses of the possible buffer
+ By performing symbolic execution on the sites of the possible buffer
  overflows, we can further differentiate between false positives and true
  vulnerabilities - improving the overall quality of the analysis.
 \end_layout
