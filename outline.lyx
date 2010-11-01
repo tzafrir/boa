@@ -120,14 +120,14 @@ We intend to implement a static Buffer Overrun Analyzer (boa).
  is possible during execution of the code.
  This must be done with care - while most static analysis methods result
  in some false positives, extra care should be taken to ensure no false
- negatives 
+ negatives (measures not taken in 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "BOON,הודים"
+key "הודים,BOON"
 
 \end_inset
 
-.
+).
  We refer to the lack of false negatives as the 
 \emph on
 soundness
@@ -171,7 +171,7 @@ key "clang"
  Finally we will use GLPK
 \begin_inset CommandInset citation
 LatexCommand cite
-key "GLPK official,GLPK wiki"
+key "GLPK wiki,GLPK official"
 
 \end_inset
 
