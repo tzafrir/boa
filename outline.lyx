@@ -115,31 +115,40 @@ status collapsed
 \end_layout
 
 \begin_layout Standard
-We intend to write a static Buffer Overrun Analyzer (boa).
- Boa receive a C program as an input, and determine whether a buffer overrun
- is possible during an execution of the code.
- Boa will be implemented in two stages, the first will be context and flow
- insensitive analysis, which will always warn about any possible buffer
- ovverun under if -
-\end_layout
+We intend to implement a static Buffer Overrun Analyzer (boa).
+ Boa will receive a C program as input, and determine whether a buffer overrun
+ is possible during execution of the code.
+ This must be done with care - while most static analysis methods result
+ in some false positives, extra care should be taken to ensure no false
+ negatives 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BOON,הודים"
 
-\begin_layout Itemize
-no pointer manipulation regarding buffers
+\end_inset
+
+.
+ We refer to the lack of false negatives as the 
+\emph on
+soundness
+\emph default
+ of the analysis.
 \end_layout
 
 \begin_layout Standard
-This relatively humble condition will ensure our solution is sound (i.e.
- boa will always warn if buffer overrun is feasible) but the context and
- flow insensitivity also prone to lots of false alarms.
- Thus we intend to test limited flow and context sensitivity, which we hope
- will be able to reduce the flase positives without letting any possible
- false negative result.
- For this secondphase we will also require that the input C code will not
- include -
+Boa will be implemented in two stages, the first will be context and flow
+ insensitive analysis, which will be sound under the assumption of no pointer
+ manipulation regarding buffers.
+ However, context and flow insensitivity is prone to false alarms.
+ Therefore, we intend to test limited flow and context sensitivity, which
+ we hope will be able to reduce the amount of false positives without leading
+ to false negative results.
+ For this second phase we will also require that the input C code not include
+ -
 \end_layout
 
 \begin_layout Itemize
-concurrency 
+concurrency
 \end_layout
 
 \begin_layout Itemize
@@ -147,11 +156,105 @@ goto statements
 \end_layout
 
 \begin_layout Standard
-The implementation will be based on Clang 
-\begin_inset Foot
-status open
+The implementation will be based on Clang
+\begin_inset CommandInset citation
+LatexCommand cite
+key "clang"
 
-\begin_layout Plain Layout
+\end_inset
+
+ as the static analysis front end.
+ Clang API will be used to generate integer linear programming constraints
+ for each buffer and integer in the code.
+ These constriants will model the max and min used (and allocated) index
+ for each buffer.
+ Finally we will use GLPK
+\begin_inset CommandInset citation
+LatexCommand cite
+key "GLPK official,GLPK wiki"
+
+\end_inset
+
+ to solve the integer linear programming problem designated by the constriants,
+ and the solution will determine whether buffer overrun is possible.
+\end_layout
+
+\begin_layout Standard
+If time allows, we will also explore the idea introduced in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "SMT"
+
+\end_inset
+
+.
+ By performing symbolic execution on the locuses of the possible buffer
+ overflows, we can further differentiate between false positives and true
+ vulnerabilities - improving the overall quality of the analysis.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "הודים"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "Buffer Overrun Detection using Linear Programming and Static Analysis"
+target "www.cs.wisc.edu/wisa/papers/ccs03/p351-ganapathy.pdf "
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "BOON"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "A First Step Towards Automated Detection of Buffer Overrun Vulnerabilities"
+target "http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.5348&rep=rep1&type=pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "SMT"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "Filtering False Alarms of Buffer Overflow Analysis Using SMT Solvers"
+target "http://formal.korea.ac.kr/~jlee/papers/Kim-Lee-at-al-IST10.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "clang"
+
+\end_inset
+
+
 \begin_inset CommandInset href
 LatexCommand href
 target "http://clang.llvm.org/"
@@ -161,17 +264,14 @@ target "http://clang.llvm.org/"
 
 \end_layout
 
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "GLPK wiki"
+
 \end_inset
 
- as the static analysis front end.
- Clang API will be used to generate integer linear programming constraints
- for each buffer and integer in the code, constriants which will model the
- maximal and minimal used (and allocated) index each buffer.
- Finally we will use GLPK 
-\begin_inset Foot
-status open
 
-\begin_layout Plain Layout
 \begin_inset CommandInset href
 LatexCommand href
 target "http://en.wikipedia.org/wiki/GNU_Linear_Programming_Kit"
@@ -181,13 +281,14 @@ target "http://en.wikipedia.org/wiki/GNU_Linear_Programming_Kit"
 
 \end_layout
 
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "GLPK official"
+
 \end_inset
 
 
-\begin_inset Foot
-status open
-
-\begin_layout Plain Layout
 \begin_inset CommandInset href
 LatexCommand href
 target "http://www.gnu.org/software/glpk/"
@@ -195,12 +296,6 @@ target "http://www.gnu.org/software/glpk/"
 \end_inset
 
 
-\end_layout
-
-\end_inset
-
- to solve the integer linear programming problem inflected by the constriants,
- and the solution will determine whether buffer overrun is possible.
 \end_layout
 
 \end_body
