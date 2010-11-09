@@ -137,33 +137,55 @@ soundness
 
 \begin_layout Standard
 Boa will be implemented in two stages, the first will be context and flow
- insensitive analysis, which will be sound under the assumption of no pointer
- manipulation regarding buffers.
+ insensitive analysis.
  However, context and flow insensitivity is prone to false alarms.
  Therefore, we intend to test limited flow and context sensitivity, which
  we hope will be able to reduce the amount of false positives without leading
  to false negative results.
- For this second phase we will also require that the input C code not include
- -
-\end_layout
-
-\begin_layout Itemize
-concurrency
-\end_layout
-
-\begin_layout Itemize
-goto statements
 \end_layout
 
 \begin_layout Standard
-The implementation will be based on Clang
+Pointer analysis is a main phase of boa.
+ We will begin with a naive points-to analysis, in which every pointer is
+ suspect of aliasing any other pointer.
+ Once preliminary results are achieved, we will attempt to refine this analysis
+ while keeping it sound.
+ We will explore the algorithm presented in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CSSV"
+
+\end_inset
+
+ as a possible basis for this.
+\end_layout
+
+\begin_layout Standard
+Assumptions:
+\end_layout
+
+\begin_layout Itemize
+No concurrency (for any flow sensitive analysis)
+\end_layout
+
+\begin_layout Itemize
+No unions
+\end_layout
+
+\begin_layout --Separator--
+
+\end_layout
+
+\begin_layout Standard
+We intend on hooking into Clang's 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "clang"
 
 \end_inset
 
- as the static analysis front end.
+ static analysis run and create constraints on integers and buffers while
+ Clang parses the source code.
  Clang API will be used to generate integer linear programming constraints
  for each buffer and integer in the code.
  These constriants will model the max and min used (and allocated) index
@@ -188,9 +210,90 @@ key "SMT"
 \end_inset
 
 .
- By performing symbolic execution on the sites of the possible buffer
- overflows, we can further differentiate between false positives and true
- vulnerabilities - improving the overall quality of the analysis.
+ By performing symbolic execution on the sites of the possible buffer overflows,
+ we can further differentiate between false positives and true vulnerabilities
+ - improving the overall quality of the analysis.
+\end_layout
+
+\begin_layout Standard
+Basically, this includes: 
+\end_layout
+
+\begin_layout Enumerate
+Extracting the relevant code snippet.
+ This cannot be done perfectly (halting problem anyone?), but this CAN be
+ done conservatively.
+ In their research, Kim, Lee et al.
+ limited this backtracking to within the context of the procedure (assuring
+ a linear number of execution paths).
+ We will investigate, among other things, if there is some way to expand
+ this while retaining scalability, and if this results in a measurable gain
+ in filtering false alarms.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Translating the snippet into SMT formulae, expressing the constraints in
+ quantifier-free FOL.
+ This is simple for most statements, but requires special care regarding
+ loop blocks and function calls.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Loop blocks are unwound, examining every possible (and feasible) execution
+ path until either the loop cannot execute (i.e.
+ the post-condition must be satisfied) or a buffer overrun cannot be discredited
+ in some iteration.
+ This is done recursively, and as far as we can tell from a cursory examination
+ – this algorithm cannot be assured to always stop.
+ We will investigate this, and possibly add some safeguards to prevent stack
+ overflow.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Functions calls are not executed symbolically.
+ Instead, the constraints generated from the context insensitive analysis
+ are used for scalar return values.
+ We will also examine this.
+ 
+\end_layout
+
+\end_deeper
+\begin_layout --Separator--
+
+\end_layout
+
+\begin_layout Standard
+\align block
+In order to simplify this process, the source code is translated into a
+ subset of C, in which there is only one type of loop, and statements have
+ no side effects.
+ While it is possible to translate 'goto' statements into this language,
+ this adds an additional complexity (possible need for program flow re-structure
+).
+\end_layout
+
+\begin_layout Standard
+We plan to perform two stages of testing: 
+\end_layout
+
+\begin_layout Enumerate
+Very simple test cases in order to check basic functionality - No buffers
+ at all, safe access to buffers, some unsafe access and C library functions
+ (strcpy, strlen, etc.), dynamically allocated buffers, some aliasing.
+ These will be relatively small programs, written by us, in order to execute
+ quickly (unit testing).
+ 
+\end_layout
+
+\begin_layout Enumerate
+Real world open-source programs, such as those used in the referenced articles
+ (wu-ftpd, sendmail, bind etc.).
+ This will enable us to test our project against real-world challenges and
+ also enable comparison with previous projects' benchmarks.
 \end_layout
 
 \begin_layout Bibliography
@@ -250,6 +353,26 @@ target "http://formal.korea.ac.kr/~jlee/papers/Kim-Lee-at-al-IST10.pdf"
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
+label "4"
+key "CSSV"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "CSSV: Towards a Realistic Tool for Statically Detecting All Buffer Overflows in C"
+target "http://www.cs.tau.ac.il/~msagiv/cssv.pdf"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "5"
 key "clang"
 
 \end_inset
@@ -267,6 +390,7 @@ target "http://clang.llvm.org/"
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
+label "6"
 key "GLPK wiki"
 
 \end_inset
@@ -284,6 +408,7 @@ target "http://en.wikipedia.org/wiki/GNU_Linear_Programming_Kit"
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
+label "7"
 key "GLPK official"
 
 \end_inset
