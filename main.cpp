@@ -1,6 +1,6 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-  std::cout << "Figuring out code reviews" << std::endl;
-  return 0;
+  std::cout << "Buffer overruns are possible!" << std::endl;
+  return 1; // non zero return value means fail => buffer overruns are possible
 }
