@@ -1,3 +1,4 @@
+// BOA-TEST   0
 // fixed buffer, no write access
 int main() {
 	char buf[10];
