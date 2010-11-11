@@ -3,7 +3,7 @@
 GREEN="\033[0;32m"
 RED="\033[0;31m"
 YELLOW="\033[0;33m"
-NO_COLOR="\033[0m" 
+NO_COLOR="\033[0m"
 
 function die {
 	echo " !ERROR! $1";
@@ -11,7 +11,7 @@ function die {
 }
 
 function run_testcase {
-	if !(head -1 $1 | grep "BOA-TEST[[:space:]]*[[:digit:]][[:space:]]*$" > /dev/null); then die "Wrong testcase format $1"; fi 
+	if !(head -1 $1 | grep "BOA-TEST[[:space:]]*[[:digit:]][[:space:]]*$" > /dev/null); then die "Wrong testcase format $1"; fi
 	local OVERRUN=true;
 	if (head -1 $1 | grep "BOA-TEST[[:space:]]*0[[:space:]]*$" > /dev/null); then OVERRUN=false; fi
 	
@@ -41,7 +41,4 @@ g++ ../main.cpp -o $BOA || die "Compilation error"
 for file in $(ls testcases/*.c); do
 	run_testcase $file
 done
- 
-
-
 
