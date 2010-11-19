@@ -12,7 +12,6 @@ void ConstraintProblem::Solve() {
 		return; 
 	}
 
-//	Expression goal = 0;
 	set<string> vars;
 	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
 		using namespace NameBufferExpression;
@@ -27,7 +26,8 @@ void ConstraintProblem::Solve() {
 	}
 	
 	map<string, int> varToCol;
-	{ // Fill varToCol map
+	{
+		// Fill varToCol map
 		int col = 1;
 		for (set<string>::iterator var = vars.begin(); var != vars.end(); ++var, ++col) {
 			varToCol[*var] = col;
@@ -39,7 +39,8 @@ void ConstraintProblem::Solve() {
 	glp_set_obj_dir(lp, GLP_MAX);
 	glp_add_rows(lp, constraints.size());
 	glp_add_cols(lp, vars.size());	
-	{ // Fill matrix
+	{
+		// Fill matrix
 		int row = 1;
 		for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint, ++row) {
 			constraint->AddToLPP(lp, row, varToCol);

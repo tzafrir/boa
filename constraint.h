@@ -21,12 +21,12 @@ namespace NameBufferExpression {
 };
 
 /**
-	Model a singel constraint.
-	
-	The constrint form is - 
-	
+	Model a single constraint.
+
+	The constraint form is - 
+
 	C >= aX + bY ...
-		
+	
 	Where C is a constant (referred as "left"),  a small letter (a, b...) is an 
 	integer value ("num") and a capital letter (X, Y...) is a string name of variable
 */
@@ -55,9 +55,9 @@ class Constraint {
 	void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
 		int indices[MAX_SIZE];
 		double values[MAX_SIZE];
-		
+
 		/* TODO if size > MAX_SIZE...  */
-		
+
 		int count = 1;
 		for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it, ++count) {
 			indices[count] = colNumbers[it->first];
@@ -77,18 +77,18 @@ class ConstraintProblem {
  	void AddBuffer(const string& name) {
  		buffers.insert(name);
  	}
- 	
+
  	void AddConstraint(const Constraint& c) {
  		constraints.push_back(c);
  	}
- 	
+
  	void Clear() {
  		buffers.clear();
  		constraints.clear();
  	}
- 	
+
  	void Solve();
- 	
+
 };
 
 #endif /* __BOA_CONSTRAINT_H */
