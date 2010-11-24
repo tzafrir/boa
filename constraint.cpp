@@ -2,16 +2,10 @@
 #include <iostream>
 #include <glpk.h>
 
-
 using std::cout;
 using std::endl;
 
-void ConstraintProblem::Solve() {
-	if (buffers.empty()) {
-		cout << "No buffers" << endl;
-		return; 
-	}
-
+set<string> ConstraintProblem::CollectVars() {
 	set<string> vars;
 	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
 		using namespace NameBufferExpression;
@@ -24,15 +18,27 @@ void ConstraintProblem::Solve() {
 	for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
 		constraint->GetVars(vars);
 	}
-	
+	return vars;
+}
+
+inline static map<string, int> MapVarToCol(const set<string>& vars) {
 	map<string, int> varToCol;
-	{
-		// Fill varToCol map
-		int col = 1;
-		for (set<string>::iterator var = vars.begin(); var != vars.end(); ++var, ++col) {
-			varToCol[*var] = col;
-		}
+	int col = 1;
+	for (set<string>::const_iterator var = vars.begin(); var != vars.end(); ++var, ++col) {
+		varToCol[*var] = col;
 	}
+	return varToCol;
+} 
+
+set<string> ConstraintProblem::Solve() {
+	set<string> unsafeBuffers;
+	if (buffers.empty()) {
+		cout << "No buffers" << endl;
+		return unsafeBuffers; 
+	}
+
+	set<string> vars = CollectVars();
+	map<string, int> varToCol = MapVarToCol(vars);
 	
 	glp_prob *lp;
 	lp = glp_create_prob();
@@ -64,6 +70,8 @@ void ConstraintProblem::Solve() {
 	glp_init_smcp(&params);
 	params.msg_lev = GLP_MSG_ERR;
 	glp_simplex(lp, &params);
+	
+	// TODO - what if no solution can be found?
 
 	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
 		// Print result
@@ -74,10 +82,12 @@ void ConstraintProblem::Solve() {
 		cout << Name(*buffer, ALLOC, MAX) << "\t = " << glp_get_col_prim(lp, varToCol[Name(*buffer, ALLOC, MAX)]) << endl;
 		
 		if (glp_get_col_prim(lp, varToCol[Name(*buffer, USED, MAX)]) > glp_get_col_prim(lp, varToCol[Name(*buffer, ALLOC, MIN)])) {
+			unsafeBuffers.insert(*buffer);
 			cout << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << *buffer << endl << endl; 
 		}
 	}	
 
 	glp_delete_prob(lp);
+	return unsafeBuffers;
 }
 

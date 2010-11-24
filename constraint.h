@@ -32,7 +32,7 @@ namespace NameBufferExpression {
 */
 class Constraint {
  private:
- 	const static int MAX_SIZE = 1000;
+ 	const static int MAX_SIZE = 100;
 	int left_;
 	map<string, int> expressions_;
  public:
@@ -52,11 +52,16 @@ class Constraint {
 		}
 	}
 	
+	void Clear() {
+	 left_ = 0;
+	 expressions_.clear();
+	}
+	
 	void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
-		int indices[MAX_SIZE];
-		double values[MAX_SIZE];
+		int indices[MAX_SIZE + 1];
+		double values[MAX_SIZE + 1];
 
-		/* TODO if size > MAX_SIZE...  */
+		// TODO if size > MAX_SIZE...  
 
 		int count = 1;
 		for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it, ++count) {
@@ -73,6 +78,8 @@ class ConstraintProblem {
  private:
  	list<Constraint> constraints;
  	set<string> buffers;
+ 	
+ 	set<string> CollectVars();
  public:
  	void AddBuffer(const string& name) {
  		buffers.insert(name);
@@ -87,7 +94,12 @@ class ConstraintProblem {
  		constraints.clear();
  	}
 
- 	void Solve();
+	/**
+		Solve the constriant problem defined by the constraints
+		
+		Return a set of buffer names in which buffer overrun may occur
+	*/
+ 	set<string> Solve();
 
 };
 
