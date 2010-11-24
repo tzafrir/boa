@@ -23,7 +23,12 @@ namespace NameBufferExpression {
 /**
 	Model a single constraint.
 
-	The constraint form is - 
+	A constraint is a simple linear inequality of the form BIG >= SMALL
+	Use AddBigExpression, AddBigConst in order to add an expression or a constant
+	to the BIG side of the inequality, or the equivalent funtions for the SMALL
+	side.
+	
+	For internal use, the constraint is stored in the form of - 
 
 	C >= aX + bY ...
 	
@@ -35,26 +40,43 @@ class Constraint {
  	const static int MAX_SIZE = 100;
 	int left_;
 	map<string, int> expressions_;
+	
+	void AddExpression(int num, string var) {
+		expressions_[var] += num;
+	}
+	
+	void AddLeft(int left) {
+		left_ += left;
+	}
+	
  public:
  	Constraint() : left_(0) {};
  	
-	void AddExpression(int num, string var) {
-		expressions_[var] = num;
+ 	void AddBigExpression(string var, int num = 1) {
+ 		AddExpression(-num, var);
+ 	}
+ 	
+ 	void AddBigConst(int num) {
+ 		AddLeft(num);
+ 	}
+ 	
+ 	void AddSmallExpression(string var, int num = 1) {
+ 		AddExpression(num, var);
+ 	}
+ 	
+ 	void AddSmallConst(int num) {
+ 		AddLeft(-num);
+ 	}
+
+	void Clear() {
+	 left_ = 0;
+	 expressions_.clear();
 	}
-	
-	void SetLeft(int left) {
-		left_ = left;
-	}
-	
+
 	void GetVars(set<string>& vars) {
 		for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it) {
 			vars.insert(it->first);
 		}
-	}
-	
-	void Clear() {
-	 left_ = 0;
-	 expressions_.clear();
 	}
 	
 	void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
@@ -71,7 +93,7 @@ class Constraint {
 		glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
 		glp_set_mat_row(lp, row, expressions_.size(), indices, values);
 	}
-	
+
 };
 
 class ConstraintProblem {
