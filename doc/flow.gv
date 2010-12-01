@@ -1,0 +1,104 @@
+digraph G {
+//    nodesep = 0.4;
+     //ranksep = 1;
+ //rankdir=LR;   
+ node [shape = note]; 
+ 	source 			[label="C Source code"];
+ node [shape = box]; 
+ 	buffers 		[label="Buffers\nset<buffer>"];
+ 	pointerDict [label=<<u>dictionary</u><br/>Pointer =&gt; set&lt;buffer&gt;>];
+ 	constraints [label="Constraints"];
+ 	unsafe 			[label="Unsafe Buffers\nset<buffer>"];
+ 	
+ 	
+ node [shape = ellipse]; 
+ 	pointer 	[label="Pointer analysis" penwidth = 3] 
+ 	generator [label="Constraint generator" penwidth = 3] 
+ 	solver 		[label="Linear solver" penwidth = 3];
+ 
+ source->pointer;
+ pointer->buffers->generator;
+ pointer->pointerDict->generator;
+ source->generator->constraints->solver;
+ buffers->solver->unsafe;
+ 
+ 	
+ //node [shape = circle]; q0 q1 q2 q4 q5 q6;
+   // node [shape = doublecircle]; q3;
+    //node [rank = 1] q_0;
+    //node [rank = 2] q_1;
+  /*  q0 -> q1 [label="a"]
+    q1 -> q2 [label="a"]
+    q2 -> q1 [label="a"]
+    q2 -> q3 [label="b"]
+    q0 -> q4 [label="a"]
+    q4 -> q5 [label="a"]
+    q5 -> q6 [label="a"]
+    q6 -> q4 [label="a"]
+    q6 -> q3 [label="c"]
+    q0 -> q3 [label="b,c"]
+ 
+    SAT -> "3SAT"
+    "3SAT" -> VC
+    VC -> HS
+    VC -> SC
+    VC -> O1IP
+
+
+    s -> v_1->v_3->v_4->v_6->v_7->t
+    s -> v_2->v_3->v_5->v_6->v_8->t 
+
+    S -> A [label="a"]
+    A -> A [label="a"]
+    S -> qf [label="e"]
+    A -> qf [label="a"]
+    A -> B [label="b"]
+    S -> B [label="b"]
+    B -> B [label="b"]
+    B -> qf [label="b"]
+
+ 
+   subgraph cluster_1 {
+		style=filled;
+		color=lightgray;
+		l1
+		l2
+		l3
+		l_n
+		label = "L";
+    }
+   subgraph cluster_2 {
+		style=filled;
+		color=lightgray;
+		r1
+		r2
+		r_m
+		label = "R";
+    }
+
+    l1->r2
+    l1->r1
+    l3->r2
+
+    s->l1 [label="1"]
+    s->l2 [label="1"]
+    s->l3 [label="1"]
+    s->l_n [label="1"]
+
+    r1->t [label="1"]
+    r2->t [label="1"]
+    r_m->t [label="1"]
+
+ */   
+/*    s->a
+    s->s1->s2->b
+    s2->c
+    s1->s3->d
+    s3->s4->e
+    s4->f
+    s [label="", shape=point]
+    s1 [label="", shape=point]
+    s2 [label="", shape=point]
+    s3 [label="", shape=point]
+    s4 [label="", shape=point] */
+}
