@@ -1,14 +1,11 @@
 To compile:
 
-Copy or symlink CreateConstraints.cpp to
-llvm/tools/clang/examples/PrintFunctionNames/PrintFunctionNames.cpp
+Edit "Makefile", replace LLVM_DIR with a pointer to your llvm dir
 
-from that folder:
+From this folder (clang_example) run - 
 $ make
 
 Then to run on a source file:
 
-clang -cc1 -load ~/llvm/Debug+Asserts/lib/libPrintFunctionNames.so -plugin print-fns ~/file.c
+clang -cc1 -load CreateConstraints.so -plugin CreateConstraints ~/file.c
 
-Assuming you have clang in your path, and that /Debug+Asserts/lib/libPrintFunctionNames.so
-is under ~/llvm. Replace as needed.

@@ -79,4 +79,5 @@ protected:
 }
 
 static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
-X("print-fns", "print function names");
+X("CreateConstraints", "boa constraint generator");
+
