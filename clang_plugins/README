@@ -8,4 +8,5 @@ $ make
 Then to run on a source file:
 
 clang -cc1 -load CreateConstraints.so -plugin CreateConstraints ~/file.c
+clang -cc1 -load PointerAnalysis.so -plugin CreateConstraints ~/file.c
 
