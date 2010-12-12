@@ -7,8 +7,14 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "buffer.h"
+using boa::Buffer;
+#include <list>
+using std::list;
+
+// DEBUG
 #include <iostream>
-using std::cout;
+using std::cerr;
 using std::endl;
 
 using namespace clang;
@@ -16,8 +22,10 @@ using namespace clang;
 namespace {
 
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
+private:
+	list<Buffer> Buffers_;
 public:
-  bool VisitStmt(Stmt* S) {  	
+  bool VisitStmt(Stmt* S) {
     if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
 				MyVisitDeclStmt(*i);
@@ -28,9 +36,35 @@ public:
   
   void MyVisitDeclStmt(Decl *d) {
 		if (VarDecl* var = dyn_cast<VarDecl>(d)) {
-      var->dump();
-			cout << " boa >> " << var->getStorageClassSpecifierString() << " << boa " << endl;
+      // FIXME - This code only detects an array of chars
+      // Array of array of chars will probably NOT detected
+      // As well as "array of MyChar" When using "typedef MyChar char". 
+      if (ArrayType* arr = dyn_cast<ArrayType>(var->getType().getTypePtr())) {
+      	if (BuiltinType* arrType = dyn_cast<BuiltinType>(arr->getElementType())) {
+      		switch (arrType->getKind()) {
+      			case BuiltinType::Char_U: case BuiltinType::UChar: case BuiltinType::Char16: 
+      			case BuiltinType::Char32: case BuiltinType::Char_S: case BuiltinType::SChar: 
+      			case BuiltinType::WChar:
+							addBufferToSet(var);
+      				break;
+      			default: 
+      				// Not a char array
+      				break;
+      		}
+      	}
+      }
 		}  
+  }
+  
+  void addBufferToSet(VarDecl* var) {
+  	var->dump();
+  	cerr << " was added to buffers set" << endl;
+  	
+  	Buffer b;
+  	cerr << " code name  = " << var->getNameAsString() << endl;
+		cerr << " \"clang ID\" = " << (void*)var << endl;
+  	// TODO - get var's code location (Tzafrir?)
+  	Buffers_.push_back(b);
   }
 };
 
