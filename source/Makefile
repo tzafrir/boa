@@ -2,7 +2,7 @@ CC=g++
 #../../prj/llvm/Debug+Asserts/bin/clang++
 DFLAGS=-D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 CFLAGS=-lglpk -g -fno-exceptions -fno-rtti -fPIC -Woverloaded-virtual -Wcast-qual -fno-strict-aliasing  -pedantic -Wno-long-long -Wall -W -Wno-unused-parameter -Wwrite-strings 
-LLVM_DIR=../../prj/llvm
+LLVM_DIR=../../llvm
 
 boa: main.cpp constraint.cpp constraint.h
 	${CC} main.cpp constraint.cpp ${CCFLAGS} -o boa
