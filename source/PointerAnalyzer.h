@@ -11,6 +11,7 @@
 using boa::Buffer;
 #include <list>
 using std::list;
+#include "constraint.h"
 
 // DEBUG
 #include <iostream>
@@ -19,7 +20,7 @@ using std::endl;
 
 using namespace clang;
 
-namespace {
+namespace boa {
 
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
@@ -77,7 +78,7 @@ public:
     var->dump();
     cerr << " was added to buffers set" << endl;
 
-    Buffer b;
+    Buffer b((void*)var);
     cerr << " code name  = " << var->getNameAsString() << endl;
     cerr << " \"clang ID\" = " << (void*)var << endl;
     // TODO - get var's code location (Tzafrir?)
@@ -85,46 +86,17 @@ public:
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-  cerr << func->getNameInfo().getAsString() << endl;
-  cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc());
+    cerr << func->getNameInfo().getAsString() << endl;
+    cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
     
-    Buffer b;
+    Buffer b((void*)funcCall);
     Buffers_.push_back(b);
   }
-};
-
-class PointerAnalysisConsumer : public ASTConsumer {
-public:
-
-  PointerAnalysisConsumer(SourceManager &SM)
-    : sm_(SM) {}
-
-  virtual void HandleTopLevelDecl(DeclGroupRef DG) {
-    for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
-      Decl *D = *i;
-      PointerASTVisitor iav(sm_);
-      iav.TraverseDecl(D);
-      iav.MyVisitDeclStmt(D);
-    }
-  }
-
-private:
-  SourceManager &sm_;
-};
-
-class PointerAnalyzer : public PluginASTAction {
-protected:
-  ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
-    return new PointerAnalysisConsumer(CI.getSourceManager());
-  }
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string>& args) {
-    return true;
+  
+  const list<Buffer>& getBuffers() const {
+    return Buffers_;
   }
 };
 
 }
-
-static FrontendPluginRegistry::Add<PointerAnalyzer>
-X("PointerAnalyzer", "boa pointer analyzer");
 

@@ -1,0 +1,7 @@
+in order to compile simply type -
+ $ make
+ 
+then in order to run -
+ $ ../../llvm/Debug+Asserts/bin/clang -cc1 -load ./boa.so -plugin boa ../tests/testcases/simple1.c
+ 
+(or any other c source file)

@@ -35,6 +35,10 @@ list<Buffer> ConstraintProblem::Solve() {
 		cout << "No buffers" << endl;
 		return unsafeBuffers; 
 	}
+  if (constraints.empty()) {
+		cout << "No constraints" << endl;
+		return unsafeBuffers;     
+  }
 
 	set<string> vars = CollectVars();
 	map<string, int> varToCol = MapVarToCol(vars);
