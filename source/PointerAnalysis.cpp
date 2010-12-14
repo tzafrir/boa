@@ -24,7 +24,7 @@ namespace {
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
   list<Buffer> Buffers_;
-	SourceManager &sm_;
+  SourceManager &sm_;
 public:
   PointerASTVisitor(SourceManager &SM)
     : sm_(SM) {}
@@ -55,8 +55,12 @@ public:
       if (ArrayType* arr = dyn_cast<ArrayType>(var->getType().getTypePtr())) {
         if (BuiltinType* arrType = dyn_cast<BuiltinType>(arr->getElementType())) {
           switch (arrType->getKind()) {
-            case BuiltinType::Char_U: case BuiltinType::UChar: case BuiltinType::Char16:
-            case BuiltinType::Char32: case BuiltinType::Char_S: case BuiltinType::SChar:
+            case BuiltinType::Char_U:
+            case BuiltinType::UChar: 
+            case BuiltinType::Char16:
+            case BuiltinType::Char32: 
+            case BuiltinType::Char_S: 
+            case BuiltinType::SChar:
             case BuiltinType::WChar:
               addBufferToSet(var);
               break;
@@ -81,11 +85,11 @@ public:
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-	cerr << func->getNameInfo().getAsString() << endl;
-	cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc());
-  	
-  	Buffer b;
-  	Buffers_.push_back(b);
+  cerr << func->getNameInfo().getAsString() << endl;
+  cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc());
+    
+    Buffer b;
+    Buffers_.push_back(b);
   }
 };
 
