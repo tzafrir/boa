@@ -24,11 +24,24 @@ namespace {
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
   list<Buffer> Buffers_;
+	SourceManager &sm_;
 public:
+  PointerASTVisitor(SourceManager &SM)
+    : sm_(SM) {}
+
   bool VisitStmt(Stmt* S) {
     if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
         MyVisitDeclStmt(*i);
+      }
+    }
+    else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
+      if (FunctionDecl* funcDec = funcCall->getDirectCallee())
+      {
+         //if (funcDec->getNameInfo()->getAsString() == "malloc")
+         {
+            addMallocToSet(funcCall,funcDec);
+         }
       }
     }
     return true;
@@ -66,24 +79,39 @@ public:
     // TODO - get var's code location (Tzafrir?)
     Buffers_.push_back(b);
   }
+
+  void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
+	cerr << func->getNameInfo().getAsString() << endl;
+	cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc());
+  	
+  	Buffer b;
+  	Buffers_.push_back(b);
+  }
 };
 
 class PointerAnalysisConsumer : public ASTConsumer {
 public:
+
+  PointerAnalysisConsumer(SourceManager &SM)
+    : sm_(SM) {}
+
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
       Decl *D = *i;
-      PointerASTVisitor iav;
+      PointerASTVisitor iav(sm_);
       iav.TraverseDecl(D);
       iav.MyVisitDeclStmt(D);
     }
   }
+
+private:
+  SourceManager &sm_;
 };
 
 class PointerAnalyzer : public PluginASTAction {
 protected:
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
-    return new PointerAnalysisConsumer();
+    return new PointerAnalysisConsumer(CI.getSourceManager());
   }
   bool ParseArgs(const CompilerInstance &CI,
                  const std::vector<std::string>& args) {
