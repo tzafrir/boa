@@ -7,7 +7,7 @@ LLVM_DIR=../../llvm
 PointerAnalysis.so: PointerAnalysis.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -L${LLVM_DIR}/Debug+Asserts/lib -L${LLVM_DIR}/Debug+Asserts/lib  -shared -o PointerAnalysis.so PointerAnalysis.o  -lpthread -ldl -lm 
 	
-PointerAnalysis.o: PointerAnalysis.cpp
+PointerAnalysis.o: PointerAnalysis.cpp Buffer.h
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "PointerAnalysis.d.tmp" -MT "PointerAnalysis.o" -MT "PointerAnalysis.d" PointerAnalysis.cpp -o PointerAnalysis.o
 	mv -f "PointerAnalysis.d.tmp" "PointerAnalysis.d"
 
