@@ -6,19 +6,13 @@
 #include <list>
 #include <map>
 #include <glpk.h>
+#include "buffer.h"
 
 using std::string;
 using std::set;
 using std::list;
 using std::map;
-
-namespace NameBufferExpression {
- 	enum Type {USED, ALLOC};
- 	enum Dir  {MIN, MAX};
-	static string Name(const string& buffer, Type type, Dir dir) {
-		return buffer + "!" + (type == USED ? "used" : "alloc") + "!" + (dir == MIN ? "min" : "max");
-	}
-};
+using boa::Buffer;
 
 /**
 	Model a single constraint.
@@ -99,12 +93,12 @@ class Constraint {
 class ConstraintProblem {
  private:
  	list<Constraint> constraints;
- 	set<string> buffers;
+ 	list<Buffer> buffers;
  	
  	set<string> CollectVars();
  public:
- 	void AddBuffer(const string& name) {
- 		buffers.insert(name);
+ 	void AddBuffer(const Buffer& buffer) {
+ 		buffers.push_back(buffer);
  	}
 
  	void AddConstraint(const Constraint& c) {
@@ -119,9 +113,9 @@ class ConstraintProblem {
 	/**
 		Solve the constriant problem defined by the constraints
 		
-		Return a set of buffer names in which buffer overrun may occur
+		Return a set of buffers in which buffer overrun may occur
 	*/
- 	set<string> Solve();
+ 	list<Buffer> Solve();
 
 };
 

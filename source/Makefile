@@ -12,5 +12,5 @@ PointerAnalysis.o: PointerAnalysis.cpp
 	mv -f "PointerAnalysis.d.tmp" "PointerAnalysis.d"
 
 boa: main.cpp constraint.cpp constraint.h
-	${CC} main.cpp constraint.cpp ${CCFLAGS} -o boa
+	${CC} main.cpp constraint.cpp ${CFLAGS} -o boa
 

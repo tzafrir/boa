@@ -7,12 +7,11 @@ using std::endl;
 
 set<string> ConstraintProblem::CollectVars() {
 	set<string> vars;
-	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
-		using namespace NameBufferExpression;
-		vars.insert(Name(*buffer, USED, MIN));
-		vars.insert(Name(*buffer, USED, MAX));
-		vars.insert(Name(*buffer, ALLOC, MIN));
-		vars.insert(Name(*buffer, ALLOC, MAX));		
+	for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+		vars.insert(buffer->NameExpression(Buffer::USED, Buffer::MIN));
+		vars.insert(buffer->NameExpression(Buffer::USED, Buffer::MAX));
+		vars.insert(buffer->NameExpression(Buffer::ALLOC, Buffer::MIN));
+		vars.insert(buffer->NameExpression(Buffer::ALLOC, Buffer::MAX));		
 	}
 	
 	for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
@@ -30,8 +29,8 @@ inline static map<string, int> MapVarToCol(const set<string>& vars) {
 	return varToCol;
 } 
 
-set<string> ConstraintProblem::Solve() {
-	set<string> unsafeBuffers;
+list<Buffer> ConstraintProblem::Solve() {
+	list<Buffer> unsafeBuffers;
 	if (buffers.empty()) {
 		cout << "No buffers" << endl;
 		return unsafeBuffers; 
@@ -53,16 +52,15 @@ set<string> ConstraintProblem::Solve() {
 		}
 	}
 
-	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+	for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
 		// Set objective coeficients
-		using namespace NameBufferExpression;
-		glp_set_obj_coef(lp, varToCol[Name(*buffer, USED, MIN)], 1.0);
-		glp_set_obj_coef(lp, varToCol[Name(*buffer, USED, MAX)], -1.0);
-		glp_set_obj_coef(lp, varToCol[Name(*buffer, ALLOC, MIN)], 1.0);
-		glp_set_obj_coef(lp, varToCol[Name(*buffer, ALLOC, MAX)], -1.0);
+		glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)], 1.0);
+		glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)], -1.0);
+		glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)], 1.0);
+		glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)], -1.0);
 	}
 
-	for (int i = 1; i <= vars.size(); ++i) {
+	for (unsigned i = 1; i <= vars.size(); ++i) {
 		glp_set_col_bnds(lp, i, GLP_FR, 0.0, 0.0);
 	}
 
@@ -73,17 +71,16 @@ set<string> ConstraintProblem::Solve() {
 	
 	// TODO - what if no solution can be found?
 
-	for (set<string>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+	for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
 		// Print result
-		using namespace NameBufferExpression;
-		cout << Name(*buffer, USED, MIN) << "\t = " << glp_get_col_prim(lp, varToCol[Name(*buffer, USED, MIN)]) << endl;
-		cout << Name(*buffer, USED, MAX) << "\t = " << glp_get_col_prim(lp, varToCol[Name(*buffer, USED, MAX)]) << endl;
-		cout << Name(*buffer, ALLOC, MIN) << "\t = " << glp_get_col_prim(lp, varToCol[Name(*buffer, ALLOC, MIN)]) << endl;
-		cout << Name(*buffer, ALLOC, MAX) << "\t = " << glp_get_col_prim(lp, varToCol[Name(*buffer, ALLOC, MAX)]) << endl;
+		cout << buffer->NameExpression(Buffer::USED, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)]) << endl;
+		cout << buffer->NameExpression(Buffer::USED, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) << endl;
+		cout << buffer->NameExpression(Buffer::ALLOC, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)]) << endl;
+		cout << buffer->NameExpression(Buffer::ALLOC, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)]) << endl;
 		
-		if (glp_get_col_prim(lp, varToCol[Name(*buffer, USED, MAX)]) > glp_get_col_prim(lp, varToCol[Name(*buffer, ALLOC, MIN)])) {
-			unsafeBuffers.insert(*buffer);
-			cout << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << *buffer << endl << endl; 
+		if (glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) > glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)])) {
+			unsafeBuffers.push_back(*buffer);
+			cout << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl; 
 		}
 	}	
 
