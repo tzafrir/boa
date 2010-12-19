@@ -19,15 +19,15 @@ using boa::Buffer;
 
   A constraint is a simple linear inequality of the form BIG >= SMALL
   Use AddBigExpression, AddBigConst in order to add an expression or a constant
-  to the BIG side of the inequality, or the equivalent funtions for the SMALL
+  to the BIG side of the inequality, or the equivalent functions for the SMALL
   side.
 
   For internal use, the constraint is stored in the form of -
 
   C >= aX + bY ...
 
-  Where C is a constant (referred as "left"),  a small letter (a, b...) is an
-  integer value ("num") and a capital letter (X, Y...) is a string name of variable
+  Where C is a constant (referred as "left"), a small letter (a, b...) is an
+  integer value ("num") and a capital letter (X, Y...) is a string name of variable.
 */
 class Constraint {
  private:
@@ -42,6 +42,8 @@ class Constraint {
   void AddLeft(int left) {
     left_ += left;
   }
+
+  // TODO(tzafrir): Disallow copying and assignment.
 
  public:
   Constraint() : left_(0) {};
@@ -111,12 +113,11 @@ class ConstraintProblem {
   }
 
   /**
-    Solve the constriant problem defined by the constraints
+    Solve the constriant problem defined by the constraints.
 
-    Return a set of buffers in which buffer overrun may occur
+    Return a set of buffers in which buffer overrun may occur.
   */
   list<Buffer> Solve();
-
 };
 
 #endif /* __BOA_CONSTRAINT_H */

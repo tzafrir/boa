@@ -7,12 +7,15 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "PointerAnalyzer.h"
 #include "buffer.h"
-using namespace boa;
-#include <list>
-using std::list;
 #include "constraint.h"
+#include "PointerAnalyzer.h"
+
+using namespace boa;
+
+#include <list>
+
+using std::list;
 
 // DEBUG
 #include <iostream>

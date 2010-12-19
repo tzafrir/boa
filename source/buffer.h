@@ -6,12 +6,13 @@
 
 using std::string;
 using std::stringstream;
-using std::hex;
 
 namespace boa {
   class Buffer {
    private:
     void* ASTNode_;
+
+  // TODO(tzafrir): Disallow copying and assignment.
 
    public:
     enum ExpressionType {USED, ALLOC};
