@@ -46,7 +46,7 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  Constraint() : left_(0) {};
+  Constraint() : left_(0) {}
 
   void AddBigExpression(string var, int num = 1) {
     AddExpression(-num, var);
