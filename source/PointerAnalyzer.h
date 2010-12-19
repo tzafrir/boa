@@ -101,6 +101,6 @@ public:
   }
 };
 
-}
+}  // namespace boa
 
 #endif  // __BOA_POINTERANALYZER_H
