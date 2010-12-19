@@ -1,3 +1,6 @@
+#ifndef __BOA_POINTERANALYZER_H
+#define __BOA_POINTERANALYZER_H
+
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
@@ -100,3 +103,4 @@ public:
 
 }
 
+#endif  // __BOA_POINTERANALYZER_H
