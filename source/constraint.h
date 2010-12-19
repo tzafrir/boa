@@ -15,107 +15,107 @@ using std::map;
 using boa::Buffer;
 
 /**
-	Model a single constraint.
+  Model a single constraint.
 
-	A constraint is a simple linear inequality of the form BIG >= SMALL
-	Use AddBigExpression, AddBigConst in order to add an expression or a constant
-	to the BIG side of the inequality, or the equivalent funtions for the SMALL
-	side.
-	
-	For internal use, the constraint is stored in the form of - 
+  A constraint is a simple linear inequality of the form BIG >= SMALL
+  Use AddBigExpression, AddBigConst in order to add an expression or a constant
+  to the BIG side of the inequality, or the equivalent funtions for the SMALL
+  side.
 
-	C >= aX + bY ...
-	
-	Where C is a constant (referred as "left"),  a small letter (a, b...) is an 
-	integer value ("num") and a capital letter (X, Y...) is a string name of variable
+  For internal use, the constraint is stored in the form of -
+
+  C >= aX + bY ...
+
+  Where C is a constant (referred as "left"),  a small letter (a, b...) is an
+  integer value ("num") and a capital letter (X, Y...) is a string name of variable
 */
 class Constraint {
  private:
- 	const static int MAX_SIZE = 100;
-	int left_;
-	map<string, int> expressions_;
-	
-	void AddExpression(int num, string var) {
-		expressions_[var] += num;
-	}
-	
-	void AddLeft(int left) {
-		left_ += left;
-	}
-	
+  const static int MAX_SIZE = 100;
+  int left_;
+  map<string, int> expressions_;
+
+  void AddExpression(int num, string var) {
+    expressions_[var] += num;
+  }
+
+  void AddLeft(int left) {
+    left_ += left;
+  }
+
  public:
- 	Constraint() : left_(0) {};
- 	
- 	void AddBigExpression(string var, int num = 1) {
- 		AddExpression(-num, var);
- 	}
- 	
- 	void AddBigConst(int num) {
- 		AddLeft(num);
- 	}
- 	
- 	void AddSmallExpression(string var, int num = 1) {
- 		AddExpression(num, var);
- 	}
- 	
- 	void AddSmallConst(int num) {
- 		AddLeft(-num);
- 	}
+  Constraint() : left_(0) {};
 
-	void Clear() {
-	 left_ = 0;
-	 expressions_.clear();
-	}
+  void AddBigExpression(string var, int num = 1) {
+    AddExpression(-num, var);
+  }
 
-	void GetVars(set<string>& vars) {
-		for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it) {
-			vars.insert(it->first);
-		}
-	}
-	
-	void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
-		int indices[MAX_SIZE + 1];
-		double values[MAX_SIZE + 1];
+  void AddBigConst(int num) {
+    AddLeft(num);
+  }
 
-		// TODO if size > MAX_SIZE...  
+  void AddSmallExpression(string var, int num = 1) {
+    AddExpression(num, var);
+  }
 
-		int count = 1;
-		for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it, ++count) {
-			indices[count] = colNumbers[it->first];
-			values[count] = it->second;
-		}
-		glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
-		glp_set_mat_row(lp, row, expressions_.size(), indices, values);
-	}
+  void AddSmallConst(int num) {
+    AddLeft(-num);
+  }
+
+  void Clear() {
+   left_ = 0;
+   expressions_.clear();
+  }
+
+  void GetVars(set<string>& vars) {
+    for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it) {
+      vars.insert(it->first);
+    }
+  }
+
+  void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
+    int indices[MAX_SIZE + 1];
+    double values[MAX_SIZE + 1];
+
+    // TODO if size > MAX_SIZE...
+
+    int count = 1;
+    for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it, ++count) {
+      indices[count] = colNumbers[it->first];
+      values[count] = it->second;
+    }
+    glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
+    glp_set_mat_row(lp, row, expressions_.size(), indices, values);
+  }
 
 };
 
 class ConstraintProblem {
  private:
- 	list<Constraint> constraints;
- 	list<Buffer> buffers;
- 	
- 	set<string> CollectVars();
+  list<Constraint> constraints;
+  list<Buffer> buffers;
+
+  set<string> CollectVars();
  public:
- 	void AddBuffer(const Buffer& buffer) {
- 		buffers.push_back(buffer);
- 	}
+  void AddBuffer(const Buffer& buffer) {
+    buffers.push_back(buffer);
+  }
 
- 	void AddConstraint(const Constraint& c) {
- 		constraints.push_back(c);
- 	}
+  void AddConstraint(const Constraint& c) {
+    constraints.push_back(c);
+  }
 
- 	void Clear() {
- 		buffers.clear();
- 		constraints.clear();
- 	}
+  void Clear() {
+    buffers.clear();
+    constraints.clear();
+  }
 
-	/**
-		Solve the constriant problem defined by the constraints
-		
-		Return a set of buffers in which buffer overrun may occur
-	*/
- 	list<Buffer> Solve();
+  /**
+    Solve the constriant problem defined by the constraints
+
+    Return a set of buffers in which buffer overrun may occur
+  */
+  list<Buffer> Solve();
 
 };
 
