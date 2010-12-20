@@ -12,12 +12,15 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/buffer.h ${SOURCE}/PointerAnalyzer.h
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/PointerAnalysis.d.tmp" -MT "${BUILD}/PointerAnalysis.o" -MT "${BUILD}/PointerAnalysis.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/PointerAnalysis.d.tmp ${BUILD}/PointerAnalysis.d
 
-${BUILD}/constraint.o : ${SOURCE}/constraint.cpp ${SOURCE}/constraint.h
+${BUILD}/constraint.o: ${SOURCE}/constraint.cpp ${SOURCE}/constraint.h
 	${CC} ${SOURCE}/constraint.cpp ${CFLAGS} -c -o ${BUILD}/constraint.o
 
-${BUILD} : 
+${BUILD}:
 	mkdir ${BUILD}
 
-tests : ${BUILD}/boa.so
+clean:
+	rm -fr ${BUILD}
+
+tests: ${BUILD}/boa.so
 	tests/testMain.sh
 
