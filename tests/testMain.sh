@@ -16,7 +16,7 @@ function run_testcase {
 	if (head -1 $1 | grep "BOA-TEST[[:space:]]*0[[:space:]]*$" > /dev/null); then OVERRUN=false; fi
 	
 	local RETVAL=false;
-	if ($BOA $1 > /dev/null); then RETVAL=true; fi
+	if ($RUN_BOA $1 &> /dev/stdout | grep "^boa\[0\]$" > /dev/null); then RETVAL=true; fi
 
 	printf "running $1 - "
 	if ($RETVAL); then
@@ -34,11 +34,11 @@ function run_testcase {
 	fi			
 }
 
-BOA=/tmp/boa_test_bin
+LLVM=../llvm
+BOA=build/boa.so
+RUN_BOA="${LLVM}/Debug+Asserts/bin/clang -cc1 -load ${BOA} -plugin boa"
 
-g++ ../main.cpp -o $BOA || die "Compilation error"
-
-for file in $(ls testcases/*.c); do
+for file in $(ls tests/testcases/*.c); do
 	run_testcase $file
 done
 
