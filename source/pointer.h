@@ -25,6 +25,10 @@ namespace boa {
     }
 
     Pointer(void* ASTNode) : ASTNode_(ASTNode) {}
+
+    bool operator<(const Pointer& other) const {
+      return this->ASTNode_ < other.ASTNode_;
+    }
   };
 }
 
