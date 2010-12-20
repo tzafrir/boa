@@ -1,4 +1,4 @@
-// BOA-TEST   0
+// BOA-TEST   1
 // simple malloc
 #include <stdlib.h>
 
