@@ -59,7 +59,7 @@ public:
     return true;
   }
 
-  void findStaticBufferDecl(Decl *d) {
+  void findVarDecl(Decl *d) {
     if (VarDecl* var = dyn_cast<VarDecl>(d)) {
       Type* varType = var->getType().getTypePtr();
       // FIXME - This code only detects an array of chars
