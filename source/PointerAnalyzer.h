@@ -35,7 +35,7 @@ class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
   list<Buffer> Buffers_;
   list<Pointer> Pointers_;
-  map<Pointer, list<Buffer>*> Pointer2Buffers_;
+  map< Pointer, list<Buffer>& > Pointer2Buffers_;
   SourceManager &sm_;
 public:
   PointerASTVisitor(SourceManager &SM)
