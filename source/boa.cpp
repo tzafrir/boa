@@ -55,11 +55,11 @@ class boaConsumer : public ASTConsumer {
     cerr << endl << "Constraint solver output - " << endl;
     list<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
-      cerr << endl << "No ovveruns possible" << endl;
+      cerr << endl << "No overruns possible" << endl;
       cerr << "boa[0]" << endl;
     }
     else {
-      cerr << endl << "Possible buffer ovverruns on - " << endl;
+      cerr << endl << "Possible buffer overruns on - " << endl;
       // TODO
       cerr << "boa[1]" << endl;
     }
