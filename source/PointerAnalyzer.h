@@ -44,7 +44,7 @@ public:
   bool VisitStmt(Stmt* S) {
     if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
-        findStaticBufferDecl(*i);
+        findVarDecl(*i);
       }
     }
     else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {

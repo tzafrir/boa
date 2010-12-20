@@ -34,7 +34,7 @@ public:
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
       Decl *D = *i;
       PointerAnalyzer_.TraverseDecl(D);
-      PointerAnalyzer_.findStaticBufferDecl(D);
+      PointerAnalyzer_.findVarDecl(D);
       // TODO - call constraint generator here
     }
   }
