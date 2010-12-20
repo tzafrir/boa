@@ -34,7 +34,7 @@ public:
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
       Decl *D = *i;
       PointerAnalyzer_.TraverseDecl(D);
-      PointerAnalyzer_.findStaticBufferDecl(D);
+      PointerAnalyzer_.findVarDecl(D);
       // TODO - call constraint generator here
     }
   }
@@ -52,10 +52,12 @@ public:
     list<Buffer> unsafeBuffers = constriantProb_.Solve();
     if (unsafeBuffers.empty()) {
       cerr << endl << "No ovveruns possible" << endl;
+      cerr << "boa[0]" << endl;
     }
     else {
       cerr << endl << "Possible buffer ovverruns on - " << endl;
       // TODO
+      cerr << "boa[1]" << endl;
     }
   }
 
