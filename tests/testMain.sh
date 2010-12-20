@@ -16,7 +16,7 @@ function run_testcase {
 	if (head -1 $1 | grep "BOA-TEST[[:space:]]*0[[:space:]]*$" > /dev/null); then OVERRUN=false; fi
 	
 	local RETVAL=false;
-	if ($RUN_BOA $1 &> /dev/stdout | grep "^boa\[0\]$" > /dev/null); then RETVAL=true; fi
+	if ($RUN_BOA $1 &> /dev/stdout | egrep "^boa\[0\]$" > /dev/null); then RETVAL=true; fi
 
 	printf "running $1 - "
 	if ($RETVAL); then
