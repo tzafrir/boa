@@ -49,7 +49,14 @@ public:
       constriantProb_.AddBuffer(*buf);
     }
     cerr << endl << "Constraint solver output - " << endl;
-    constriantProb_.Solve();  
+    list<Buffer> unsafeBuffers = constriantProb_.Solve();
+    if (unsafeBuffers.empty()) {
+      cerr << endl << "No ovveruns possible" << endl;
+    }
+    else {
+      cerr << endl << "Possible buffer ovverruns on - " << endl;
+      // TODO
+    }
   }
 
 private:
