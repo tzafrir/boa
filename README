@@ -1,1 +1,12 @@
-boa - Buffer Overrun Analyzer
+BOA - Buffer Overrun Analyzer
+
+In order to compile simply type -
+ $ make
+
+In order to test -
+ $ make tests
+
+In order to run -
+ $ ../llvm/Debug+Asserts/bin/clang -cc1 -load build/boa.so -plugin boa tests/testcases/simple1.c
+
+(or any other c source file)
