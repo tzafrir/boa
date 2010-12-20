@@ -28,13 +28,13 @@ namespace {
 
 class boaConsumer : public ASTConsumer {
 public:
-  boaConsumer(SourceManager &SM) : sm_(SM), PointerAnalyzer_(SM) {}
+  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM) {}
 
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
       Decl *D = *i;
-      PointerAnalyzer_.TraverseDecl(D);
-      PointerAnalyzer_.findVarDecl(D);
+      pointerAnalyzer_.TraverseDecl(D);
+      pointerAnalyzer_.findVarDecl(D);
       // TODO - call constraint generator here
     }
   }
@@ -43,7 +43,7 @@ public:
     // TODO - call constraint dispach here
     
     cerr << endl << "The buffers we have found - " << endl;
-    const list<Buffer> &Buffers = PointerAnalyzer_.getBuffers();
+    const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (list<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       cerr << buf->getUniqueName() << endl;
       constriantProb_.AddBuffer(*buf);
@@ -63,7 +63,7 @@ public:
 
 private:
   SourceManager &sm_;
-  PointerASTVisitor PointerAnalyzer_;
+  PointerASTVisitor pointerAnalyzer_;
   ConstraintProblem constriantProb_;
 };
 
