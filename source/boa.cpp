@@ -27,7 +27,11 @@ using namespace clang;
 namespace {
 
 class boaConsumer : public ASTConsumer {
-public:
+ private:
+  SourceManager &sm_;
+  PointerASTVisitor pointerAnalyzer_;
+  ConstraintProblem constriantProb_;
+ public:
   boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM) {}
 
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
@@ -60,15 +64,10 @@ public:
       cerr << "boa[1]" << endl;
     }
   }
-
-private:
-  SourceManager &sm_;
-  PointerASTVisitor pointerAnalyzer_;
-  ConstraintProblem constriantProb_;
 };
 
 class boaPlugin : public PluginASTAction {
-protected:
+ protected:
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
     return new boaConsumer(CI.getSourceManager());
   }
