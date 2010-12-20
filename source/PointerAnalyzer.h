@@ -35,7 +35,7 @@ class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
   list<Buffer> Buffers_;
   list<Pointer> Pointers_;
-  map< Pointer, list<Buffer>& > Pointer2Buffers_;
+  map< Pointer, list<Buffer>* > Pointer2Buffers_;
   SourceManager &sm_;
 public:
   PointerASTVisitor(SourceManager &SM)
@@ -109,6 +109,7 @@ public:
     cerr << " \"clang ID\" = " << (void*)var << endl;
     cerr << " line number = " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
     Pointers_.push_back(p);
+    Pointer2Buffers_[p] = &Buffers_;
   }
   
   const list<Buffer>& getBuffers() const {
@@ -117,6 +118,10 @@ public:
 
   const list<Pointer>& getPointers() const {
     return Pointers_;
+  }
+
+  const map< Pointer, list<Buffer>* > & getMapping() const {
+    return Pointer2Buffers_;
   }
 };
 

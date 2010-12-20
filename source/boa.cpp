@@ -52,12 +52,12 @@ public:
     list<Buffer> unsafeBuffers = constriantProb_.Solve();
     if (unsafeBuffers.empty()) {
       cerr << endl << "No ovveruns possible" << endl;
-      cerr << "boa[0]" << endl; // used by tests
+      cerr << "boa[0]" << endl;
     }
     else {
       cerr << endl << "Possible buffer ovverruns on - " << endl;
       // TODO
-      cerr << "boa[1]" << endl; // used by tests      
+      cerr << "boa[1]" << endl;
     }
   }
 
