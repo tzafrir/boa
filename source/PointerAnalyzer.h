@@ -12,8 +12,14 @@
 
 #include "buffer.h"
 using boa::Buffer;
+#include "pointer.h"
+using boa::Pointer;
+
 #include <list>
 using std::list;
+#include <map>
+using std::map;
+
 #include "constraint.h"
 
 // DEBUG
@@ -28,6 +34,8 @@ namespace boa {
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
   list<Buffer> Buffers_;
+  list<Pointer> Pointers_;
+  map<Pointer, list<Buffer>*> Pointer2Buffers_;
   SourceManager &sm_;
 public:
   PointerASTVisitor(SourceManager &SM)
@@ -42,7 +50,7 @@ public:
     else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
       if (FunctionDecl* funcDec = funcCall->getDirectCallee())
       {
-         //if (funcDec->getNameInfo()->getAsString() == "malloc")
+         if (funcDec->getNameInfo().getAsString() == "malloc")
          {
             addMallocToSet(funcCall,funcDec);
          }
@@ -53,25 +61,22 @@ public:
 
   void MyVisitDeclStmt(Decl *d) {
     if (VarDecl* var = dyn_cast<VarDecl>(d)) {
+      Type* varType = var->getType().getTypePtr();
       // FIXME - This code only detects an array of chars
       // Array of array of chars will probably NOT detected
       // As well as "array of MyChar" When using "typedef MyChar char".
-      if (ArrayType* arr = dyn_cast<ArrayType>(var->getType().getTypePtr())) {
-        if (BuiltinType* arrType = dyn_cast<BuiltinType>(arr->getElementType())) {
-          switch (arrType->getKind()) {
-            case BuiltinType::Char_U:
-            case BuiltinType::UChar: 
-            case BuiltinType::Char16:
-            case BuiltinType::Char32: 
-            case BuiltinType::Char_S: 
-            case BuiltinType::SChar:
-            case BuiltinType::WChar:
-              addBufferToSet(var);
-              break;
-            default:
-              // Not a char array
-              break;
-          }
+      if (ArrayType* arr = dyn_cast<ArrayType>(varType)) {
+        if (arr->getElementType().getTypePtr()->isAnyCharacterType())
+        {
+          addBufferToSet(var);
+          
+        }
+      }
+      else if (PointerType* pType = dyn_cast<PointerType>(varType))
+      {
+        if (pType->getPointeeType()->isAnyCharacterType())
+        {
+           addPointerToSet(var);
         }
       }
     }
@@ -84,20 +89,34 @@ public:
     Buffer b((void*)var);
     cerr << " code name  = " << var->getNameAsString() << endl;
     cerr << " \"clang ID\" = " << (void*)var << endl;
-    // TODO - get var's code location (Tzafrir?)
+    cerr << " line number = " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
     Buffers_.push_back(b);
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-    cerr << func->getNameInfo().getAsString() << endl;
-    cerr << "malloc_" << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
+    cerr << "malloc on line " << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
     
     Buffer b((void*)funcCall);
     Buffers_.push_back(b);
   }
+
+  void addPointerToSet(VarDecl* var) {
+    var->dump();
+    cerr << " was added to pointers set" << endl;
+
+    Pointer p((void*)var);
+    cerr << " code name  = " << var->getNameAsString() << endl;
+    cerr << " \"clang ID\" = " << (void*)var << endl;
+    cerr << " line number = " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
+    Pointers_.push_back(p);
+  }
   
   const list<Buffer>& getBuffers() const {
     return Buffers_;
+  }
+
+  const list<Pointer>& getPointers() const {
+    return Pointers_;
   }
 };
 
