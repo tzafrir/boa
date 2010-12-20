@@ -2,9 +2,11 @@
 #include <set>
 #include <string>
 #include "constraint.h"
+#include "buffer.h"
 
 using std::set;
 using std::string;
+using boa::Buffer;
 
 int main(int argc, char* argv[]) {
   ConstraintProblem cp;
@@ -15,7 +17,7 @@ int main(int argc, char* argv[]) {
   // ...
 
   // solve constraint problem
-  set<string> unsafeBuffers = cp.Solve();
+  list<Buffer> unsafeBuffers = cp.Solve();
   
   if (unsafeBuffers.empty()) {
 	  std::cout << "Safe!" << std::endl;
