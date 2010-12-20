@@ -36,7 +36,7 @@ public:
   bool VisitStmt(Stmt* S) {
     if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
-        MyVisitDeclStmt(*i);
+        findStaticBufferDecl(*i);
       }
     }
     else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
@@ -51,7 +51,7 @@ public:
     return true;
   }
 
-  void MyVisitDeclStmt(Decl *d) {
+  void findStaticBufferDecl(Decl *d) {
     if (VarDecl* var = dyn_cast<VarDecl>(d)) {
       // FIXME - This code only detects an array of chars
       // Array of array of chars will probably NOT detected
