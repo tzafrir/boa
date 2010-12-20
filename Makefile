@@ -15,9 +15,12 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/buffer.h ${SOURCE}/PointerAnalyzer.h
 ${BUILD}/constraint.o : ${SOURCE}/constraint.cpp ${SOURCE}/constraint.h
 	${CC} ${SOURCE}/constraint.cpp ${CFLAGS} -c -o ${BUILD}/constraint.o
 
-${BUILD} :
+${BUILD}:
 	mkdir ${BUILD}
 
-tests : ${BUILD}/boa.so
+clean:
+	rm -fr ${BUILD}
+
+tests: ${BUILD}/boa.so
 	tests/testMain.sh
 

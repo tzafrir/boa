@@ -30,7 +30,7 @@ class boaConsumer : public ASTConsumer {
  private:
   SourceManager &sm_;
   PointerASTVisitor pointerAnalyzer_;
-  ConstraintProblem constriantProb_;
+  ConstraintProblem constraintProblem_;
  public:
   boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM) {}
 
@@ -50,16 +50,16 @@ class boaConsumer : public ASTConsumer {
     const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (list<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       cerr << buf->getUniqueName() << endl;
-      constriantProb_.AddBuffer(*buf);
+      constraintProblem_.AddBuffer(*buf);
     }
     cerr << endl << "Constraint solver output - " << endl;
-    list<Buffer> unsafeBuffers = constriantProb_.Solve();
+    list<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
-      cerr << endl << "No ovveruns possible" << endl;
+      cerr << endl << "No overruns possible" << endl;
       cerr << "boa[0]" << endl;
     }
     else {
-      cerr << endl << "Possible buffer ovverruns on - " << endl;
+      cerr << endl << "Possible buffer overruns on - " << endl;
       // TODO
       cerr << "boa[1]" << endl;
     }
