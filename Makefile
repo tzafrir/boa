@@ -21,6 +21,8 @@ ${BUILD}:
 clean:
 	rm -fr ${BUILD}
 
-tests: ${BUILD}/boa.so
+tests: ${BUILD}/boa.so FORCE
 	tests/testMain.sh
+	
+FORCE:
 
