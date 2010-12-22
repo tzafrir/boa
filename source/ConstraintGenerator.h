@@ -25,9 +25,15 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
 
   bool VisitStmt(Stmt* S) {
     if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
+      if (!op->isAssignmentOp()) {
+        return true;
+      }
+
       op->dump();
       if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-        llvm::errs() << "";
+        if (DeclRefExpr* dre = dyn_cast<DeclRefExpr>(op->getLHS())) {
+          llvm::errs() << "Is at " << (void*)(dre->getDecl()) << "\n";
+        }
       }
     }
     return true;
