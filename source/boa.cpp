@@ -9,6 +9,8 @@
 
 #include "buffer.h"
 #include "constraint.h"
+
+#include "ConstraintGenerator.h"
 #include "PointerAnalyzer.h"
 
 using namespace boa;
@@ -30,16 +32,17 @@ class boaConsumer : public ASTConsumer {
  private:
   SourceManager &sm_;
   PointerASTVisitor pointerAnalyzer_;
+  ConstraintGenerator constraintGenerator_;
   ConstraintProblem constraintProblem_;
  public:
-  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM) {}
+  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM), constraintGenerator_(SM) {}
 
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
       Decl *D = *i;
       pointerAnalyzer_.TraverseDecl(D);
       pointerAnalyzer_.findVarDecl(D);
-      // TODO - call constraint generator here
+      constraintGenerator_.TraverseDecl(D);
     }
   }
   
