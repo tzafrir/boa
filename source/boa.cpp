@@ -32,10 +32,10 @@ class boaConsumer : public ASTConsumer {
  private:
   SourceManager &sm_;
   PointerASTVisitor pointerAnalyzer_;
-  ConstraintGenerator constraintGenerator_;
   ConstraintProblem constraintProblem_;
+  ConstraintGenerator constraintGenerator_;
  public:
-  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM), constraintGenerator_(SM) {}
+  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM), constraintGenerator_(SM, constraintProblem_) {}
 
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
