@@ -14,6 +14,10 @@ using std::list;
 using std::map;
 using boa::Buffer;
 
+// DEBUG 
+#include <sstream>
+
+
 /**
   Model a single constraint.
 
@@ -53,6 +57,25 @@ class Constraint {
     Expressions() : val_(0) {}
     void AddExpression(const string& var, int num = 1) {vars_[var] += num;}
     void addConst(int num) {val_ += num;}
+    
+    // DEBUG
+    static string int2str(int i) {
+      std::ostringstream buffer;
+      buffer << i;
+      return buffer.str();
+    }
+    string toString() {
+      string s;
+      for (map<string, int>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        if ((!s.empty()) && (it->second >= 0)) s += "+ ";
+        s += int2str(it->second) + it->first + " ";
+      }
+      if (s.empty() || (val_ != 0)) {
+        if ((!s.empty()) && (val_ >= 0)) s += "+ ";
+        s += int2str(val_); 
+      }
+      return s; 
+    }
   };
 
   Constraint() : left_(0) {}
