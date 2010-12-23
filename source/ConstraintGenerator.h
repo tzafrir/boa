@@ -21,39 +21,42 @@ namespace boa {
 class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
- public:
-  ConstraintGenerator(SourceManager &SM, ConstraintProblem CP) : sm_(SM), cp_(CP) {}
 
-  bool VisitStmt(Stmt* S) {
-    if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
-      if ((expr->getBase()->getType().getTypePtr()->isPointerType()) && 
-          (dyn_cast<ImplicitCastExpr>(expr->getBase())) &&
-          (dyn_cast<ImplicitCastExpr>(expr->getBase())->getSubExpr()->getType().getTypePtr()->isArrayType())
-          ) {
-        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(dyn_cast<ImplicitCastExpr>(expr->getBase())->getSubExpr())) {
+  bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
+    if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
+      if (implicitCast->getSubExpr()->getType().getTypePtr()->isArrayType()) {
+        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
           ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr());
           if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
             Buffer buf(declRef->getDecl());
             if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr->getIdx())) {
               Constraint usedMax, usedMin;
               int intVal = literal->getValue().getLimitedValue();
-              
+
               usedMax.AddBigExpression(buf.NameExpression(Buffer::USED, Buffer::MAX));
               usedMax.AddSmallConst(intVal);
               cp_.AddConstraint(usedMax);
               llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << intVal << "\n";
-              
+
               usedMin.AddSmallExpression(buf.NameExpression(Buffer::USED, Buffer::MIN));
               usedMin.AddBigConst(intVal);
               llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << intVal << "\n";
-              cp_.AddConstraint(usedMin);              
-                        
+              cp_.AddConstraint(usedMin);
+
             } // TODO - else (not a literal)
           }
         }
       } //TODO - else (pointer?)
-      
-      return true;
+    }
+    return true;
+  }
+
+ public:
+  ConstraintGenerator(SourceManager &SM, ConstraintProblem CP) : sm_(SM), cp_(CP) {}
+
+  bool VisitStmt(Stmt* S) {
+    if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
+      return GenerateArraySubscriptConstraints(expr);
     }
 
     if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
@@ -68,7 +71,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
         }
       }
     }
-    
+
     return true;
   }
 };
