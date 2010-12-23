@@ -13,6 +13,7 @@
 #include <string>
 
 #include "constraint.h"
+#include "pointer.h"
 
 using namespace clang;
 
@@ -21,33 +22,50 @@ namespace boa {
 class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
+  
+  Constraint::Expressions GenerateIntegerExpression(Expr *expr) {
+    Constraint::Expressions retval;
+    if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
+      retval.addConst(literal->getValue().getLimitedValue());
+    } // TODO - else (not a literal)    
+    return retval;  
+  }
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
+    Constraint::Expressions indexExpr = GenerateIntegerExpression(expr->getIdx());
+
+    // Base is a static array
     if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
       if (implicitCast->getSubExpr()->getType().getTypePtr()->isArrayType()) {
         if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
           ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr());
           if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
             Buffer buf(declRef->getDecl());
-            if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr->getIdx())) {
-              Constraint usedMax, usedMin;
-              int intVal = literal->getValue().getLimitedValue();
+            Constraint usedMax, usedMin;
 
-              usedMax.AddBigExpression(buf.NameExpression(Buffer::USED, Buffer::MAX));
-              usedMax.AddSmallConst(intVal);
-              cp_.AddConstraint(usedMax);
-              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << intVal << "\n";
+            usedMax.AddBigExpression(buf.NameExpression(Buffer::USED, Buffer::MAX));
+            usedMax.AddSmall(indexExpr);
+            cp_.AddConstraint(usedMax);
+            llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << indexExpr.toString() << "\n";
 
-              usedMin.AddSmallExpression(buf.NameExpression(Buffer::USED, Buffer::MIN));
-              usedMin.AddBigConst(intVal);
-              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << intVal << "\n";
-              cp_.AddConstraint(usedMin);
-
-            } // TODO - else (not a literal)
+            usedMin.AddSmallExpression(buf.NameExpression(Buffer::USED, Buffer::MIN));
+            usedMin.AddBig(indexExpr);
+            llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << indexExpr.toString() << "\n";
+            cp_.AddConstraint(usedMin);
           }
         }
-      } //TODO - else (pointer?)
+      }
     }
+    // base is a pointer
+    else if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr->getBase())) {
+      PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
+      if (pType->getPointeeType()->isAnyCharacterType()) {
+        Pointer ptr(declRef->getDecl());
+        llvm::errs() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  indexExpr.toString() << "\n";
+        // TODO - dispatch
+      }
+    }
+    
     return true;
   }
 
