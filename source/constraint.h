@@ -46,7 +46,23 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
+  class Expressions {
+    int val_;
+    map<string, int> vars_;
+   public:
+    Expressions() : val_(0) {}
+    void AddExpression(string var, int num = 1) {vars_[var] += num;}
+    void addConst(int num) {val_ += num;}
+  };
+
   Constraint() : left_(0) {}
+  
+  void AddBig(Expressions expr) {
+    for (map<string, int>::iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      AddBigExpression(it->first, it->second);
+    }
+    AddBigConst(expr.val_);
+  }
 
   void AddBigExpression(string var, int num = 1) {
     AddExpression(-num, var);
@@ -54,6 +70,13 @@ class Constraint {
 
   void AddBigConst(int num) {
     AddLeft(num);
+  }
+
+  void AddSmall(Expressions expr) {
+    for (map<string, int>::iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      AddSmallExpression(it->first, it->second);
+    }
+    AddSmallConst(expr.val_);
   }
 
   void AddSmallExpression(string var, int num = 1) {
