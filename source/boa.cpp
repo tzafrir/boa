@@ -47,10 +47,10 @@ class boaConsumer : public ASTConsumer {
       constraintGenerator_.TraverseDecl(D);
     }
   }
-  
+
   virtual ~boaConsumer() {
     // TODO - call constraint dispach here
-    
+
     cerr << endl << "The buffers we have found - " << endl;
     const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (list<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
@@ -70,7 +70,7 @@ class boaConsumer : public ASTConsumer {
       cerr << endl << "Possible buffer overruns on - " << endl;
       cerr << SEPARATOR << endl;
       for (list<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
-        cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;      
+        cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;
       }
       cerr << SEPARATOR << endl;
     }
@@ -82,7 +82,7 @@ class boaPlugin : public PluginASTAction {
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
     return new boaConsumer(CI.getSourceManager());
   }
-  
+
   bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args) {
     return true;
   }

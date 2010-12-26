@@ -91,7 +91,7 @@ public:
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
     cerr << "malloc on line " << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
-    
+
     Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
   }
@@ -107,7 +107,7 @@ public:
     Pointers_.push_back(p);
     Pointer2Buffers_[p] = &Buffers_;
   }
-  
+
   const list<Buffer>& getBuffers() const {
     return Buffers_;
   }

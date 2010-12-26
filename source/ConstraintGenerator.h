@@ -22,13 +22,13 @@ namespace boa {
 class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
-  
+
   Constraint::Expressions GenerateIntegerExpression(Expr *expr) {
     Constraint::Expressions retval;
     if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
       retval.addConst(literal->getValue().getLimitedValue());
-    } // TODO - else (not a literal)    
-    return retval;  
+    } // TODO - else (not a literal)
+    return retval;
   }
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
@@ -65,7 +65,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
         // TODO - dispatch
       }
     }
-    
+
     return true;
   }
 
@@ -76,7 +76,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
     if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
       return GenerateArraySubscriptConstraints(expr);
     }
-    
+
     if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
         if (VarDecl* var = dyn_cast<VarDecl>(*i)) {
@@ -99,7 +99,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
         }
       }
     }
-    
+
 
     if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
       if (!op->isAssignmentOp()) {

@@ -14,7 +14,7 @@ using std::list;
 using std::map;
 using boa::Buffer;
 
-// DEBUG 
+// DEBUG
 #include <sstream>
 
 
@@ -57,7 +57,7 @@ class Constraint {
     Expressions() : val_(0) {}
     void AddExpression(const string& var, int num = 1) {vars_[var] += num;}
     void addConst(int num) {val_ += num;}
-    
+
     // DEBUG
     static string int2str(int i) {
       std::ostringstream buffer;
@@ -72,14 +72,14 @@ class Constraint {
       }
       if (s.empty() || (val_ != 0)) {
         if ((!s.empty()) && (val_ >= 0)) s += "+ ";
-        s += int2str(val_); 
+        s += int2str(val_);
       }
-      return s; 
+      return s;
     }
   };
 
   Constraint() : left_(0) {}
-  
+
   void AddBig(const Expressions& expr) {
     for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
       AddBigExpression(it->first, it->second);
