@@ -64,7 +64,6 @@ public:
       Type* varType = var->getType().getTypePtr();
       // FIXME - This code only detects an array of chars
       // Array of array of chars will probably NOT detected
-      // As well as "array of MyChar" When using "typedef MyChar char".
       if (ArrayType* arr = dyn_cast<ArrayType>(varType)) {
         if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
           addBufferToSet(var);
