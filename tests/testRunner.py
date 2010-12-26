@@ -24,8 +24,8 @@ Receives a list of tuples, returns a list of all n'th elements in the list.
     result.append(aTuple[n])
   return result
 
-def printFailure(failedLine):
-  sys.stderr.write("FAILED: " + failedLine + "\n")
+def printFailure(failedLine, lineNumber):
+  sys.stderr.write("FAILED(" + str(lineNumber) + "): " + failedLine + "\n")
 
 def runTest(testName):
   """\
@@ -72,9 +72,11 @@ This method has a side effect of printing all failing assertions to stderr.
   a = open(testsFolder + testName + assertsSuffix, 'r')
   # enum
   BYNAME, BYLOCATION, BYBOTH = range(3)
+  lineNumber = 0
   result = True
   for lineWithBreak in a.readlines():
     line = lineWithBreak.split("\n")[0]
+    lineNumber += 1
     if line == "":
       continue
     values = line.split(" ")
@@ -97,11 +99,11 @@ This method has a side effect of printing all failing assertions to stderr.
       contains = listContains(testOutput, (values[2], values[3]))
     if isHasAssertion:
       if not contains:
-        printFailure(line)
+        printFailure(line, lineNumber)
         result &= False
     else:
       if contains:
-        printFailure(line)
+        printFailure(line, lineNumber)
         result &= False
   return result
 
