@@ -1,0 +1,8 @@
+The following buffers were found to have possible overruns:
+
+Also, everything above the separator is ignored!
+
+[Buffer name (when declared)] [declaration file name]:[declaration line number]
+---
+b file.c:30
+mychars included.h:92
