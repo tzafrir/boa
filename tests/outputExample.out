@@ -6,3 +6,5 @@ Also, everything above the separator is ignored!
 ---
 b file.c:30
 mychars included.h:92
+---
+And some other stuff after it if we want.
