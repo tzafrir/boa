@@ -19,6 +19,7 @@ using namespace boa;
 
 using std::list;
 
+
 // DEBUG
 #include <iostream>
 using std::cerr;
@@ -27,6 +28,7 @@ using std::endl;
 using namespace clang;
 
 namespace {
+static const string SEPARATOR("---");
 
 class boaConsumer : public ASTConsumer {
  private:
@@ -58,13 +60,19 @@ class boaConsumer : public ASTConsumer {
     cerr << endl << "Constraint solver output - " << endl;
     list<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
-      cerr << endl << "No overruns possible" << endl;
       cerr << "boa[0]" << endl;
+      cerr << endl << "No overruns possible" << endl;
+      cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
     }
     else {
-      cerr << endl << "Possible buffer overruns on - " << endl;
-      // TODO
       cerr << "boa[1]" << endl;
+      cerr << endl << "Possible buffer overruns on - " << endl;
+      cerr << SEPARATOR << endl;
+      for (list<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
+        cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;      
+      }
+      cerr << SEPARATOR << endl;
     }
   }
 };
