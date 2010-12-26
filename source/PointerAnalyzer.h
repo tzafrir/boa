@@ -66,16 +66,12 @@ public:
       // Array of array of chars will probably NOT detected
       // As well as "array of MyChar" When using "typedef MyChar char".
       if (ArrayType* arr = dyn_cast<ArrayType>(varType)) {
-        if (arr->getElementType().getTypePtr()->isAnyCharacterType())
-        {
+        if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
           addBufferToSet(var);
-          
         }
       }
-      else if (PointerType* pType = dyn_cast<PointerType>(varType))
-      {
-        if (pType->getPointeeType()->isAnyCharacterType())
-        {
+      else if (PointerType* pType = dyn_cast<PointerType>(varType)) {
+        if (pType->getPointeeType()->isAnyCharacterType()) {
            addPointerToSet(var);
         }
       }
