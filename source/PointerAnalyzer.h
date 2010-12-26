@@ -82,17 +82,17 @@ public:
     var->dump();
     cerr << " was added to buffers set" << endl;
 
-    Buffer b((void*)var);
+    Buffer b((void*)var, var->getNameAsString(), sm_.getBufferName(var->getLocation()), sm_.getSpellingLineNumber(var->getLocation()));
     cerr << " code name  = " << var->getNameAsString() << endl;
     cerr << " \"clang ID\" = " << (void*)var << endl;
-    cerr << " line number = " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
+    cerr << " line number = " << sm_.getBufferName(var->getLocation()) << endl;
     Buffers_.push_back(b);
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
     cerr << "malloc on line " << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
     
-    Buffer b((void*)funcCall);
+    Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
   }
 
