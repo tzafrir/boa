@@ -70,12 +70,36 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   }
 
  public:
-  ConstraintGenerator(SourceManager &SM, ConstraintProblem CP) : sm_(SM), cp_(CP) {}
+  ConstraintGenerator(SourceManager &SM, ConstraintProblem &CP) : sm_(SM), cp_(CP) {}
 
   bool VisitStmt(Stmt* S) {
     if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
       return GenerateArraySubscriptConstraints(expr);
     }
+    
+    if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
+      for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
+        if (VarDecl* var = dyn_cast<VarDecl>(*i)) {
+          if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
+            if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
+              Buffer buf(var);
+              Constraint allocMax, allocMin;
+
+              allocMax.AddBigExpression(buf.NameExpression(Buffer::ALLOC, Buffer::MAX));
+              allocMax.AddSmallConst(arr->getSize().getLimitedValue());
+              cp_.AddConstraint(allocMax);
+              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MAX) << " >= " << arr->getSize().getLimitedValue() << "\n";
+
+              allocMin.AddSmallExpression(buf.NameExpression(Buffer::ALLOC, Buffer::MIN));
+              allocMin.AddBigConst(arr->getSize().getLimitedValue());
+              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MIN) << " <= " << arr->getSize().getLimitedValue() << "\n";
+              cp_.AddConstraint(allocMin);
+            }
+          }
+        }
+      }
+    }
+    
 
     if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
       if (!op->isAssignmentOp()) {
