@@ -10,10 +10,10 @@ namespace boa {
 set<string> ConstraintProblem::CollectVars() {
   set<string> vars;
   for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
-    vars.insert(buffer->NameExpression(Buffer::USED, Buffer::MIN));
-    vars.insert(buffer->NameExpression(Buffer::USED, Buffer::MAX));
-    vars.insert(buffer->NameExpression(Buffer::ALLOC, Buffer::MIN));
-    vars.insert(buffer->NameExpression(Buffer::ALLOC, Buffer::MAX));
+    vars.insert(buffer->NameExpression(MIN, USED));
+    vars.insert(buffer->NameExpression(MAX, USED));
+    vars.insert(buffer->NameExpression(MIN, ALLOC));
+    vars.insert(buffer->NameExpression(MAX, ALLOC));
   }
 
   for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
@@ -60,10 +60,10 @@ list<Buffer> ConstraintProblem::Solve() {
 
   for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     // Set objective coeficients
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)], 1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)], -1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)], 1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)], -1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, USED)], 1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, USED)], -1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, ALLOC)], 1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, ALLOC)], -1.0);
   }
 
   for (unsigned i = 1; i <= vars.size(); ++i) {
@@ -79,12 +79,12 @@ list<Buffer> ConstraintProblem::Solve() {
 
   for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     // Print result
-    log::os() << buffer->NameExpression(Buffer::USED, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)]) << endl;
-    log::os() << buffer->NameExpression(Buffer::USED, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) << endl;
-    log::os() << buffer->NameExpression(Buffer::ALLOC, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)]) << endl;
-    log::os() << buffer->NameExpression(Buffer::ALLOC, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)]) << endl;
+    log::os() << buffer->NameExpression(MIN, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) << endl;
+    log::os() << buffer->NameExpression(MAX, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) << endl;
+    log::os() << buffer->NameExpression(MIN, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)]) << endl;
+    log::os() << buffer->NameExpression(MAX, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, ALLOC)]) << endl;
 
-    if (glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) >= glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)])) {
+    if (glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) >= glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)])) {
       unsafeBuffers.push_back(*buffer);
       log::os() << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
