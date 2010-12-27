@@ -55,8 +55,21 @@ class Constraint {
    public:
     friend class Constraint;
     Expression() : val_(0) {}
+    void add(const Expression& expr) {
+      for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+        add(it->first, it->second);
+      }
+      add(expr.val_);      
+    }
     void add(const string& var, int num = 1) {vars_[var] += num;}
     void add(int num) {val_ += num;}
+
+    void sub(const Expression& expr) {
+      for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+        add(it->first, -it->second);
+      }
+      add(-expr.val_);      
+    }    
 
     // DEBUG
     static string int2str(int i) {
