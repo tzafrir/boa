@@ -1,5 +1,5 @@
-#ifndef __BOA_POINTER_H
-#define __BOA_POINTER_H /* */
+#ifndef __BOA_INTEGER_H
+#define __BOA_INTEGER_H /* */
 
 #include <string>
 #include <sstream>
@@ -9,10 +9,10 @@ using std::string;
 using std::stringstream;
 
 namespace boa {
-  class Pointer : public VarLiteral {
+  class Integer : public VarLiteral {
    public:
 
-    Pointer(void* ASTNode) : VarLiteral(ASTNode) {}
+    Integer(void* ASTNode) : VarLiteral(ASTNode) {}
 
     string NameExpression(ExpressionDir dir, ExpressionType type) const {
       return getUniqueName() + "!" + (dir == MIN ? "min" : "max");
@@ -20,5 +20,5 @@ namespace boa {
   };
 }
 
-#endif // __BOA_POINTER_H
+#endif // __BOA_INTEGER_H
 
