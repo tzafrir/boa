@@ -64,27 +64,26 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   
     // Base is a static array
     if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
-      if (implicitCast->getSubExpr()->getType().getTypePtr()->isArrayType()) {
-        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
-          ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr());
+      if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
+        if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {                  
           if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
             varLiteral = new Buffer(declRef->getDecl());           
+          }
+        }      
+        else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
+          if (pType->getPointeeType()->isAnyCharacterType()) {
+            varLiteral = new Pointer(declRef->getDecl());       
           }
         }
       }
     }
-    // base is a pointer
-    else if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr->getBase())) {
-      PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
-      if (pType->getPointeeType()->isAnyCharacterType()) {
-        varLiteral = new Pointer(declRef->getDecl());       
-      }
-    }
+    // base is a pointer    
     else {
       // TODO: Any other cases?
     }
     
     if (NULL == varLiteral) {
+      expr->dump();
       return false;
     }
     
@@ -140,7 +139,24 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
          if (funcDec->getNameInfo().getAsString() == "malloc")
          {
             Buffer buf(funcCall);
+            Expr* argument = funcCall->getArg(0);
+            if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
+              argument = implicitCast->getSubExpr();
+            }
             
+            Constraint allocMax, allocMin;
+
+            allocMax.addBig(buf.NameExpression(MAX, ALLOC));
+            allocMax.addSmall(GenerateIntegerExpression(argument, true));
+            cp_.AddConstraint(allocMax);
+            log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " 
+                      << GenerateIntegerExpression(argument, true).toString() << "\n";
+
+            allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
+            allocMin.addBig(GenerateIntegerExpression(argument, false));
+            log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " 
+                      << GenerateIntegerExpression(argument, false).toString() << "\n";
+            cp_.AddConstraint(allocMin);
          }
       }
     }
