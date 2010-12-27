@@ -3,9 +3,8 @@
 import sys
 from subprocess import *
 
-clangExecutable = 'clang'
+clangExecutable = '../llvm/Debug+Asserts/bin/clang'
 boaPlugin = 'build/boa.so'
-testsFolder = 'tests/testcases/'
 assertsSuffix = '.asserts'
 
 separator = '---'
@@ -29,12 +28,12 @@ def printFailure(failedLine, lineNumber):
 
 def runTest(testName):
   """\
-Runs BOA over testsFolder/testName.c, returns a list of tuples in the form
+Runs BOA over testName.c, returns a list of tuples in the form
 (bufferName, bufferLocation) 
 """
   results = list()
   p = Popen([clangExecutable, '-cc1', '-load', boaPlugin, '-plugin',
-       'boa', testsFolder + testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
+       'boa', testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
   separatorFound = False
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
@@ -69,7 +68,7 @@ This method returns True iff all assertions pass.
 This method has a side effect of printing all failing assertions to stderr.
 """
   # TODO: Handle invalid assertion files.
-  a = open(testsFolder + testName + assertsSuffix, 'r')
+  a = open(testName + assertsSuffix, 'r')
   # enum
   BYNAME, BYLOCATION, BYBOTH = range(3)
   lineNumber = 0
@@ -110,13 +109,12 @@ This method has a side effect of printing all failing assertions to stderr.
 def main():
   if len(sys.argv) < 2:
     sys.stderr.write("Usage: %s [testName]*\n" % sys.argv[0])
-    sys.stderr.write("    For each testcase, runs boa on testsFolder/testName.c and checks the assertions " +
-                     "in testsFolder/testName.asserts\n")
-  sys.argv.pop(0)
-  for test in sys.argv:
-    testOutput = runTest(test)
-    val = applyAssertions(test, testOutput)
-    return val
+    sys.stderr.write("    For each testcase, runs boa on testName.c and checks the assertions " +
+                     "in testName.asserts\n")
+  testName = sys.argv[1]
+  testOutput = runTest(testName)
+  val = applyAssertions(testName, testOutput)
+  return val
     
 
 if __name__ == "__main__":
