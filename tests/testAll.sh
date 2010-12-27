@@ -23,7 +23,7 @@ function run_testcase {
 		if !($OVERRUN); then
 			echo -e "$GREEN SUCCESS! $NO_COLOR (No overruns)";
 		else
-			echo -e "$RED COMPLETE FAILURE!  $NO_COLOR (Overruns not found by boa)";
+			echo -e "$RED FAILURE!  $NO_COLOR (Missed possible overruns)";
 		fi
 	else
 		if ($OVERRUN); then

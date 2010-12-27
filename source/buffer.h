@@ -11,6 +11,8 @@ namespace boa {
   class Buffer {
    private:
     void* ASTNode_;
+    string readableName_, filename_;
+    int line_;
 
   // TODO(tzafrir): Disallow copying and assignment.
 
@@ -21,16 +23,29 @@ namespace boa {
     virtual string getUniqueName() const {
       stringstream ss;
       ss << ASTNode_;
-      string retval;
-      ss >> retval;
-      return retval;
+      return ss.str();
+    }
+
+    const string& getReadableName() const {
+      return readableName_;
+    }
+
+    string getSourceLocation() const {
+      stringstream ss;
+      ss << filename_ << ":" << line_;
+      return ss.str();
     }
 
     string NameExpression(ExpressionType type, ExpressionDir dir) {
       return getUniqueName() + "!" + (type == USED ? "used" : "alloc") + "!" + (dir == MIN ? "min" : "max");
     }
 
-    Buffer(void* ASTNode) : ASTNode_(ASTNode) {}
+    Buffer(void* ASTNode, const string& readableName, const string& filename, int line) :
+      ASTNode_(ASTNode), readableName_(readableName), filename_(filename), line_(line) {}
+
+    Buffer(void* ASTNode) :
+      ASTNode_(ASTNode) {}
+
   };
 }
 
