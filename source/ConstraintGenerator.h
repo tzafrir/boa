@@ -60,7 +60,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
       PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
       if (pType->getPointeeType()->isAnyCharacterType()) {
         Pointer ptr(declRef->getDecl());
-        log::os() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  GenerateIntegerExpression(expr->getIdx(), false).toString() << "-" << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
+        log::os() << "Should backpatch access through pointer " << (void*)declRef->getDecl() << " at " <<  GenerateIntegerExpression(expr->getIdx(), false).toString() << "-" << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
         // TODO - dispatch
       }
     }

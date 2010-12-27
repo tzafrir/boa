@@ -50,7 +50,7 @@ class boaConsumer : public ASTConsumer {
   }
 
   virtual ~boaConsumer() {
-    // TODO - call constraint dispach here
+    // TODO - call constraint backpatch here
 
     log::os() << "The buffers we have found - " << endl;
     const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
