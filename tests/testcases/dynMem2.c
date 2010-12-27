@@ -6,7 +6,7 @@ int main() {
 	char *p;
 	p = (char*)malloc(4);
 
-	p[5] = '!';
+	p[5] = 'a';
 	return 0;
 }
 

@@ -33,24 +33,15 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   }
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
+    VarLiteral* varLiteral = NULL;
+  
     // Base is a static array
     if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
       if (implicitCast->getSubExpr()->getType().getTypePtr()->isArrayType()) {
         if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
           ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr());
           if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
-            Buffer buf(declRef->getDecl());
-            Constraint usedMax, usedMin;
-
-            usedMax.addBig(buf.NameExpression(Buffer::USED, Buffer::MAX));
-            usedMax.addSmall(GenerateIntegerExpression(expr->getIdx(), true));
-            cp_.AddConstraint(usedMax);
-            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
-
-            usedMin.addSmall(buf.NameExpression(Buffer::USED, Buffer::MIN));
-            usedMin.addBig(GenerateIntegerExpression(expr->getIdx(), false));
-            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << GenerateIntegerExpression(expr->getIdx(), false).toString() << "\n";
-            cp_.AddConstraint(usedMin);
+            varLiteral = new Buffer(declRef->getDecl());           
           }
         }
       }
@@ -59,12 +50,30 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
     else if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr->getBase())) {
       PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
       if (pType->getPointeeType()->isAnyCharacterType()) {
-        Pointer ptr(declRef->getDecl());
-        log::os() << "Should backpatch access through pointer " << (void*)declRef->getDecl() << " at " <<  GenerateIntegerExpression(expr->getIdx(), false).toString() << "-" << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
-        // TODO - dispatch
+        varLiteral = new Pointer(declRef->getDecl());       
       }
     }
+    else {
+      // TODO: Any other cases?
+    }
+    
+    if (NULL == varLiteral) {
+      return false;
+    }
+    
+    Constraint usedMax, usedMin;
 
+    usedMax.addBig(varLiteral->NameExpression(MAX, USED));
+    usedMax.addSmall(GenerateIntegerExpression(expr->getIdx(), true));
+    cp_.AddConstraint(usedMax);
+    log::os() << "Adding - " << varLiteral->NameExpression(MAX, USED) << " >= " << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
+
+    usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
+    usedMin.addBig(GenerateIntegerExpression(expr->getIdx(), false));
+    log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " << GenerateIntegerExpression(expr->getIdx(), false).toString() << "\n";
+    cp_.AddConstraint(usedMin);
+
+    delete varLiteral;
     return true;
   }
 
@@ -84,14 +93,14 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
               Buffer buf(var);
               Constraint allocMax, allocMin;
 
-              allocMax.addBig(buf.NameExpression(Buffer::ALLOC, Buffer::MAX));
+              allocMax.addBig(buf.NameExpression(MAX, ALLOC));
               allocMax.addSmall(arr->getSize().getLimitedValue());
               cp_.AddConstraint(allocMax);
-              log::os() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MAX) << " >= " << arr->getSize().getLimitedValue() << "\n";
+              log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " << arr->getSize().getLimitedValue() << "\n";
 
-              allocMin.addSmall(buf.NameExpression(Buffer::ALLOC, Buffer::MIN));
+              allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
               allocMin.addBig(arr->getSize().getLimitedValue());
-              log::os() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MIN) << " <= " << arr->getSize().getLimitedValue() << "\n";
+              log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " << arr->getSize().getLimitedValue() << "\n";
               cp_.AddConstraint(allocMin);
             }
           }
@@ -100,18 +109,18 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
     }
 
 
-    if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
-      if (!op->isAssignmentOp()) {
-        return true;
-      }
+//    if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
+//      //if (!op->isAssignmentOp()) {
+//        return true;
+//      //}
 
-      op->dump();
-      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-        if (DeclRefExpr* dre = dyn_cast<DeclRefExpr>(op->getLHS())) {
-          log::os() << "Is at " << (void*)(dre->getDecl()) << "\n";
-        }
-      }
-    }
+//      op->dump();
+//      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+//        if (DeclRefExpr* dre = dyn_cast<DeclRefExpr>(op->getLHS())) {
+//          log::os() << "Is at " << (void*)(dre->getDecl()) << "\n";
+//        }
+//      }
+//    }
 
     return true;
   }

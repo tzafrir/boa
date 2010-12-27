@@ -3,31 +3,19 @@
 
 #include <string>
 #include <sstream>
+#include "varLiteral.h"
 
 using std::string;
 using std::stringstream;
 
 namespace boa {
-  class Pointer {
-   private:
-    void* ASTNode_;
-
-  // TODO(tzafrir): Disallow copying and assignment.
-
+  class Pointer : public VarLiteral {
    public:
 
-    virtual string getUniqueName() const {
-      stringstream ss;
-      ss << ASTNode_;
-      string retval;
-      ss >> retval;
-      return retval;
-    }
+    Pointer(void* ASTNode) : VarLiteral(ASTNode) {}
 
-    Pointer(void* ASTNode) : ASTNode_(ASTNode) {}
-
-    bool operator<(const Pointer& other) const {
-      return this->ASTNode_ < other.ASTNode_;
+    string NameExpression(ExpressionDir dir, ExpressionType type) const {
+      return getUniqueName() + "!" + (dir == MIN ? "min" : "max");
     }
   };
 }

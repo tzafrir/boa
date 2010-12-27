@@ -50,7 +50,25 @@ class boaConsumer : public ASTConsumer {
   }
 
   virtual ~boaConsumer() {
-    // TODO - call constraint backpatch here
+    const map<Pointer, list<Buffer>* >& mapping = pointerAnalyzer_.getMapping();
+    for (map<Pointer, list<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
+      const Pointer &ptr = pointerIt->first;
+      list<Buffer>* buffers = pointerIt->second;
+
+      for (list<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
+        Constraint usedMax, usedMin;
+
+        usedMax.addBig(it->NameExpression(MAX, USED));
+        usedMax.addSmall(ptr.NameExpression(MAX, USED));
+        constraintProblem_.AddConstraint(usedMax);
+        log::os() << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
+        
+        usedMin.addBig(ptr.NameExpression(MIN, USED));
+        usedMin.addSmall(it->NameExpression(MIN, USED));
+        constraintProblem_.AddConstraint(usedMin);
+        log::os() << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
+      }
+    }
 
     log::os() << "The buffers we have found - " << endl;
     const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
