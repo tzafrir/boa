@@ -128,19 +128,19 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
               allocMin.addBig(arr->getSize().getLimitedValue());
               log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " << arr->getSize().getLimitedValue() << "\n";
               cp_.AddConstraint(allocMin);
+              return true;
             }
           }
         }
       }
     }
-    else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
-      if (FunctionDecl* funcDec = funcCall->getDirectCallee())
-      {
-         if (funcDec->getNameInfo().getAsString() == "malloc")
-         {
+    
+    if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
+      if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
+         if (funcDec->getNameInfo().getAsString() == "malloc") {
             Buffer buf(funcCall);
             Expr* argument = funcCall->getArg(0);
-            if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
+            while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
               argument = implicitCast->getSubExpr();
             }
             
@@ -157,6 +157,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " 
                       << GenerateIntegerExpression(argument, false).toString() << "\n";
             cp_.AddConstraint(allocMin);
+            return true;
          }
       }
     }
