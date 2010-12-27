@@ -22,7 +22,7 @@ using boa::Buffer;
   Model a single constraint.
 
   A constraint is a simple linear inequality of the form BIG >= SMALL
-  Use AddBigExpression, AddBigConst in order to add an expression or a constant
+  Use addBig in order to add an expression, literal or a constant
   to the BIG side of the inequality, or the equivalent functions for the SMALL
   side.
 
@@ -37,26 +37,26 @@ class Constraint {
  private:
   const static int MAX_SIZE = 100;
   int left_;
-  map<string, int> expressions_;
+  map<string, int> literals_;
 
-  void AddExpression(int num, string var) {
-    expressions_[var] += num;
+  void addLiteral(int num, string var) {
+    literals_[var] += num;
   }
 
-  void AddLeft(int left) {
+  void addLeft(int left) {
     left_ += left;
   }
 
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  class Expressions {
+  class Expression {
     int val_;
     map<string, int> vars_;
    public:
-    Expressions() : val_(0) {}
-    void AddExpression(const string& var, int num = 1) {vars_[var] += num;}
-    void addConst(int num) {val_ += num;}
+    Expression() : val_(0) {}
+    void add(const string& var, int num = 1) {vars_[var] += num;}
+    void add(int num) {val_ += num;}
 
     // DEBUG
     static string int2str(int i) {
@@ -80,43 +80,43 @@ class Constraint {
 
   Constraint() : left_(0) {}
 
-  void AddBig(const Expressions& expr) {
+  void addBig(const Expression& expr) {
     for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
-      AddBigExpression(it->first, it->second);
+      addBig(it->first, it->second);
     }
-    AddBigConst(expr.val_);
+    addBig(expr.val_);
   }
 
-  void AddBigExpression(const string& var, int num = 1) {
-    AddExpression(-num, var);
+  void addBig(const string& var, int num = 1) {
+    addLiteral(-num, var);
   }
 
-  void AddBigConst(int num) {
-    AddLeft(num);
+  void addBig(int num) {
+    addLeft(num);
   }
 
-  void AddSmall(const Expressions& expr) {
+  void addSmall(const Expression& expr) {
     for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
-      AddSmallExpression(it->first, it->second);
+      addSmall(it->first, it->second);
     }
-    AddSmallConst(expr.val_);
+    addSmall(expr.val_);
   }
 
-  void AddSmallExpression(const string& var, int num = 1) {
-    AddExpression(num, var);
+  void addSmall(const string& var, int num = 1) {
+    addLiteral(num, var);
   }
 
-  void AddSmallConst(int num) {
-    AddLeft(-num);
+  void addSmall(int num) {
+    addLeft(-num);
   }
 
   void Clear() {
    left_ = 0;
-   expressions_.clear();
+   literals_.clear();
   }
 
   void GetVars(set<string>& vars) {
-    for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it) {
+    for (map<string, int>::iterator it = literals_.begin(); it != literals_.end(); ++it) {
       vars.insert(it->first);
     }
   }
@@ -128,12 +128,12 @@ class Constraint {
     // TODO if size > MAX_SIZE...
 
     int count = 1;
-    for (map<string, int>::iterator it = expressions_.begin(); it != expressions_.end(); ++it, ++count) {
+    for (map<string, int>::iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
       indices[count] = colNumbers[it->first];
       values[count] = it->second;
     }
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
-    glp_set_mat_row(lp, row, expressions_.size(), indices, values);
+    glp_set_mat_row(lp, row, literals_.size(), indices, values);
   }
 
 };

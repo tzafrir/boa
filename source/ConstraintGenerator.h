@@ -23,16 +23,16 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
 
-  Constraint::Expressions GenerateIntegerExpression(Expr *expr) {
-    Constraint::Expressions retval;
+  Constraint::Expression GenerateIntegerExpression(Expr *expr) {
+    Constraint::Expression retval;
     if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
-      retval.addConst(literal->getValue().getLimitedValue());
+      retval.add(literal->getValue().getLimitedValue());
     } // TODO - else (not a literal)
     return retval;
   }
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
-    Constraint::Expressions indexExpr = GenerateIntegerExpression(expr->getIdx());
+    Constraint::Expression indexExpr = GenerateIntegerExpression(expr->getIdx());
 
     // Base is a static array
     if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
@@ -43,13 +43,13 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             Buffer buf(declRef->getDecl());
             Constraint usedMax, usedMin;
 
-            usedMax.AddBigExpression(buf.NameExpression(Buffer::USED, Buffer::MAX));
-            usedMax.AddSmall(indexExpr);
+            usedMax.addBig(buf.NameExpression(Buffer::USED, Buffer::MAX));
+            usedMax.addSmall(indexExpr);
             cp_.AddConstraint(usedMax);
             llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << indexExpr.toString() << "\n";
 
-            usedMin.AddSmallExpression(buf.NameExpression(Buffer::USED, Buffer::MIN));
-            usedMin.AddBig(indexExpr);
+            usedMin.addSmall(buf.NameExpression(Buffer::USED, Buffer::MIN));
+            usedMin.addBig(indexExpr);
             llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << indexExpr.toString() << "\n";
             cp_.AddConstraint(usedMin);
           }
@@ -85,13 +85,13 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
               Buffer buf(var);
               Constraint allocMax, allocMin;
 
-              allocMax.AddBigExpression(buf.NameExpression(Buffer::ALLOC, Buffer::MAX));
-              allocMax.AddSmallConst(arr->getSize().getLimitedValue());
+              allocMax.addBig(buf.NameExpression(Buffer::ALLOC, Buffer::MAX));
+              allocMax.addSmall(arr->getSize().getLimitedValue());
               cp_.AddConstraint(allocMax);
               llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MAX) << " >= " << arr->getSize().getLimitedValue() << "\n";
 
-              allocMin.AddSmallExpression(buf.NameExpression(Buffer::ALLOC, Buffer::MIN));
-              allocMin.AddBigConst(arr->getSize().getLimitedValue());
+              allocMin.addSmall(buf.NameExpression(Buffer::ALLOC, Buffer::MIN));
+              allocMin.addBig(arr->getSize().getLimitedValue());
               llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MIN) << " <= " << arr->getSize().getLimitedValue() << "\n";
               cp_.AddConstraint(allocMin);
             }
