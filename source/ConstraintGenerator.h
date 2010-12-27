@@ -107,6 +107,16 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
         }
       }
     }
+    else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
+      if (FunctionDecl* funcDec = funcCall->getDirectCallee())
+      {
+         if (funcDec->getNameInfo().getAsString() == "malloc")
+         {
+            Buffer buf(funcCall);
+            
+         }
+      }
+    }
 
 
 //    if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
