@@ -70,22 +70,23 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
     VarLiteral* varLiteral = NULL;
   
-    // Base is a static array
-    if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
-      if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(implicitCast->getSubExpr())) {
-        if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {                  
-          if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
-            varLiteral = new Buffer(declRef->getDecl());           
-          }
-        }      
-        else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
-          if (pType->getPointeeType()->isAnyCharacterType()) {
-            varLiteral = new Pointer(declRef->getDecl());       
-          }
+    Expr* base = expr->getBase();
+    while (dyn_cast<ImplicitCastExpr>(base)) {
+      base = dyn_cast<ImplicitCastExpr>(expr->getBase())->getSubExpr();
+    }
+    
+    if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
+      if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {                  
+        if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
+          varLiteral = new Buffer(declRef->getDecl());           
+        }
+      }      
+      else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
+        if (pType->getPointeeType()->isAnyCharacterType()) {
+          varLiteral = new Pointer(declRef->getDecl());       
         }
       }
-    }
-    // base is a pointer    
+    } 
     else {
       // TODO: Any other cases?
     }
