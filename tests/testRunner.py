@@ -8,6 +8,8 @@ boaPlugin = 'build/boa.so'
 assertsSuffix = '.asserts'
 
 separator = '---'
+redColor = '\033[0;31m'
+noColor = '\033[0m'
 
 def listContains(aList, member):
   if aList.count(member) > 0:
@@ -67,8 +69,12 @@ HAS ByBoth mychars_ chartest.c:15
 This method returns True iff all assertions pass.
 This method has a side effect of printing all failing assertions to stderr.
 """
-  # TODO: Handle invalid assertion files.
-  a = open(testName + assertsSuffix, 'r')
+  assertFilename = testName + assertsSuffix
+  try:
+    a = open(assertFilename, 'r')
+  except IOError:
+    sys.stderr.write(redColor + "ERROR" + noColor + ": Unable to open " + assertFilename + "\n")
+    return False
   # enum
   BYNAME, BYLOCATION, BYBOTH = range(3)
   lineNumber = 0
