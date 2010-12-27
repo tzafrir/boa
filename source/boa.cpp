@@ -9,6 +9,7 @@
 
 #include "buffer.h"
 #include "constraint.h"
+#include "log.h"
 
 #include "ConstraintGenerator.h"
 #include "PointerAnalyzer.h"
@@ -51,13 +52,13 @@ class boaConsumer : public ASTConsumer {
   virtual ~boaConsumer() {
     // TODO - call constraint dispach here
 
-    cerr << endl << "The buffers we have found - " << endl;
+    log::os() << "The buffers we have found - " << endl;
     const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (list<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
-      cerr << buf->getUniqueName() << endl;
+      log::os() << buf->getUniqueName() << endl;
       constraintProblem_.AddBuffer(*buf);
     }
-    cerr << endl << "Constraint solver output - " << endl;
+    log::os() << "Constraint solver output - " << endl;
     list<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
       cerr << "boa[0]" << endl;
@@ -84,6 +85,11 @@ class boaPlugin : public PluginASTAction {
   }
 
   bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args) {
+    for (unsigned i = 0; i < args.size(); ++i) {
+      if (args[i] == "log") {
+        log::set(std::cout);
+       }
+    }
     return true;
   }
 };

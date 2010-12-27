@@ -10,10 +10,9 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "log.h"
 #include "buffer.h"
-using boa::Buffer;
 #include "pointer.h"
-using boa::Pointer;
 
 #include <list>
 using std::list;
@@ -21,11 +20,6 @@ using std::list;
 using std::map;
 
 #include "constraint.h"
-
-// DEBUG
-#include <iostream>
-using std::cerr;
-using std::endl;
 
 using namespace clang;
 
@@ -78,33 +72,31 @@ public:
   }
 
   void addBufferToSet(VarDecl* var) {
-    var->dump();
-    cerr << " was added to buffers set" << endl;
-
     Buffer b((void*)var, var->getNameAsString(), sm_.getBufferName(var->getLocation()), sm_.getSpellingLineNumber(var->getLocation()));
-    cerr << " code name  = " << var->getNameAsString() << endl;
-    cerr << " \"clang ID\" = " << (void*)var << endl;
-    cerr << " line number = " << sm_.getBufferName(var->getLocation()) << endl;
     Buffers_.push_back(b);
+
+    log::os() << "Adding static buffer -" << endl;
+    log::os() << " code name     = " + b.getReadableName() << endl;
+    log::os() << " \"clang ID\"    = " + b.getUniqueName() << endl;
+    log::os() << " code location = " + b.getSourceLocation() << endl;
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-    cerr << "malloc on line " << sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
+    log::os() << "malloc on line " + sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
 
     Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
   }
 
   void addPointerToSet(VarDecl* var) {
-    var->dump();
-    cerr << " was added to pointers set" << endl;
-
     Pointer p((void*)var);
-    cerr << " code name  = " << var->getNameAsString() << endl;
-    cerr << " \"clang ID\" = " << (void*)var << endl;
-    cerr << " line number = " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
     Pointers_.push_back(p);
     Pointer2Buffers_[p] = &Buffers_;
+
+    log::os() << "Adding pointer -" << endl;
+    log::os() << " code name     = " + var->getNameAsString() << endl;
+//    cerr << " \"clang ID\" = " << (void*)var << endl;
+    log::os() << " line number = " + sm_.getSpellingLineNumber(var->getLocation()) << endl;
   }
 
   const list<Buffer>& getBuffers() const {
