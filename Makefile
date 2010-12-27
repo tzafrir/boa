@@ -22,5 +22,5 @@ clean:
 	rm -fr ${BUILD}
 
 tests: ${BUILD}/boa.so
-	tests/testMain.sh
+	tests/testAll.sh
 
