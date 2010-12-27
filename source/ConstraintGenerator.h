@@ -24,7 +24,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
 
-  Constraint::Expression GenerateIntegerExpression(Expr *expr) {
+  Constraint::Expression GenerateIntegerExpression(Expr *expr, bool max) {
     Constraint::Expression retval;
     if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
       retval.add(literal->getValue().getLimitedValue());
@@ -33,8 +33,6 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   }
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
-    Constraint::Expression indexExpr = GenerateIntegerExpression(expr->getIdx());
-
     // Base is a static array
     if (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(expr->getBase())) {
       if (implicitCast->getSubExpr()->getType().getTypePtr()->isArrayType()) {
@@ -45,13 +43,13 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             Constraint usedMax, usedMin;
 
             usedMax.addBig(buf.NameExpression(Buffer::USED, Buffer::MAX));
-            usedMax.addSmall(indexExpr);
+            usedMax.addSmall(GenerateIntegerExpression(expr->getIdx(), true));
             cp_.AddConstraint(usedMax);
-            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << indexExpr.toString() << "\n";
+            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
 
             usedMin.addSmall(buf.NameExpression(Buffer::USED, Buffer::MIN));
-            usedMin.addBig(indexExpr);
-            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << indexExpr.toString() << "\n";
+            usedMin.addBig(GenerateIntegerExpression(expr->getIdx(), false));
+            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << GenerateIntegerExpression(expr->getIdx(), false).toString() << "\n";
             cp_.AddConstraint(usedMin);
           }
         }
@@ -62,7 +60,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
       PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
       if (pType->getPointeeType()->isAnyCharacterType()) {
         Pointer ptr(declRef->getDecl());
-        log::os() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  indexExpr.toString() << "\n";
+        log::os() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  GenerateIntegerExpression(expr->getIdx(), false).toString() << "-" << GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
         // TODO - dispatch
       }
     }
