@@ -35,5 +35,5 @@ echo -e "All Tests:"
 echo -e "  $tested tests run"
 echo -e "  $GREEN$passed tests passed$NO_COLOR"
 if [ "$tested" != "$passed" ]; then
-  echo -e "  $RED$(( $tested - $passed )) tests failed"
+  echo -e "  $RED$(( $tested - $passed )) tests failed$NO_COLOR"
 fi
