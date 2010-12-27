@@ -7,7 +7,7 @@ namespace {
 
 namespace boa {
   namespace log {
-    class nullstream : ostream {
+    class nullstream : public ostream {
       template <class T> const nullstream& operator<<(const T& m) const {return *this;}
     } devNull;
 

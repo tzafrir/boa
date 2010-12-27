@@ -53,6 +53,7 @@ class Constraint {
     int val_;
     map<string, int> vars_;
    public:
+    friend class Constraint;
     Expression() : val_(0) {}
     void add(const string& var, int num = 1) {vars_[var] += num;}
     void add(int num) {val_ += num;}
