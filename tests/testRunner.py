@@ -3,7 +3,7 @@
 import sys
 from subprocess import *
 
-clangExecutable = 'clang'
+clangExecutable = '../llvm/Debug+Asserts/bin/clang'
 boaPlugin = 'build/boa.so'
 testsFolder = 'tests/testcases/'
 assertsSuffix = '.asserts'
