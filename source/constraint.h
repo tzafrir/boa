@@ -12,12 +12,11 @@ using std::string;
 using std::set;
 using std::list;
 using std::map;
-using boa::Buffer;
 
 // DEBUG
 #include <sstream>
 
-
+namespace boa {
 /**
   Model a single constraint.
 
@@ -165,6 +164,6 @@ class ConstraintProblem {
   */
   list<Buffer> Solve();
 };
-
+} //namespace boa
 #endif /* __BOA_CONSTRAINT_H */
 

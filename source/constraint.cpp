@@ -1,9 +1,11 @@
 #include "constraint.h"
 #include <iostream>
 #include <glpk.h>
+#include "log.h"
 
-using std::cout;
 using std::endl;
+
+namespace boa {
 
 set<string> ConstraintProblem::CollectVars() {
   set<string> vars;
@@ -32,11 +34,11 @@ inline static map<string, int> MapVarToCol(const set<string>& vars) {
 list<Buffer> ConstraintProblem::Solve() {
   list<Buffer> unsafeBuffers;
   if (buffers.empty()) {
-    cout << "No buffers" << endl;
+    log::os() << "No buffers" << endl;
     return unsafeBuffers;
   }
   if (constraints.empty()) {
-    cout << "No constraints" << endl;
+    log::os() << "No constraints" << endl;
     return unsafeBuffers;
   }
 
@@ -77,18 +79,18 @@ list<Buffer> ConstraintProblem::Solve() {
 
   for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     // Print result
-    cout << buffer->NameExpression(Buffer::USED, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)]) << endl;
-    cout << buffer->NameExpression(Buffer::USED, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) << endl;
-    cout << buffer->NameExpression(Buffer::ALLOC, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)]) << endl;
-    cout << buffer->NameExpression(Buffer::ALLOC, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)]) << endl;
+    log::os() << buffer->NameExpression(Buffer::USED, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MIN)]) << endl;
+    log::os() << buffer->NameExpression(Buffer::USED, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) << endl;
+    log::os() << buffer->NameExpression(Buffer::ALLOC, Buffer::MIN) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)]) << endl;
+    log::os() << buffer->NameExpression(Buffer::ALLOC, Buffer::MAX) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MAX)]) << endl;
 
     if (glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::USED, Buffer::MAX)]) >= glp_get_col_prim(lp, varToCol[buffer->NameExpression(Buffer::ALLOC, Buffer::MIN)])) {
       unsafeBuffers.push_back(*buffer);
-      cout << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
+      log::os() << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
   }
 
   glp_delete_prob(lp);
   return unsafeBuffers;
 }
-
+}

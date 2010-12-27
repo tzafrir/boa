@@ -14,6 +14,7 @@
 
 #include "constraint.h"
 #include "pointer.h"
+#include "log.h"
 
 using namespace clang;
 
@@ -46,11 +47,11 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             usedMax.addBig(buf.NameExpression(Buffer::USED, Buffer::MAX));
             usedMax.addSmall(indexExpr);
             cp_.AddConstraint(usedMax);
-            llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << indexExpr.toString() << "\n";
+            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MAX) << " >= " << indexExpr.toString() << "\n";
 
             usedMin.addSmall(buf.NameExpression(Buffer::USED, Buffer::MIN));
             usedMin.addBig(indexExpr);
-            llvm::errs() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << indexExpr.toString() << "\n";
+            log::os() << "Adding - " << buf.NameExpression(Buffer::USED, Buffer::MIN) << " <= " << indexExpr.toString() << "\n";
             cp_.AddConstraint(usedMin);
           }
         }
@@ -61,7 +62,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
       PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr());
       if (pType->getPointeeType()->isAnyCharacterType()) {
         Pointer ptr(declRef->getDecl());
-        llvm::errs() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  indexExpr.toString() << "\n";
+        log::os() << "Should dispatch access through pointer " << (void*)declRef->getDecl() << " at " <<  indexExpr.toString() << "\n";
         // TODO - dispatch
       }
     }
@@ -88,11 +89,11 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
               allocMax.addBig(buf.NameExpression(Buffer::ALLOC, Buffer::MAX));
               allocMax.addSmall(arr->getSize().getLimitedValue());
               cp_.AddConstraint(allocMax);
-              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MAX) << " >= " << arr->getSize().getLimitedValue() << "\n";
+              log::os() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MAX) << " >= " << arr->getSize().getLimitedValue() << "\n";
 
               allocMin.addSmall(buf.NameExpression(Buffer::ALLOC, Buffer::MIN));
               allocMin.addBig(arr->getSize().getLimitedValue());
-              llvm::errs() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MIN) << " <= " << arr->getSize().getLimitedValue() << "\n";
+              log::os() << "Adding - " << buf.NameExpression(Buffer::ALLOC, Buffer::MIN) << " <= " << arr->getSize().getLimitedValue() << "\n";
               cp_.AddConstraint(allocMin);
             }
           }
@@ -109,7 +110,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
       op->dump();
       if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
         if (DeclRefExpr* dre = dyn_cast<DeclRefExpr>(op->getLHS())) {
-          llvm::errs() << "Is at " << (void*)(dre->getDecl()) << "\n";
+          log::os() << "Is at " << (void*)(dre->getDecl()) << "\n";
         }
       }
     }
