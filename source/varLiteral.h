@@ -21,7 +21,7 @@ namespace boa {
     
     virtual string getUniqueName() const {
       stringstream ss;
-      ss << ASTNode_;
+      ss << "V" << ASTNode_;
       return ss.str();
     }
 

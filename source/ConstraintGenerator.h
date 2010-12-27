@@ -36,9 +36,16 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   
   Constraint::Expression GenerateIntegerExpression(Expr *expr, bool max) {
     Constraint::Expression retval;
+    
     if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
       retval.add(literal->getValue().getLimitedValue());
       return retval;
+    }
+    
+    if (dyn_cast<DeclRefExpr>(expr)) {
+      Integer intLiteral(expr);
+      retval.add(intLiteral.NameExpression(max ? MAX : MIN));
+      return retval;      
     }
     
     if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
@@ -54,6 +61,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
         default : break;
       }
     }
+     
     expr->dump();
     log::os() << "Can't generate integer expression " << getStmtLoc(expr) << endl;
     return retval;

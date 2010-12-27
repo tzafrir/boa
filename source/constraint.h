@@ -81,7 +81,7 @@ class Constraint {
       string s;
       for (map<string, int>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if ((!s.empty()) && (it->second >= 0)) s += "+ ";
-        s += int2str(it->second) + it->first + " ";
+        s += int2str(it->second) + "*" + it->first + " ";
       }
       if (s.empty() || (val_ != 0)) {
         if ((!s.empty()) && (val_ >= 0)) s += "+ ";
