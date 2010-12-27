@@ -11,6 +11,10 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <string>
+#include <sstream>
+
+using std::string;
+using std::stringstream;
 
 #include "constraint.h"
 #include "pointer.h"
@@ -24,11 +28,34 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
 
+  string getStmtLoc(Stmt *stmt) { 
+    stringstream buff;
+    buff << sm_.getBufferName(stmt->getLocStart()) << ":" << sm_.getSpellingLineNumber(stmt->getLocStart());
+    return buff.str();
+  }
+  
   Constraint::Expression GenerateIntegerExpression(Expr *expr, bool max) {
     Constraint::Expression retval;
     if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
       retval.add(literal->getValue().getLimitedValue());
-    } // TODO - else (not a literal)
+      return retval;
+    }
+    
+    if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
+      switch (op->getOpcode()) {
+        case BO_Add :
+          retval.add(GenerateIntegerExpression(op->getLHS(), max));
+          retval.add(GenerateIntegerExpression(op->getRHS(), max));
+          return retval;
+       case BO_Sub :
+          retval.add(GenerateIntegerExpression(op->getLHS(), max));
+          retval.sub(GenerateIntegerExpression(op->getRHS(), !max));
+          return retval;
+        default : break;
+      }
+    }
+    expr->dump();
+    log::os() << "Can't generate integer expression " << getStmtLoc(expr) << endl;
     return retval;
   }
 
