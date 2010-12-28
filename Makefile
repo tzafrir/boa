@@ -1,5 +1,5 @@
 CC=clang++
-C=gcc
+C=gcc -Werror
 DFLAGS=-D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 CFLAGS=-g -fno-exceptions -fno-rtti -fPIC -Woverloaded-virtual -Wcast-qual -fno-strict-aliasing  -pedantic -Wno-long-long -Wall -W -Wno-unused-parameter -Wwrite-strings
 LLVM_DIR=../llvm
@@ -21,6 +21,7 @@ ${BUILD}:
 
 clean:
 	rm -fr ${BUILD}
+	rm -rf tests/testcases/build
 
 TESTCASES=$(patsubst tests/testcases/%.c,tests/testcases/build/%.out,$(wildcard tests/testcases/*.c))
 
