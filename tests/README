@@ -1,5 +1,0 @@
-Put test cases (c source code) on testcases folder.
-Each testcase should start with the line -
-// BOA-TEST   <N>
-Where <N> is zero if buffer overruns are impossible, or one (any other digit) otherwise
-
