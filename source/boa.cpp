@@ -79,13 +79,11 @@ class boaConsumer : public ASTConsumer {
     log::os() << "Constraint solver output - " << endl;
     list<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
-      cerr << "boa[0]" << endl;
       cerr << endl << "No overruns possible" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
     }
     else {
-      cerr << "boa[1]" << endl;
       cerr << endl << "Possible buffer overruns on - " << endl;
       cerr << SEPARATOR << endl;
       for (list<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
