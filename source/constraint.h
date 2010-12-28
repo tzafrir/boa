@@ -70,6 +70,20 @@ class Constraint {
       }
       add(-expr.val_);      
     }
+    
+    void mul(int num) {
+      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        it->second *= num;
+      }
+      val_ *= num;        
+    }
+
+    void div(int num) {
+      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        it->second /= num;
+      }
+      val_ /= num;        
+    }
 
     /**
       Does the expression contain only a free element (no literals)?    
