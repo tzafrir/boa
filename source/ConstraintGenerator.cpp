@@ -57,8 +57,39 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
         }
         return result;
       }
+      case BO_Mul : {
+        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
+        if ((LHS.size() == 1) && (LHS[0].IsConst())) {
+          for (unsigned i = 0; i < RHS.size(); ++i) {
+            RHS[i].mul(LHS[0].GetConst());
+            result.push_back(RHS[i]);
+          }
+          RHS = GenerateIntegerExpression(op->getRHS(), !max);
+          for (unsigned i = 0; i < RHS.size(); ++i) {
+            RHS[i].mul(LHS[0].GetConst());
+            result.push_back(RHS[i]);
+          }
+          return result;          
+        }
+        else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
+          for (unsigned i = 0; i < LHS.size(); ++i) {
+            LHS[i].mul(RHS[0].GetConst());
+            result.push_back(LHS[i]);
+          }
+          LHS = GenerateIntegerExpression(op->getLHS(), !max);
+          for (unsigned i = 0; i < LHS.size(); ++i) {
+            LHS[i].mul(RHS[0].GetConst());
+            result.push_back(LHS[i]);
+          }
+          return result;          
+        }
+        // TODO - return infinity/NaN instead of empty vector?
+        log::os() << "Multiplaction of two non const integer expressions " << getStmtLoc(expr) << endl;
+        return result;
+      }
       default : break;
-    }
+    } 
   }
    
   expr->dump();
