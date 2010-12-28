@@ -69,7 +69,23 @@ class Constraint {
         add(it->first, -it->second);
       }
       add(-expr.val_);      
-    }    
+    }
+
+    /**
+      Does the expression contain only a free element (no literals)?    
+    */
+    bool IsConst() {
+      for (map<string, int>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        if (it->second != 0) {
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    int GetConst() {
+      return val_;
+    }
 
     // DEBUG
     static string int2str(int i) {
