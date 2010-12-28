@@ -11,6 +11,8 @@ separator = '---'
 redColor = '\033[0;31m'
 noColor = '\033[0m'
 
+errs = sys.stderr
+
 def listContains(aList, member):
   if aList.count(member) > 0:
     return True
@@ -26,7 +28,7 @@ Receives a list of tuples, returns a list of all n'th elements in the list.
   return result
 
 def printFailure(failedLine, lineNumber):
-  sys.stderr.write("FAILED(" + str(lineNumber) + "): " + failedLine + "\n")
+  errs.write("FAILED(" + str(lineNumber) + "): " + failedLine + "\n")
 
 def runTest(testName):
   """\
@@ -73,7 +75,7 @@ This method has a side effect of printing all failing assertions to stderr.
   try:
     a = open(assertFilename, 'r')
   except IOError:
-    sys.stderr.write(redColor + "ERROR" + noColor + ": Unable to open " + assertFilename + "\n")
+    errs.write(redColor + "ERROR" + noColor + ": Unable to open " + assertFilename + "\n")
     return False
   # enum
   BYNAME, BYLOCATION, BYBOTH = range(3)
@@ -93,7 +95,7 @@ This method has a side effect of printing all failing assertions to stderr.
       # Comment line.
       continue
     else:
-      sys.stderr.write("Invalid assertion in " + testName + assertsSuffix + ":" + str(lineNumber) + "\n")
+      errs.write("Invalid assertion in " + testName + assertsSuffix + ":" + str(lineNumber) + "\n")
       return False
     assertionTypeValue = values[1]
     if assertionTypeValue == "ByName":
@@ -120,8 +122,8 @@ This method has a side effect of printing all failing assertions to stderr.
 
 def main():
   if len(sys.argv) < 2:
-    sys.stderr.write("Usage: %s [testName]*\n" % sys.argv[0])
-    sys.stderr.write("    For each testcase, runs boa on testName.c and checks the assertions " +
+    errs.write("Usage: %s [testName]*\n" % sys.argv[0])
+    errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
   testName = sys.argv[1]
   testOutput = runTest(testName)
