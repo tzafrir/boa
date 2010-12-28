@@ -1,4 +1,5 @@
 CC=clang++
+C=gcc
 DFLAGS=-D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 CFLAGS=-g -fno-exceptions -fno-rtti -fPIC -Woverloaded-virtual -Wcast-qual -fno-strict-aliasing  -pedantic -Wno-long-long -Wall -W -Wno-unused-parameter -Wwrite-strings
 LLVM_DIR=../llvm
@@ -16,13 +17,19 @@ ${BUILD}/constraint.o : ${SOURCE}/constraint.cpp ${SOURCE}/constraint.h
 	${CC} ${SOURCE}/constraint.cpp ${CFLAGS} -c -o ${BUILD}/constraint.o
 
 ${BUILD}:
-	mkdir ${BUILD}
+	mkdir -p ${BUILD}
 
 clean:
 	rm -fr ${BUILD}
 
-tests: ${BUILD}/boa.so FORCE
+TESTCASES=$(patsubst tests/testcases/%.c,tests/testcases/build/%.out,$(wildcard tests/testcases/*.c))
+
+tests: ${BUILD}/boa.so ${TESTCASES} FORCE
 	tests/testAll.sh
+
+tests/testcases/build/%.out : tests/testcases/%.c
+	mkdir -p tests/testcases/build
+	${C} $< -o $@
 	
 FORCE:
 
