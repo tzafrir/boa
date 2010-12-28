@@ -12,9 +12,11 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 using std::string;
 using std::stringstream;
+using std::vector;
 
 #include "constraint.h"
 #include "pointer.h"
@@ -30,7 +32,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
 
   string getStmtLoc(Stmt *stmt); // for debug
   
-  Constraint::Expression GenerateIntegerExpression(Expr *expr, bool max);
+  vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
 

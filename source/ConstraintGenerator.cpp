@@ -1,4 +1,7 @@
 #include "ConstraintGenerator.h"
+#include <vector>
+
+using std::vector;
           
 namespace boa {
 
@@ -9,37 +12,58 @@ string ConstraintGenerator::getStmtLoc(Stmt *stmt) {
   return buff.str();
 }
 
-Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
-  Constraint::Expression retval;
+vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
+  vector<Constraint::Expression> result;
+  Constraint::Expression ce;
   
   if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
-    retval.add(literal->getValue().getLimitedValue());
-    return retval;
+    ce.add(literal->getValue().getLimitedValue());
+    result.push_back(ce);
+    return result;
   }
   
   if (dyn_cast<DeclRefExpr>(expr)) {
     Integer intLiteral(expr);
-    retval.add(intLiteral.NameExpression(max ? MAX : MIN));
-    return retval;      
+    ce.add(intLiteral.NameExpression(max ? MAX : MIN));
+    result.push_back(ce);
+    return result;      
   }
   
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
     switch (op->getOpcode()) {
-      case BO_Add :
-        retval.add(GenerateIntegerExpression(op->getLHS(), max));
-        retval.add(GenerateIntegerExpression(op->getRHS(), max));
-        return retval;
-     case BO_Sub :
-        retval.add(GenerateIntegerExpression(op->getLHS(), max));
-        retval.sub(GenerateIntegerExpression(op->getRHS(), !max));
-        return retval;
+      case BO_Add : {
+        vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
+        vector<Constraint::Expression> RHExpressions = GenerateIntegerExpression(op->getRHS(), max);
+        for (unsigned i = 0; i < LHExpressions.size(); ++i) {
+          for (unsigned j = 0; j < RHExpressions.size(); ++j) {
+            Constraint::Expression loopCE;
+            loopCE.add(LHExpressions[i]);
+            loopCE.add(RHExpressions[j]);
+            result.push_back(loopCE);
+          }
+        }
+        return result;
+      }
+      case BO_Sub : {
+        vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
+        vector<Constraint::Expression> RHExpressions = GenerateIntegerExpression(op->getRHS(), !max);
+        for (unsigned i = 0; i < LHExpressions.size(); ++i) {
+          for (unsigned j = 0; j < RHExpressions.size(); ++j) {
+            Constraint::Expression loopCE;
+            loopCE.add(LHExpressions[i]);
+            loopCE.sub(RHExpressions[j]);
+            result.push_back(loopCE);
+          }
+        }
+        return result;
+      }
       default : break;
     }
   }
    
   expr->dump();
   log::os() << "Can't generate integer expression " << getStmtLoc(expr) << endl;
-  return retval;
+  return result;
 }
 
 bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
@@ -71,19 +95,24 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
     return false;
   }
   
-  Constraint usedMax, usedMin;
-
-  usedMax.addBig(varLiteral->NameExpression(MAX, USED));
-  usedMax.addSmall(GenerateIntegerExpression(expr->getIdx(), true));
-  cp_.AddConstraint(usedMax);
-  log::os() << "Adding - " << varLiteral->NameExpression(MAX, USED) << " >= " << 
-               GenerateIntegerExpression(expr->getIdx(), true).toString() << "\n";
-
-  usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
-  usedMin.addBig(GenerateIntegerExpression(expr->getIdx(), false));
-  log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " << 
-               GenerateIntegerExpression(expr->getIdx(), false).toString() << "\n";
-  cp_.AddConstraint(usedMin);
+  vector<Constraint::Expression> maxIndices = GenerateIntegerExpression(expr->getIdx(), true);
+  for (unsigned i = 0; i < maxIndices.size(); ++i) {
+    Constraint usedMax;
+    usedMax.addBig(varLiteral->NameExpression(MAX, USED));
+    usedMax.addSmall(maxIndices[i]);
+    cp_.AddConstraint(usedMax);
+    log::os() << "Adding - " << varLiteral->NameExpression(MAX, USED) << " >= " << 
+                 maxIndices[i].toString() << "\n";
+  }
+  vector<Constraint::Expression> minIndices = GenerateIntegerExpression(expr->getIdx(), false);
+  for (unsigned i = 0; i < minIndices.size(); ++i) {
+    Constraint usedMin;
+    usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
+    usedMin.addSmall(minIndices[i]);
+    cp_.AddConstraint(usedMin);
+    log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " << 
+                 minIndices[i].toString() << "\n";
+  }
 
   delete varLiteral;
   return true;
@@ -122,28 +151,35 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   
   if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
     if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-       if (funcDec->getNameInfo().getAsString() == "malloc") {
-          Buffer buf(funcCall);
-          Expr* argument = funcCall->getArg(0);
-          while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
-            argument = implicitCast->getSubExpr();
-          }
-          
-          Constraint allocMax, allocMin;
+      if (funcDec->getNameInfo().getAsString() == "malloc") {
+        Buffer buf(funcCall);
+        Expr* argument = funcCall->getArg(0);
+        while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
+          argument = implicitCast->getSubExpr();
+        }
 
+        vector<Constraint::Expression> maxArgs = GenerateIntegerExpression(argument, true);
+        for (unsigned i = 0; i < maxArgs.size(); ++i) {
+          Constraint allocMax;
+          
           allocMax.addBig(buf.NameExpression(MAX, ALLOC));
-          allocMax.addSmall(GenerateIntegerExpression(argument, true));
+          allocMax.addSmall(maxArgs[i]);
           cp_.AddConstraint(allocMax);
           log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " 
-                    << GenerateIntegerExpression(argument, true).toString() << "\n";
-
+                    << maxArgs[i].toString() << "\n";
+        }
+        vector<Constraint::Expression> minArgs = GenerateIntegerExpression(argument, false);
+        for (unsigned i = 0; i < minArgs.size(); ++i) {
+          Constraint allocMin;
+          
           allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
-          allocMin.addBig(GenerateIntegerExpression(argument, false));
-          log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " 
-                    << GenerateIntegerExpression(argument, false).toString() << "\n";
+          allocMin.addBig(minArgs[i]);
           cp_.AddConstraint(allocMin);
-          return true;
-       }
+          log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " 
+                    << minArgs[i].toString() << "\n";
+        }
+        return true;
+      }
     }
   }
 
