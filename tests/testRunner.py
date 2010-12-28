@@ -82,13 +82,19 @@ This method has a side effect of printing all failing assertions to stderr.
   for lineWithBreak in a.readlines():
     line = lineWithBreak.split("\n")[0]
     lineNumber += 1
-    if line == "":
-      continue
+
     values = line.split(" ")
-    if values[0] == "HAS":
+    firstWord = values[0]
+    if firstWord == "HAS":
       isHasAssertion = True
-    else:
+    elif firstWord == "NOT":
       isHasAssertion = False
+    elif firstWord == "" or firstWord[0] == '#':
+      # Comment line.
+      continue
+    else:
+      sys.stderr.write("Invalid assertion in " + testName + assertsSuffix + ":" + str(lineNumber) + "\n")
+      return False
     assertionTypeValue = values[1]
     if assertionTypeValue == "ByName":
       assertionType = BYNAME
