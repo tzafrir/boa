@@ -1,0 +1,5 @@
+HAS ByName buf1
+NOT ByName buf2
+NOT ByName buf3
+NOT ByName buf4
+HAS ByName buf5

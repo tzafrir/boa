@@ -1,0 +1,3 @@
+HAS ByLocation tests/testcases/dynMem3.c:3
+HAS ByLocation tests/testcases/dynMem3.c:6
+NOT ByLocation tests/testcases/dynMem3.c:9
