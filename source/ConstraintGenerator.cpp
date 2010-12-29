@@ -20,10 +20,11 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
     expr = dyn_cast<ImplicitCastExpr>(expr)->getSubExpr();
   }
 
-  if (SizeOfAlignOfExpr *sizeOf = dyn_cast<SizeOfAlignOfExpr>(expr)) {
-    if (sizeOf->isSizeOf()) {
-      log::os() << "Size of (" << getStmtLoc(expr) << ") = " << 
-                   sizeOf->getArgumentTypeInfo()->getTypeLoc().getFullDataSize() << endl;
+  if (SizeOfAlignOfExpr *sizeOfExpr = dyn_cast<SizeOfAlignOfExpr>(expr)) {
+    if (sizeOfExpr->isSizeOf()) {
+      ce.add(1); // sizeof(ANYTHING) == 1
+      result.push_back(ce);
+      return result;
     }
   } 
   
