@@ -216,16 +216,16 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   }
 
 
-//    if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
-//      if (op->isAssignmentOp()) {
-//        if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-//          if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
-//            
-//            declRef->getDecl();
-//          }
-//        }
-//      }
-//    }
+  if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
+    if (op->isAssignmentOp()) {
+      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+        if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
+          Integer intLiteral(declRef->getDecl());
+          GenerateGenericConstraint(intLiteral, op->getRHS());
+        }
+      }
+    }
+  }
 
   return true;
 }
