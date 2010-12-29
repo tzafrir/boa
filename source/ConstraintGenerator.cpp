@@ -39,8 +39,8 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
       case BO_Add : {
         vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
         vector<Constraint::Expression> RHExpressions = GenerateIntegerExpression(op->getRHS(), max);
-        for (unsigned i = 0; i < LHExpressions.size(); ++i) {
-          for (unsigned j = 0; j < RHExpressions.size(); ++j) {
+        for (size_t i = 0; i < LHExpressions.size(); ++i) {
+          for (size_t j = 0; j < RHExpressions.size(); ++j) {
             Constraint::Expression loopCE;
             loopCE.add(LHExpressions[i]);
             loopCE.add(RHExpressions[j]);
@@ -52,8 +52,8 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
       case BO_Sub : {
         vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
         vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), !max);
-        for (unsigned i = 0; i < LHS.size(); ++i) {
-          for (unsigned j = 0; j < RHS.size(); ++j) {
+        for (size_t i = 0; i < LHS.size(); ++i) {
+          for (size_t j = 0; j < RHS.size(); ++j) {
             Constraint::Expression loopCE;
             loopCE.add(LHS[i]);
             loopCE.sub(RHS[j]);
@@ -66,24 +66,24 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
         vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
         vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
         if ((LHS.size() == 1) && (LHS[0].IsConst())) {
-          for (unsigned i = 0; i < RHS.size(); ++i) {
+          for (size_t i = 0; i < RHS.size(); ++i) {
             RHS[i].mul(LHS[0].GetConst());
             result.push_back(RHS[i]);
           }
           RHS = GenerateIntegerExpression(op->getRHS(), !max);
-          for (unsigned i = 0; i < RHS.size(); ++i) {
+          for (size_t i = 0; i < RHS.size(); ++i) {
             RHS[i].mul(LHS[0].GetConst());
             result.push_back(RHS[i]);
           }
           return result;
         }
         else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
-          for (unsigned i = 0; i < LHS.size(); ++i) {
+          for (size_t i = 0; i < LHS.size(); ++i) {
             LHS[i].mul(RHS[0].GetConst());
             result.push_back(LHS[i]);
           }
           LHS = GenerateIntegerExpression(op->getLHS(), !max);
-          for (unsigned i = 0; i < LHS.size(); ++i) {
+          for (size_t i = 0; i < LHS.size(); ++i) {
             LHS[i].mul(RHS[0].GetConst());
             result.push_back(LHS[i]);
           }
@@ -132,7 +132,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   }
 
   vector<Constraint::Expression> maxIndices = GenerateIntegerExpression(expr->getIdx(), true);
-  for (unsigned i = 0; i < maxIndices.size(); ++i) {
+  for (size_t i = 0; i < maxIndices.size(); ++i) {
     Constraint usedMax;
     usedMax.addBig(varLiteral->NameExpression(MAX, USED));
     usedMax.addSmall(maxIndices[i]);
@@ -141,7 +141,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
                  maxIndices[i].toString() << "\n";
   }
   vector<Constraint::Expression> minIndices = GenerateIntegerExpression(expr->getIdx(), false);
-  for (unsigned i = 0; i < minIndices.size(); ++i) {
+  for (size_t i = 0; i < minIndices.size(); ++i) {
     Constraint usedMin;
     usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
     usedMin.addBig(minIndices[i]);
@@ -173,17 +173,17 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
       cp_.AddConstraint(allocMin);
     }
   }
-  
+
   if (var->getType()->isIntegerType()) {
     Integer intLiteral(var);
     if (var->hasInit()) {
-      vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true); 
+      vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true);
       if (!maxInits.empty()) {
         GenerateGenericConstraint(intLiteral, var->getInit());
         return;
       }
     }
-    log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;          
+    log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;
   }
 }
 
@@ -208,7 +208,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
         while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
           argument = implicitCast->getSubExpr();
         }
-        
+
         GenerateGenericConstraint(buf, argument);
         return true;
       }
@@ -232,7 +232,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression) {
   vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
-  for (unsigned i = 0; i < maxExprs.size(); ++i) {
+  for (size_t i = 0; i < maxExprs.size(); ++i) {
     Constraint allocMax;
     allocMax.addBig(var.NameExpression(MAX, ALLOC));
     allocMax.addSmall(maxExprs[i]);
@@ -240,16 +240,16 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr 
     log::os() << "Adding - " << var.NameExpression(MAX, ALLOC) << " >= "
               << maxExprs[i].toString() << endl;
   }
-  
+
   vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
-  for (unsigned i = 0; i < minExprs.size(); ++i) {
+  for (size_t i = 0; i < minExprs.size(); ++i) {
     Constraint allocMin;
     allocMin.addSmall(var.NameExpression(MIN, ALLOC));
     allocMin.addBig(minExprs[i]);
     cp_.AddConstraint(allocMin);
     log::os() << "Adding - " << var.NameExpression(MIN, ALLOC) << " <= "
               << minExprs[i].toString() << endl;
-  } 
+  }
 }
 
 } // namespace boa

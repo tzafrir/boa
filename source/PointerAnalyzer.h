@@ -80,7 +80,7 @@ public:
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
     Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
-    log::os() << "Adding malloc buffer at " + b.getSourceLocation() << endl;    
+    log::os() << "Adding malloc buffer at " + b.getSourceLocation() << endl;
   }
 
   void addPointerToSet(VarDecl* var) {

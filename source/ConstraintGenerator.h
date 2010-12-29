@@ -36,12 +36,12 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             sm_.getSpellingLineNumber(stmt->getLocStart());
     return buff.str();
   }
-  
+
   void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression);
 
   vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
 
-  void GenerateVarDeclConstraints(VarDecl *var);  
+  void GenerateVarDeclConstraints(VarDecl *var);
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
 
