@@ -118,7 +118,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
     if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {                  
-      if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
+      if (arr->getElementType()->isAnyCharacterType()) {
         varLiteral = new Buffer(declRef->getDecl());           
       }
     }      
@@ -169,7 +169,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
     for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
       if (VarDecl* var = dyn_cast<VarDecl>(*i)) {
         if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
-          if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
+          if (arr->getElementType()->isAnyCharacterType()) {
             Buffer buf(var);
             Constraint allocMax, allocMin;
 
