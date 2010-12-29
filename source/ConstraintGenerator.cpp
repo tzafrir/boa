@@ -231,11 +231,14 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
 
   if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
-    if (op->isAssignmentOp()) {
+    if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
+      Integer intLiteral(declRef->getDecl());
       if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-        if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
-          Integer intLiteral(declRef->getDecl());
+        if (op->isAssignmentOp()) {
           GenerateGenericConstraint(intLiteral, op->getRHS());
+        }
+        if (op-> isCompoundAssignmentOp()) {
+          GenerateUnboundConstraint(intLiteral);
         }
       }
     }
