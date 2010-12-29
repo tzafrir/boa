@@ -37,6 +37,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
     return buff.str();
   }
   
+  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression);
+
   vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
 
   void GenerateVarDeclConstraints(VarDecl *var);  

@@ -179,23 +179,7 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
     if (var->hasInit()) {
       vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true); 
       if (!maxInits.empty()) {
-        for (unsigned i = 0; i < maxInits.size(); ++i) {
-          Constraint c;
-          c.addBig(intLiteral.NameExpression(MAX));
-          c.addSmall(maxInits[i]);
-          cp_.AddConstraint(c);
-          log::os() << "Adding - " << intLiteral.NameExpression(MAX) << " >= " 
-                    << maxInits[i].toString() << endl;
-        }
-        vector<Constraint::Expression> minInits  = GenerateIntegerExpression(var->getInit(), false); 
-        for (unsigned i = 0; i < minInits.size(); ++i) {
-          Constraint c;
-          c.addSmall(intLiteral.NameExpression(MIN));
-          c.addBig(minInits[i]);
-          cp_.AddConstraint(c);
-          log::os() << "Adding - " << intLiteral.NameExpression(MIN) << " <= " 
-                    << minInits[i].toString() << endl;
-        }              
+        GenerateGenericConstraint(intLiteral, var->getInit());
         return;
       }
     }
@@ -224,27 +208,8 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
         while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
           argument = implicitCast->getSubExpr();
         }
-
-        vector<Constraint::Expression> maxArgs = GenerateIntegerExpression(argument, true);
-        for (unsigned i = 0; i < maxArgs.size(); ++i) {
-          Constraint allocMax;
-
-          allocMax.addBig(buf.NameExpression(MAX, ALLOC));
-          allocMax.addSmall(maxArgs[i]);
-          cp_.AddConstraint(allocMax);
-          log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= "
-                    << maxArgs[i].toString() << "\n";
-        }
-        vector<Constraint::Expression> minArgs = GenerateIntegerExpression(argument, false);
-        for (unsigned i = 0; i < minArgs.size(); ++i) {
-          Constraint allocMin;
-
-          allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
-          allocMin.addBig(minArgs[i]);
-          cp_.AddConstraint(allocMin);
-          log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= "
-                    << minArgs[i].toString() << "\n";
-        }
+        
+        GenerateGenericConstraint(buf, argument);
         return true;
       }
     }
@@ -252,19 +217,39 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
 
 //    if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
-//      //if (!op->isAssignmentOp()) {
-//        return true;
-//      //}
-
-//      op->dump();
-//      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-//        if (DeclRefExpr* dre = dyn_cast<DeclRefExpr>(op->getLHS())) {
-//          log::os() << "Is at " << (void*)(dre->getDecl()) << "\n";
+//      if (op->isAssignmentOp()) {
+//        if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+//          if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
+//            
+//            declRef->getDecl();
+//          }
 //        }
 //      }
 //    }
 
   return true;
+}
+
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression) {
+  vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
+  for (unsigned i = 0; i < maxExprs.size(); ++i) {
+    Constraint allocMax;
+    allocMax.addBig(var.NameExpression(MAX, ALLOC));
+    allocMax.addSmall(maxExprs[i]);
+    cp_.AddConstraint(allocMax);
+    log::os() << "Adding - " << var.NameExpression(MAX, ALLOC) << " >= "
+              << maxExprs[i].toString() << endl;
+  }
+  
+  vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
+  for (unsigned i = 0; i < minExprs.size(); ++i) {
+    Constraint allocMin;
+    allocMin.addSmall(var.NameExpression(MIN, ALLOC));
+    allocMin.addBig(minExprs[i]);
+    cp_.AddConstraint(allocMin);
+    log::os() << "Adding - " << var.NameExpression(MIN, ALLOC) << " <= "
+              << minExprs[i].toString() << endl;
+  } 
 }
 
 } // namespace boa
