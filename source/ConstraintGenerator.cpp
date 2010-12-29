@@ -241,6 +241,15 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
     }
   }
 
+  if (UnaryOperator* op = dyn_cast<UnaryOperator>(S)) {
+    if (op->getSubExpr()->getType()->isIntegerType() && op->isIncrementDecrementOp()) {
+      if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getSubExpr())) {
+        Integer intLiteral(declRef->getDecl());
+        GenerateUnboundConstraint(intLiteral);
+      }
+    }
+  }
+
   return true;
 }
 
