@@ -5,13 +5,6 @@ using std::vector;
 
 namespace boa {
 
-string ConstraintGenerator::getStmtLoc(Stmt *stmt) {
-  stringstream buff;
-  buff << sm_.getBufferName(stmt->getLocStart()) << ":" <<
-          sm_.getSpellingLineNumber(stmt->getLocStart());
-  return buff.str();
-}
-
 vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
   vector<Constraint::Expression> result;
   Constraint::Expression ce;
@@ -161,6 +154,55 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   return true;
 }
 
+void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
+  if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
+    if (arr->getElementType()->isAnyCharacterType()) {
+      Buffer buf(var);
+      Constraint allocMax, allocMin;
+
+      allocMax.addBig(buf.NameExpression(MAX, ALLOC));
+      allocMax.addSmall(arr->getSize().getLimitedValue());
+      cp_.AddConstraint(allocMax);
+      log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
+                    arr->getSize().getLimitedValue() << "\n";
+
+      allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
+      allocMin.addBig(arr->getSize().getLimitedValue());
+      log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
+                   arr->getSize().getLimitedValue() << "\n";
+      cp_.AddConstraint(allocMin);
+    }
+  }
+  
+  if (var->getType()->isIntegerType()) {
+    Integer intLiteral(var);
+    if (var->hasInit()) {
+      vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true); 
+      if (!maxInits.empty()) {
+        for (unsigned i = 0; i < maxInits.size(); ++i) {
+          Constraint c;
+          c.addBig(intLiteral.NameExpression(MAX));
+          c.addSmall(maxInits[i]);
+          cp_.AddConstraint(c);
+          log::os() << "Adding - " << intLiteral.NameExpression(MAX) << " >= " 
+                    << maxInits[i].toString() << endl;
+        }
+        vector<Constraint::Expression> minInits  = GenerateIntegerExpression(var->getInit(), false); 
+        for (unsigned i = 0; i < minInits.size(); ++i) {
+          Constraint c;
+          c.addSmall(intLiteral.NameExpression(MIN));
+          c.addBig(minInits[i]);
+          cp_.AddConstraint(c);
+          log::os() << "Adding - " << intLiteral.NameExpression(MIN) << " <= " 
+                    << minInits[i].toString() << endl;
+        }              
+        return;
+      }
+    }
+    log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;          
+  }
+}
+
 bool ConstraintGenerator::VisitStmt(Stmt* S) {
   if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
     return GenerateArraySubscriptConstraints(expr);
@@ -169,51 +211,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
     for (DeclGroupRef::iterator decIt = dec->decl_begin(); decIt != dec->decl_end(); ++decIt) {
       if (VarDecl* var = dyn_cast<VarDecl>(*decIt)) {
-        if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
-          if (arr->getElementType()->isAnyCharacterType()) {
-            Buffer buf(var);
-            Constraint allocMax, allocMin;
-
-            allocMax.addBig(buf.NameExpression(MAX, ALLOC));
-            allocMax.addSmall(arr->getSize().getLimitedValue());
-            cp_.AddConstraint(allocMax);
-            log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
-                          arr->getSize().getLimitedValue() << "\n";
-
-            allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
-            allocMin.addBig(arr->getSize().getLimitedValue());
-            log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
-                         arr->getSize().getLimitedValue() << "\n";
-            cp_.AddConstraint(allocMin);
-          }
-        }
-        else if (var->getType()->isIntegerType()) {
-          Integer intLiteral(var);
-          if (var->hasInit()) {
-            vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true); 
-            if (!maxInits.empty()) {
-              for (unsigned i = 0; i < maxInits.size(); ++i) {
-                Constraint c;
-                c.addBig(intLiteral.NameExpression(MAX));
-                c.addSmall(maxInits[i]);
-                cp_.AddConstraint(c);
-                log::os() << "Adding - " << intLiteral.NameExpression(MAX) << " >= " 
-                          << maxInits[i].toString() << endl;
-              }
-              vector<Constraint::Expression> minInits  = GenerateIntegerExpression(var->getInit(), false); 
-              for (unsigned i = 0; i < minInits.size(); ++i) {
-                Constraint c;
-                c.addSmall(intLiteral.NameExpression(MIN));
-                c.addBig(minInits[i]);
-                cp_.AddConstraint(c);
-                log::os() << "Adding - " << intLiteral.NameExpression(MIN) << " <= " 
-                          << minInits[i].toString() << endl;
-              }              
-              continue;
-            }
-          }
-          log::os() << "Integer definition without initializer on " << getStmtLoc(S) << endl;          
-        }
+        GenerateVarDeclConstraints(var);
       }
     }
   }

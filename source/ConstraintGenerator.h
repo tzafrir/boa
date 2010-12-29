@@ -30,9 +30,16 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
 
-  string getStmtLoc(Stmt *stmt); // for debug
+  template <class T> string getStmtLoc(T *stmt) {
+    stringstream buff;
+    buff << sm_.getBufferName(stmt->getLocStart()) << ":" <<
+            sm_.getSpellingLineNumber(stmt->getLocStart());
+    return buff.str();
+  }
   
   vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
+
+  void GenerateVarDeclConstraints(VarDecl *var);  
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
 
