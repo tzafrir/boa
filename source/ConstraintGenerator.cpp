@@ -1,5 +1,6 @@
 #include "ConstraintGenerator.h"
 #include <vector>
+#include <limits>
 
 using std::vector;
 
@@ -183,6 +184,14 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
         return;
       }
     }
+    // FIXME - is MAX_INT enough?
+    Constraint maxV, minV;
+    maxV.addBig(intLiteral.NameExpression(MAX));
+    maxV.addSmall(std::numeric_limits<int>::max());
+    cp_.AddConstraint(maxV);
+    minV.addSmall(intLiteral.NameExpression(MIN));
+    maxV.addBig(std::numeric_limits<int>::min());
+    cp_.AddConstraint(minV);
     log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;
   }
 }
