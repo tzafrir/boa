@@ -74,29 +74,20 @@ public:
   void addBufferToSet(VarDecl* var) {
     Buffer b((void*)var, var->getNameAsString(), sm_.getBufferName(var->getLocation()), sm_.getSpellingLineNumber(var->getLocation()));
     Buffers_.push_back(b);
-
-    log::os() << "Adding static buffer -" << endl;
-    log::os() << " code name     = " + b.getReadableName() << endl;
-    log::os() << " \"clang ID\"    = " + b.getUniqueName() << endl;
-    log::os() << " code location = " + b.getSourceLocation() << endl;
+    log::os() << "Adding static buffer -" << b.getReadableName() << " at " <<  b.getSourceLocation() << endl;
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-    log::os() << "malloc on line " + sm_.getSpellingLineNumber(funcCall->getExprLoc()) << endl;
-
     Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
+    log::os() << "Adding malloc buffer at " + b.getSourceLocation() << endl;    
   }
 
   void addPointerToSet(VarDecl* var) {
     Pointer p((void*)var);
     Pointers_.push_back(p);
     Pointer2Buffers_[p] = &Buffers_;
-
-    log::os() << "Adding pointer -" << endl;
-    log::os() << " code name     = " + var->getNameAsString() << endl;
-//    cerr << " \"clang ID\" = " << (void*)var << endl;
-    log::os() << " line number = " + sm_.getSpellingLineNumber(var->getLocation()) << endl;
+    log::os() << "Adding pointer -" << var->getNameAsString() << " at line " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
   }
 
   const list<Buffer>& getBuffers() const {
