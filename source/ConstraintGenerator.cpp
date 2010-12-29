@@ -184,16 +184,21 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
         return;
       }
     }
-    // FIXME - is MAX_INT enough?
-    Constraint maxV, minV;
-    maxV.addBig(intLiteral.NameExpression(MAX));
-    maxV.addSmall(std::numeric_limits<int>::max());
-    cp_.AddConstraint(maxV);
-    minV.addSmall(intLiteral.NameExpression(MIN));
-    maxV.addBig(std::numeric_limits<int>::min());
-    cp_.AddConstraint(minV);
+
+    GenerateUnboundConstraint(intLiteral);
     log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;
   }
+}
+
+void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var) {
+  // FIXME - is MAX_INT enough?
+  Constraint maxV, minV;
+  maxV.addBig(var.NameExpression(MAX, USED));
+  maxV.addSmall(std::numeric_limits<int>::max());
+  cp_.AddConstraint(maxV);
+  minV.addSmall(var.NameExpression(MIN, USED));
+  maxV.addBig(std::numeric_limits<int>::min());
+  cp_.AddConstraint(minV);
 }
 
 bool ConstraintGenerator::VisitStmt(Stmt* S) {

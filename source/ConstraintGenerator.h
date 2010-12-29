@@ -36,6 +36,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             sm_.getSpellingLineNumber(stmt->getLocStart());
     return buff.str();
   }
+  
+  void GenerateUnboundConstraint(const VarLiteral &var);
 
   void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression);
 
