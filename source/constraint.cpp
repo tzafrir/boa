@@ -84,7 +84,9 @@ list<Buffer> ConstraintProblem::Solve() {
     log::os() << buffer->NameExpression(MIN, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)]) << endl;
     log::os() << buffer->NameExpression(MAX, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, ALLOC)]) << endl;
 
-    if (glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) >= glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)])) {
+    if ((glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) >= 
+         glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)])) ||
+        (glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
       log::os() << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
