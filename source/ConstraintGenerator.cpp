@@ -144,7 +144,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   for (unsigned i = 0; i < minIndices.size(); ++i) {
     Constraint usedMin;
     usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
-    usedMin.addSmall(minIndices[i]);
+    usedMin.addBig(minIndices[i]);
     cp_.AddConstraint(usedMin);
     log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " <<
                  minIndices[i].toString() << "\n";
