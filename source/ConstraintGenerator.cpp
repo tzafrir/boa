@@ -167,8 +167,8 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   }
 
   if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
-    for (DeclGroupRef::iterator i = dec->decl_begin(); i != dec->decl_end(); ++i) {
-      if (VarDecl* var = dyn_cast<VarDecl>(*i)) {
+    for (DeclGroupRef::iterator decIt = dec->decl_begin(); decIt != dec->decl_end(); ++decIt) {
+      if (VarDecl* var = dyn_cast<VarDecl>(*decIt)) {
         if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
           if (arr->getElementType()->isAnyCharacterType()) {
             Buffer buf(var);
@@ -186,6 +186,33 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
                          arr->getSize().getLimitedValue() << "\n";
             cp_.AddConstraint(allocMin);
           }
+        }
+        else if (var->getType()->isIntegerType()) {
+          Integer intLiteral(var);
+          if (var->hasInit()) {
+            vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true); 
+            if (!maxInits.empty()) {
+              for (unsigned i = 0; i < maxInits.size(); ++i) {
+                Constraint c;
+                c.addBig(intLiteral.NameExpression(MAX));
+                c.addSmall(maxInits[i]);
+                cp_.AddConstraint(c);
+                log::os() << "Adding - " << intLiteral.NameExpression(MAX) << " >= " 
+                          << maxInits[i].toString() << endl;
+              }
+              vector<Constraint::Expression> minInits  = GenerateIntegerExpression(var->getInit(), false); 
+              for (unsigned i = 0; i < minInits.size(); ++i) {
+                Constraint c;
+                c.addSmall(intLiteral.NameExpression(MIN));
+                c.addBig(minInits[i]);
+                cp_.AddConstraint(c);
+                log::os() << "Adding - " << intLiteral.NameExpression(MIN) << " <= " 
+                          << minInits[i].toString() << endl;
+              }              
+              continue;
+            }
+          }
+          log::os() << "Integer definition without initializer on " << getStmtLoc(S) << endl;          
         }
       }
     }
