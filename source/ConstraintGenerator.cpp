@@ -2,12 +2,12 @@
 #include <vector>
 
 using std::vector;
-          
+
 namespace boa {
 
-string ConstraintGenerator::getStmtLoc(Stmt *stmt) { 
+string ConstraintGenerator::getStmtLoc(Stmt *stmt) {
   stringstream buff;
-  buff << sm_.getBufferName(stmt->getLocStart()) << ":" << 
+  buff << sm_.getBufferName(stmt->getLocStart()) << ":" <<
           sm_.getSpellingLineNumber(stmt->getLocStart());
   return buff.str();
 }
@@ -26,21 +26,21 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
       result.push_back(ce);
       return result;
     }
-  } 
-  
+  }
+
   if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
     ce.add(literal->getValue().getLimitedValue());
     result.push_back(ce);
     return result;
   }
-  
+
   if (dyn_cast<DeclRefExpr>(expr)) {
     Integer intLiteral(expr);
     ce.add(intLiteral.NameExpression(max ? MAX : MIN));
     result.push_back(ce);
-    return result;      
+    return result;
   }
-  
+
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
     switch (op->getOpcode()) {
       case BO_Add : {
@@ -82,7 +82,7 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
             RHS[i].mul(LHS[0].GetConst());
             result.push_back(RHS[i]);
           }
-          return result;          
+          return result;
         }
         else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
           for (unsigned i = 0; i < LHS.size(); ++i) {
@@ -94,16 +94,16 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
             LHS[i].mul(RHS[0].GetConst());
             result.push_back(LHS[i]);
           }
-          return result;          
+          return result;
         }
         // TODO - return infinity/NaN instead of empty vector?
         log::os() << "Multiplaction of two non const integer expressions " << getStmtLoc(expr) << endl;
         return result;
       }
       default : break;
-    } 
+    }
   }
-   
+
   expr->dump();
   log::os() << "Can't generate integer expression " << getStmtLoc(expr) << endl;
   return result;
@@ -116,35 +116,35 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   while (dyn_cast<ImplicitCastExpr>(base)) {
     base = dyn_cast<ImplicitCastExpr>(base)->getSubExpr();
   }
-  
+
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
-    if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {                  
+    if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {
       if (arr->getElementType()->isAnyCharacterType()) {
-        varLiteral = new Buffer(declRef->getDecl());           
-      }
-    }      
-    else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
-      if (pType->getPointeeType()->isAnyCharacterType()) {
-        varLiteral = new Pointer(declRef->getDecl());       
+        varLiteral = new Buffer(declRef->getDecl());
       }
     }
-  } 
+    else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
+      if (pType->getPointeeType()->isAnyCharacterType()) {
+        varLiteral = new Pointer(declRef->getDecl());
+      }
+    }
+  }
   else {
     // TODO: Any other cases?
   }
-  
+
   if (NULL == varLiteral) {
     expr->dump();
     return false;
   }
-  
+
   vector<Constraint::Expression> maxIndices = GenerateIntegerExpression(expr->getIdx(), true);
   for (unsigned i = 0; i < maxIndices.size(); ++i) {
     Constraint usedMax;
     usedMax.addBig(varLiteral->NameExpression(MAX, USED));
     usedMax.addSmall(maxIndices[i]);
     cp_.AddConstraint(usedMax);
-    log::os() << "Adding - " << varLiteral->NameExpression(MAX, USED) << " >= " << 
+    log::os() << "Adding - " << varLiteral->NameExpression(MAX, USED) << " >= " <<
                  maxIndices[i].toString() << "\n";
   }
   vector<Constraint::Expression> minIndices = GenerateIntegerExpression(expr->getIdx(), false);
@@ -153,7 +153,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
     usedMin.addSmall(varLiteral->NameExpression(MIN, USED));
     usedMin.addSmall(minIndices[i]);
     cp_.AddConstraint(usedMin);
-    log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " << 
+    log::os() << "Adding - " << varLiteral->NameExpression(MIN, USED) << " <= " <<
                  minIndices[i].toString() << "\n";
   }
 
@@ -167,7 +167,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   }
 
   if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
-    for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
+    for (DeclGroupRef::iterator i = dec->decl_begin(); i != dec->decl_end(); ++i) {
       if (VarDecl* var = dyn_cast<VarDecl>(*i)) {
         if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
           if (arr->getElementType()->isAnyCharacterType()) {
@@ -177,21 +177,20 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
             allocMax.addBig(buf.NameExpression(MAX, ALLOC));
             allocMax.addSmall(arr->getSize().getLimitedValue());
             cp_.AddConstraint(allocMax);
-            log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " << 
+            log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
                           arr->getSize().getLimitedValue() << "\n";
 
             allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
             allocMin.addBig(arr->getSize().getLimitedValue());
-            log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " << 
+            log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
                          arr->getSize().getLimitedValue() << "\n";
             cp_.AddConstraint(allocMin);
-            return true;
           }
         }
       }
     }
   }
-  
+
   if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
     if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
       if (funcDec->getNameInfo().getAsString() == "malloc") {
@@ -204,21 +203,21 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
         vector<Constraint::Expression> maxArgs = GenerateIntegerExpression(argument, true);
         for (unsigned i = 0; i < maxArgs.size(); ++i) {
           Constraint allocMax;
-          
+
           allocMax.addBig(buf.NameExpression(MAX, ALLOC));
           allocMax.addSmall(maxArgs[i]);
           cp_.AddConstraint(allocMax);
-          log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " 
+          log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= "
                     << maxArgs[i].toString() << "\n";
         }
         vector<Constraint::Expression> minArgs = GenerateIntegerExpression(argument, false);
         for (unsigned i = 0; i < minArgs.size(); ++i) {
           Constraint allocMin;
-          
+
           allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
           allocMin.addBig(minArgs[i]);
           cp_.AddConstraint(allocMin);
-          log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " 
+          log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= "
                     << minArgs[i].toString() << "\n";
         }
         return true;
