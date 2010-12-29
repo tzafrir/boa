@@ -15,6 +15,17 @@ string ConstraintGenerator::getStmtLoc(Stmt *stmt) {
 vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
   vector<Constraint::Expression> result;
   Constraint::Expression ce;
+
+  while (dyn_cast<ImplicitCastExpr>(expr)) {
+    expr = dyn_cast<ImplicitCastExpr>(expr)->getSubExpr();
+  }
+
+  if (SizeOfAlignOfExpr *sizeOf = dyn_cast<SizeOfAlignOfExpr>(expr)) {
+    if (sizeOf->isSizeOf()) {
+      log::os() << "Size of (" << getStmtLoc(expr) << ") = " << 
+                   sizeOf->getArgumentTypeInfo()->getTypeLoc().getFullDataSize() << endl;
+    }
+  } 
   
   if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
     ce.add(literal->getValue().getLimitedValue());
@@ -102,7 +113,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
 
   Expr* base = expr->getBase();
   while (dyn_cast<ImplicitCastExpr>(base)) {
-    base = dyn_cast<ImplicitCastExpr>(expr->getBase())->getSubExpr();
+    base = dyn_cast<ImplicitCastExpr>(base)->getSubExpr();
   }
   
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
