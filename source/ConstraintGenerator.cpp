@@ -27,8 +27,8 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
     return result;
   }
 
-  if (dyn_cast<DeclRefExpr>(expr)) {
-    Integer intLiteral(expr);
+  if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr)) {
+    Integer intLiteral(declRef->getDecl());
     ce.add(intLiteral.NameExpression(max ? MAX : MIN));
     result.push_back(ce);
     return result;
@@ -50,13 +50,13 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
         return result;
       }
       case BO_Sub : {
-        vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
-        vector<Constraint::Expression> RHExpressions = GenerateIntegerExpression(op->getRHS(), !max);
-        for (unsigned i = 0; i < LHExpressions.size(); ++i) {
-          for (unsigned j = 0; j < RHExpressions.size(); ++j) {
+        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), !max);
+        for (unsigned i = 0; i < LHS.size(); ++i) {
+          for (unsigned j = 0; j < RHS.size(); ++j) {
             Constraint::Expression loopCE;
-            loopCE.add(LHExpressions[i]);
-            loopCE.sub(RHExpressions[j]);
+            loopCE.add(LHS[i]);
+            loopCE.sub(RHS[j]);
             result.push_back(loopCE);
           }
         }
