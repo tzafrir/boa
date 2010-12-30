@@ -16,9 +16,9 @@
 
 using namespace boa;
 
-#include <list>
+#include <vector>
 
-using std::list;
+using std::vector;
 
 
 // DEBUG
@@ -50,12 +50,12 @@ class boaConsumer : public ASTConsumer {
   }
 
   virtual ~boaConsumer() {
-    const map<Pointer, list<Buffer>* >& mapping = pointerAnalyzer_.getMapping();
-    for (map<Pointer, list<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
+    const map<Pointer, vector<Buffer>* >& mapping = pointerAnalyzer_.getMapping();
+    for (map<Pointer, vector<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
       const Pointer &ptr = pointerIt->first;
-      list<Buffer>* buffers = pointerIt->second;
+      vector<Buffer>* buffers = pointerIt->second;
 
-      for (list<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
+      for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
         Constraint usedMax, usedMin;
 
         usedMax.addBig(it->NameExpression(MAX, USED));
@@ -71,22 +71,29 @@ class boaConsumer : public ASTConsumer {
     }
 
     log::os() << "The buffers we have found - " << endl;
-    const list<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
-    for (list<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
+    const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
+    for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       log::os() << buf->getUniqueName() << endl;
       constraintProblem_.AddBuffer(*buf);
     }
     log::os() << "Constraint solver output - " << endl;
-    list<Buffer> unsafeBuffers = constraintProblem_.Solve();
+    vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
       cerr << endl << "No overruns possible" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
     }
     else {
+      map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
+      for (map<Buffer, vector<Constraint> >::iterator it = blames.begin(); it != blames.end(); ++it) {
+        cerr << endl << it->first.getReadableName() << " " << it->first.getSourceLocation() << endl;
+        for (size_t i = 0; i < it->second.size(); ++i) {
+          cerr << "  - " << it->second[i].Blame() << endl;
+        }
+      }
       cerr << endl << "Possible buffer overruns on - " << endl;
       cerr << SEPARATOR << endl;
-      for (list<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
+      for (vector<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
         cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;
       }
       cerr << SEPARATOR << endl;

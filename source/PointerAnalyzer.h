@@ -13,13 +13,13 @@
 #include "log.h"
 #include "buffer.h"
 #include "pointer.h"
-#include "constraint.h"
 
-#include <list>
+#include <vector>
+using std::vector;
 #include <map>
-
 using std::map;
-using std::list;
+
+#include "constraint.h"
 
 using namespace clang;
 
@@ -27,9 +27,9 @@ namespace boa {
 
 class PointerASTVisitor : public RecursiveASTVisitor<PointerASTVisitor> {
 private:
-  list<Buffer> Buffers_;
-  list<Pointer> Pointers_;
-  map< Pointer, list<Buffer>* > Pointer2Buffers_;
+  vector<Buffer> Buffers_;
+  vector<Pointer> Pointers_;
+  map< Pointer, vector<Buffer>* > Pointer2Buffers_;
   SourceManager &sm_;
 public:
   PointerASTVisitor(SourceManager &SM)
@@ -90,15 +90,15 @@ public:
     log::os() << "Adding pointer - " << var->getNameAsString() << " at line " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
   }
 
-  const list<Buffer>& getBuffers() const {
+  const vector<Buffer>& getBuffers() const {
     return Buffers_;
   }
 
-  const list<Pointer>& getPointers() const {
+  const vector<Pointer>& getPointers() const {
     return Pointers_;
   }
 
-  const map< Pointer, list<Buffer>* > & getMapping() const {
+  const map< Pointer, vector<Buffer>* > & getMapping() const {
     return Pointer2Buffers_;
   }
 };
