@@ -128,8 +128,8 @@ class Constraint {
    literals_.clear();
   }
 
-  void GetVars(set<string>& vars) {
-    for (map<string, int>::iterator it = literals_.begin(); it != literals_.end(); ++it) {
+  void GetVars(set<string>& vars) const{
+    for (map<string, int>::const_iterator it = literals_.begin(); it != literals_.end(); ++it) {
       vars.insert(it->first);
     }
   }
@@ -153,14 +153,15 @@ class Constraint {
 
 class ConstraintProblem {
  private:
+  static const vector<Constraint> NO_CONSTRAINTS;
   vector<Constraint> constraints;
   vector<Buffer> buffers;
 
-  set<string> CollectVars();
+  set<string> CollectVars() const;
   
-  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers);
+  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const;
   
-  vector<Constraint> Blame(const vector<Constraint> &input, const Buffer &buffer);
+  vector<Constraint> Blame(vector<Constraint> &input, const vector<Buffer> &buffer, const vector<Constraint> &output) const;
  public:
   void AddBuffer(const Buffer& buffer) {
     buffers.push_back(buffer);
@@ -180,7 +181,7 @@ class ConstraintProblem {
 
     Return a set of buffers in which buffer overrun may occur.
   */
-  vector<Buffer> Solve();
+  vector<Buffer> Solve() const;
   
   /**
     Solve the constraint problem and generate a minimal set of constraints which cause each overrun
@@ -190,7 +191,7 @@ class ConstraintProblem {
     constraint will cause the specific buffer overrun, there might be other (smaller) set which will
     also cause the overrun.
   */
-  map<Buffer, vector<Constraint> > SolveAndBlame();
+  map<Buffer, vector<Constraint> > SolveAndBlame() const;
 };
 } //namespace boa
 #endif /* __BOA_CONSTRAINT_H */

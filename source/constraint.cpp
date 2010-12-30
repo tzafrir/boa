@@ -7,16 +7,16 @@ using std::endl;
 
 namespace boa {
 
-set<string> ConstraintProblem::CollectVars() {
+set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
-  for (vector<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (vector<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     vars.insert(buffer->NameExpression(MIN, USED));
     vars.insert(buffer->NameExpression(MAX, USED));
     vars.insert(buffer->NameExpression(MIN, ALLOC));
     vars.insert(buffer->NameExpression(MAX, ALLOC));
   }
 
-  for (vector<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
+  for (vector<Constraint>::const_iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
     constraint->GetVars(vars);
   }
   return vars;
@@ -31,11 +31,11 @@ inline static map<string, int> MapVarToCol(const set<string>& vars) {
   return varToCol;
 }
 
-vector<Buffer> ConstraintProblem::Solve() {
+vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints, buffers);
 }
 
-vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) {
+vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const {
   vector<Buffer> unsafeBuffers;
   if (inputBuffers.empty()) {
     log::os() << "No buffers" << endl;
@@ -98,15 +98,35 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
   return unsafeBuffers;
 }
 
-vector<Constraint> ConstraintProblem::Blame(const vector<Constraint> &input, const Buffer &buffer) {
+vector<Constraint> ConstraintProblem::Blame(vector<Constraint> &input, const vector<Buffer> &buffer, 
+                                            const vector<Constraint> &output) const {
+  static const int SLICE = 10;
+
+  if (input.size() > SLICE) { 
+    // try first slice 
+    vector<Constraint> slice;
+    for (size_t i = 0; i < SLICE; ++i) {
+      slice.push_back(input[i]);
+    }
+    if (! Solve(slice, buffer).empty()) {
+      return Blame(slice, buffer, NO_CONSTRAINTS);
+    }
+    // try the rest of the input
+    for (size_t i = SLICE; i < input.size(); ++i) {
+      //result.push_back(
+    }
+  }
   
 }
 
-map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() {
+map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
   vector<Buffer> unsafe = Solve();
   map<Buffer, vector<Constraint> > result;
   for (size_t i = 0; i < unsafe.size(); ++i) {
-    result[unsafe[i]] = Blame(constraints, unsafe[i]);
+    vector<Buffer> buf;
+    buf.push_back(unsafe[i]);
+    vector<Constraint> c(constraints);
+    result[unsafe[i]] = Blame(c, buf, NO_CONSTRAINTS);
   } 
   return result;
 }
