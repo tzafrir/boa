@@ -134,14 +134,14 @@ class Constraint {
     }
   }
 
-  void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) {
+  void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) const {
     int indices[MAX_SIZE + 1];
     double values[MAX_SIZE + 1];
 
     // TODO if size > MAX_SIZE...
 
     int count = 1;
-    for (map<string, int>::iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
+    for (map<string, int>::const_iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
       indices[count] = colNumbers[it->first];
       values[count] = it->second;
     }
@@ -157,6 +157,10 @@ class ConstraintProblem {
   vector<Buffer> buffers;
 
   set<string> CollectVars();
+  
+  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers);
+  
+  vector<Constraint> Blame(const vector<Constraint> &input, const Buffer &buffer);
  public:
   void AddBuffer(const Buffer& buffer) {
     buffers.push_back(buffer);
@@ -177,6 +181,16 @@ class ConstraintProblem {
     Return a set of buffers in which buffer overrun may occur.
   */
   vector<Buffer> Solve();
+  
+  /**
+    Solve the constraint problem and generate a minimal set of constraints which cause each overrun
+    
+    Return a map - the keys are possibly overrun buffers, the corresponding value is a small set of 
+    constraints which cause the overrun. The set is minimal in the sense that no subset of these
+    constraint will cause the specific buffer overrun, there might be other (smaller) set which will
+    also cause the overrun.
+  */
+  map<Buffer, vector<Constraint> > SolveAndBlame();
 };
 } //namespace boa
 #endif /* __BOA_CONSTRAINT_H */
