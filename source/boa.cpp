@@ -37,8 +37,12 @@ class boaConsumer : public ASTConsumer {
   PointerASTVisitor pointerAnalyzer_;
   ConstraintProblem constraintProblem_;
   ConstraintGenerator constraintGenerator_;
+  bool blameOverruns_;
+  
  public:
-  boaConsumer(SourceManager &SM) : sm_(SM), pointerAnalyzer_(SM), constraintGenerator_(SM, constraintProblem_) {}
+  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM), 
+                                                       constraintGenerator_(SM, constraintProblem_),
+                                                       blameOverruns_(blameOverruns) {}
 
   virtual void HandleTopLevelDecl(DeclGroupRef DG) {
     for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
@@ -60,11 +64,13 @@ class boaConsumer : public ASTConsumer {
 
         usedMax.addBig(it->NameExpression(MAX, USED));
         usedMax.addSmall(ptr.NameExpression(MAX, USED));
+        usedMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMax);
         log::os() << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
         
         usedMin.addBig(ptr.NameExpression(MIN, USED));
         usedMin.addSmall(it->NameExpression(MIN, USED));
+        usedMin.SetBlame("Pointer analyzer constraint");        
         constraintProblem_.AddConstraint(usedMin);
         log::os() << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
       }
@@ -79,19 +85,21 @@ class boaConsumer : public ASTConsumer {
     log::os() << "Constraint solver output - " << endl;
     vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
-      cerr << endl << "No overruns possible" << endl;
+      cerr << endl << "No overruns detected" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
     }
     else {
-      map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
-      for (map<Buffer, vector<Constraint> >::iterator it = blames.begin(); it != blames.end(); ++it) {
-        cerr << endl << it->first.getReadableName() << " " << it->first.getSourceLocation() << endl;
-        for (size_t i = 0; i < it->second.size(); ++i) {
-          cerr << "  - " << it->second[i].Blame() << endl;
+      cerr << endl << "Possible buffer overruns on - " << endl;
+      if (blameOverruns_) {
+        map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
+        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin(); it != blames.end(); ++it) {
+          cerr << endl << it->first.getReadableName() << " " << it->first.getSourceLocation() << endl;
+          for (size_t i = 0; i < it->second.size(); ++i) {
+            cerr << "  - " << it->second[i].Blame() << endl;
+          }
         }
       }
-      cerr << endl << "Possible buffer overruns on - " << endl;
       cerr << SEPARATOR << endl;
       for (vector<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
         cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;
@@ -103,15 +111,21 @@ class boaConsumer : public ASTConsumer {
 
 class boaPlugin : public PluginASTAction {
  protected:
+  bool blameOverruns_;
+  
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
-    return new boaConsumer(CI.getSourceManager());
+    return new boaConsumer(CI.getSourceManager(), blameOverruns_);
   }
 
   bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args) {
+    blameOverruns_ = false;
     for (unsigned i = 0; i < args.size(); ++i) {
       if (args[i] == "log") {
         log::set(std::cout);
-       }
+      }
+      else if (args[i] == "blame") {
+        blameOverruns_ = true;
+      }
     }
     return true;
   }
