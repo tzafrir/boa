@@ -3,14 +3,14 @@
 
 #include <string>
 #include <set>
-#include <list>
+#include <vector>
 #include <map>
 #include <glpk.h>
 #include "buffer.h"
 
 using std::string;
 using std::set;
-using std::list;
+using std::vector;
 using std::map;
 
 // DEBUG
@@ -153,8 +153,8 @@ class Constraint {
 
 class ConstraintProblem {
  private:
-  list<Constraint> constraints;
-  list<Buffer> buffers;
+  vector<Constraint> constraints;
+  vector<Buffer> buffers;
 
   set<string> CollectVars();
  public:
@@ -176,7 +176,7 @@ class ConstraintProblem {
 
     Return a set of buffers in which buffer overrun may occur.
   */
-  list<Buffer> Solve();
+  vector<Buffer> Solve();
 };
 } //namespace boa
 #endif /* __BOA_CONSTRAINT_H */

@@ -9,14 +9,14 @@ namespace boa {
 
 set<string> ConstraintProblem::CollectVars() {
   set<string> vars;
-  for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (vector<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     vars.insert(buffer->NameExpression(MIN, USED));
     vars.insert(buffer->NameExpression(MAX, USED));
     vars.insert(buffer->NameExpression(MIN, ALLOC));
     vars.insert(buffer->NameExpression(MAX, ALLOC));
   }
 
-  for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
+  for (vector<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
     constraint->GetVars(vars);
   }
   return vars;
@@ -31,8 +31,8 @@ inline static map<string, int> MapVarToCol(const set<string>& vars) {
   return varToCol;
 }
 
-list<Buffer> ConstraintProblem::Solve() {
-  list<Buffer> unsafeBuffers;
+vector<Buffer> ConstraintProblem::Solve() {
+  vector<Buffer> unsafeBuffers;
   if (buffers.empty()) {
     log::os() << "No buffers" << endl;
     return unsafeBuffers;
@@ -53,12 +53,12 @@ list<Buffer> ConstraintProblem::Solve() {
   {
     // Fill matrix
     int row = 1;
-    for (list<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint, ++row) {
+    for (vector<Constraint>::iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint, ++row) {
       constraint->AddToLPP(lp, row, varToCol);
     }
   }
 
-  for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (vector<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     // Set objective coeficients
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, USED)], 1.0);
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, USED)], -1.0);
@@ -77,7 +77,7 @@ list<Buffer> ConstraintProblem::Solve() {
 
   // TODO - what if no solution can be found?
 
-  for (list<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (vector<Buffer>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     // Print result
     log::os() << buffer->NameExpression(MIN, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) << endl;
     log::os() << buffer->NameExpression(MAX, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) << endl;
