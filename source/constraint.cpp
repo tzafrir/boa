@@ -98,25 +98,22 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
   return unsafeBuffers;
 }
 
-vector<Constraint> ConstraintProblem::Blame(vector<Constraint> &input, const vector<Buffer> &buffer, 
-                                            const vector<Constraint> &output) const {
-  static const int SLICE = 10;
-
-  if (input.size() > SLICE) { 
-    // try first slice 
-    vector<Constraint> slice;
-    for (size_t i = 0; i < SLICE; ++i) {
-      slice.push_back(input[i]);
-    }
-    if (! Solve(slice, buffer).empty()) {
-      return Blame(slice, buffer, NO_CONSTRAINTS);
-    }
-    // try the rest of the input
-    for (size_t i = SLICE; i < input.size(); ++i) {
-      //result.push_back(
+vector<Constraint> ConstraintProblem::Blame(const vector<Constraint> &input, const vector<Buffer> &buffer) const {
+  vector<Constraint> result(input);
+  // super naive algorithm
+  for (size_t i = 0; i < result.size(); ) {
+    Constraint tmp = result[i];
+    result[i] = result.back();
+    result.pop_back();
+    if (Solve(result, buffer).empty()) {
+      result.push_back(tmp);
+      tmp = result[i];
+      result[i] = result.back();
+      result.back() = tmp;
+      ++i;
     }
   }
-  
+  return result;
 }
 
 map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
@@ -125,9 +122,8 @@ map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
   for (size_t i = 0; i < unsafe.size(); ++i) {
     vector<Buffer> buf;
     buf.push_back(unsafe[i]);
-    vector<Constraint> c(constraints);
-    result[unsafe[i]] = Blame(c, buf, NO_CONSTRAINTS);
-  } 
+    result[unsafe[i]] = Blame(constraints, buf);
+  }
   return result;
 }
 } // namespace boa

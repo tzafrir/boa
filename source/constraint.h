@@ -153,7 +153,7 @@ class Constraint {
 
 class ConstraintProblem {
  private:
-  static const vector<Constraint> NO_CONSTRAINTS;
+  const vector<Constraint> NO_CONSTRAINTS;
   vector<Constraint> constraints;
   vector<Buffer> buffers;
 
@@ -161,7 +161,7 @@ class ConstraintProblem {
   
   vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const;
   
-  vector<Constraint> Blame(vector<Constraint> &input, const vector<Buffer> &buffer, const vector<Constraint> &output) const;
+  vector<Constraint> Blame(const vector<Constraint> &input, const vector<Buffer> &buffer) const;
  public:
   void AddBuffer(const Buffer& buffer) {
     buffers.push_back(buffer);
