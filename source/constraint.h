@@ -37,6 +37,7 @@ class Constraint {
   const static int MAX_SIZE = 100;
   int left_;
   map<string, int> literals_;
+  string blame_;
 
   void addLiteral(int num, string var) {
     literals_[var] += num;
@@ -59,7 +60,7 @@ class Constraint {
       for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
         add(it->first, it->second);
       }
-      add(expr.val_);      
+      add(expr.val_);
     }
     void add(const string& var, int num = 1) {vars_[var] += num;}
     void add(int num) {val_ += num;}
@@ -68,8 +69,8 @@ class Constraint {
       for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
         add(it->first, -it->second);
       }
-      add(-expr.val_);      
-    }    
+      add(-expr.val_);
+    }
 
     // DEBUG
     static string int2str(int i) {
@@ -92,6 +93,14 @@ class Constraint {
   };
 
   Constraint() : left_(0) {}
+  
+  void SetBlame(const string &blame) {
+    blame_ = blame;
+  }
+  
+  string Blame() {
+    return blame_;
+  }
 
   void addBig(const Expression& expr) {
     for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
@@ -158,9 +167,9 @@ class ConstraintProblem {
   vector<Buffer> buffers;
 
   set<string> CollectVars() const;
-  
+
   vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const;
-  
+
   vector<Constraint> Blame(const vector<Constraint> &input, const vector<Buffer> &buffer) const;
  public:
   void AddBuffer(const Buffer& buffer) {
@@ -182,11 +191,11 @@ class ConstraintProblem {
     Return a set of buffers in which buffer overrun may occur.
   */
   vector<Buffer> Solve() const;
-  
+
   /**
     Solve the constraint problem and generate a minimal set of constraints which cause each overrun
-    
-    Return a map - the keys are possibly overrun buffers, the corresponding value is a small set of 
+
+    Return a map - the keys are possibly overrun buffers, the corresponding value is a small set of
     constraints which cause the overrun. The set is minimal in the sense that no subset of these
     constraint will cause the specific buffer overrun, there might be other (smaller) set which will
     also cause the overrun.
