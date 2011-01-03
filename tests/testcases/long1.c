@@ -5,4 +5,5 @@ int main() {
   char b[4];
   a[i] = '\0';
   b[j] = '\0';
+  return 0;
 }
