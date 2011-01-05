@@ -10,9 +10,9 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Buffer.h"
 #include "Constraint.h"
 #include "log.h"
-#include "buffer.h"
 #include "pointer.h"
 
 #include <vector>

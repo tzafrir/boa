@@ -6,7 +6,8 @@
 #include <vector>
 #include <map>
 #include <glpk.h>
-#include "buffer.h"
+
+#include "Buffer.h"
 
 using std::string;
 using std::set;

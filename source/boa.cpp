@@ -7,7 +7,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "buffer.h"
+#include "Buffer.h"
 #include "Constraint.h"
 #include "log.h"
 
