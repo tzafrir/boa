@@ -146,14 +146,14 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
 
       allocMax.addBig(buf.NameExpression(MAX, ALLOC));
       allocMax.addSmall(arr->getSize().getLimitedValue());
-      allocMax.SetBlame("static char buffer decleration " + getStmtLoc(var));
+      allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
       cp_.AddConstraint(allocMax);
       log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
                     arr->getSize().getLimitedValue() << "\n";
 
       allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
       allocMin.addBig(arr->getSize().getLimitedValue());
-      allocMin.SetBlame("static char buffer decleration " + getStmtLoc(var));      
+      allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
       log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
                    arr->getSize().getLimitedValue() << "\n";
       cp_.AddConstraint(allocMin);
@@ -165,12 +165,12 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
     if (var->hasInit()) {
       vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true);
       if (!maxInits.empty()) {
-        GenerateGenericConstraint(intLiteral, var->getInit(), "int decleration " + getStmtLoc(var));
+        GenerateGenericConstraint(intLiteral, var->getInit(), "int declaration " + getStmtLoc(var));
         return;
       }
     }
 
-    GenerateUnboundConstraint(intLiteral, "int without initializor " + getStmtLoc(var));
+    GenerateUnboundConstraint(intLiteral, "int without initializer " + getStmtLoc(var));
     log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;
   }
 }
