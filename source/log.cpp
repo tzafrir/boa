@@ -2,9 +2,6 @@
 
 using std::ostream;
 
-namespace {
-}
-
 namespace boa {
   namespace log {
     class nullstream : public ostream {
