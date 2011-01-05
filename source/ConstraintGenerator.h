@@ -31,6 +31,9 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   SourceManager &sm_;
   ConstraintProblem &cp_;
 
+  /**
+   * Generic method to get source code location of either a clang::Stmt or a boa::VarDecl.
+   */
   template <class T> string getStmtLoc(T *stmt) {
     stringstream buff;
     buff << sm_.getBufferName(stmt->getLocStart()) << ":" <<
