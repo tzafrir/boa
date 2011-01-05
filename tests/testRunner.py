@@ -3,8 +3,7 @@
 import sys
 from subprocess import *
 
-clangExecutable = '../llvm/Debug+Asserts/bin/clang'
-boaPlugin = 'build/boa.so'
+boaExecutable = './boa'
 assertsSuffix = '.asserts'
 
 separator = '---'
@@ -36,8 +35,7 @@ Runs BOA over testName.c, returns a list of tuples in the form
 (bufferName, bufferLocation) 
 """
   results = list()
-  p = Popen([clangExecutable, '-cc1', '-load', boaPlugin, '-plugin',
-       'boa', testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
+  p = Popen([boaExecutable, testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
   separatorFound = False
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
