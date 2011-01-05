@@ -131,7 +131,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
     expr->dump();
     return false;
   }
-  
+
   GenerateGenericConstraint(*varLiteral, expr->getIdx(), "array subscript " + getStmtLoc(expr), USED);
 
   delete varLiteral;
@@ -184,7 +184,7 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   cp_.AddConstraint(maxV);
   minV.addSmall(var.NameExpression(MIN, USED));
   minV.addBig(std::numeric_limits<int>::min());
-  minV.SetBlame(blame);  
+  minV.SetBlame(blame);
   cp_.AddConstraint(minV);
 }
 
@@ -243,7 +243,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
   return true;
 }
 
-void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression, 
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
                                                     const string &blame, ExpressionType type) {
   vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
   for (size_t i = 0; i < maxExprs.size(); ++i) {
