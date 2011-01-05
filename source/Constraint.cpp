@@ -9,7 +9,7 @@ namespace boa {
 
 set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
-  for (vector<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
     vars.insert(buffer->NameExpression(MIN, USED));
     vars.insert(buffer->NameExpression(MAX, USED));
     vars.insert(buffer->NameExpression(MIN, ALLOC));
@@ -35,7 +35,7 @@ vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints, buffers);
 }
 
-vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const {
+vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {
   vector<Buffer> unsafeBuffers;
   if (inputBuffers.empty()) {
     log::os() << "No buffers" << endl;
@@ -62,7 +62,7 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
     }
   }
 
-  for (vector<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
     // Set objective coeficients
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, USED)], 1.0);
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, USED)], -1.0);
@@ -81,7 +81,7 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
 
   // TODO - what if no solution can be found?
 
-  for (vector<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
     // Print result
     log::os() << buffer->NameExpression(MIN, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) << endl;
     log::os() << buffer->NameExpression(MAX, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) << endl;
@@ -100,7 +100,7 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
   return unsafeBuffers;
 }
 
-vector<Constraint> ConstraintProblem::Blame(const vector<Constraint> &input, const vector<Buffer> &buffer) const {
+vector<Constraint> ConstraintProblem::Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const {
   vector<Constraint> result(input);
   // super naive algorithm
   for (size_t i = 0; i < result.size(); ) {
@@ -122,8 +122,8 @@ map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
   vector<Buffer> unsafe = Solve();
   map<Buffer, vector<Constraint> > result;
   for (size_t i = 0; i < unsafe.size(); ++i) {
-    vector<Buffer> buf;
-    buf.push_back(unsafe[i]);
+    set<Buffer> buf;
+    buf.insert(unsafe[i]);
     result[unsafe[i]] = Blame(constraints, buf);
   }
   return result;

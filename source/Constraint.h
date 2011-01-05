@@ -195,16 +195,16 @@ class ConstraintProblem {
  private:
   const vector<Constraint> NO_CONSTRAINTS;
   vector<Constraint> constraints;
-  vector<Buffer> buffers;
+  set<Buffer> buffers;
 
   set<string> CollectVars() const;
 
-  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const vector<Buffer> &inputBuffers) const;
+  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const;
 
-  vector<Constraint> Blame(const vector<Constraint> &input, const vector<Buffer> &buffer) const;
+  vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
  public:
   void AddBuffer(const Buffer& buffer) {
-    buffers.push_back(buffer);
+    buffers.insert(buffer);
   }
 
   void AddConstraint(const Constraint& c) {
