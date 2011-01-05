@@ -8,7 +8,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "buffer.h"
-#include "constraint.h"
+#include "Constraint.h"
 #include "log.h"
 
 #include "ConstraintGenerator.h"

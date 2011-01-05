@@ -1,4 +1,4 @@
-#include "constraint.h"
+#include "Constraint.h"
 #include <iostream>
 #include <glpk.h>
 #include "log.h"

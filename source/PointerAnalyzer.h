@@ -10,6 +10,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Constraint.h"
 #include "log.h"
 #include "buffer.h"
 #include "pointer.h"
@@ -18,8 +19,6 @@
 using std::vector;
 #include <map>
 using std::map;
-
-#include "constraint.h"
 
 using namespace clang;
 

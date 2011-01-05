@@ -18,7 +18,7 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
-#include "constraint.h"
+#include "Constraint.h"
 #include "pointer.h"
 #include "log.h"
 
