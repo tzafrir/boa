@@ -12,8 +12,9 @@
 
 #include "Buffer.h"
 #include "Constraint.h"
+#include "Pointer.h"
+
 #include "log.h"
-#include "pointer.h"
 
 #include <vector>
 using std::vector;

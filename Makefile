@@ -9,7 +9,7 @@ SOURCE=source
 ${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/Constraint.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -L${LLVM_DIR}/Debug+Asserts/lib -L${LLVM_DIR}/Debug+Asserts/lib  -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/Constraint.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o -lpthread -lglpk -ldl -lm
 
-${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/varLiteral.h ${SOURCE}/pointer.h ${SOURCE}/integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/Constraint.o ${BUILD}/log.o
+${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/varLiteral.h ${SOURCE}/Pointer.h ${SOURCE}/integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/Constraint.o ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/boa.d.tmp" -MT "${BUILD}/boa.o" -MT "${BUILD}/boa.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 

@@ -19,7 +19,8 @@ using std::stringstream;
 using std::vector;
 
 #include "Constraint.h"
-#include "pointer.h"
+#include "Pointer.h"
+
 #include "log.h"
 
 using namespace clang;
