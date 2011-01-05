@@ -32,7 +32,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   ConstraintProblem &cp_;
 
   /**
-   * Generic method to get source code location of either a clang::Stmt or a boa::VarDecl.
+   * Generic method to get source code location of either a clang::Stmt or a clang::Decl.
    */
   template <class T> string getStmtLoc(T *stmt) {
     stringstream buff;
@@ -40,10 +40,10 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
             sm_.getSpellingLineNumber(stmt->getLocStart());
     return buff.str();
   }
-  
+
   void GenerateUnboundConstraint(const VarLiteral &var, const string &blame);
 
-  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression, 
+  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
                                  const string &blame, ExpressionType type=ALLOC);
 
   vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
