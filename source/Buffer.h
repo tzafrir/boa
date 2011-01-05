@@ -3,7 +3,8 @@
 
 #include <string>
 #include <sstream>
-#include "varLiteral.h"
+
+#include "VarLiteral.h"
 
 using std::string;
 using std::stringstream;
