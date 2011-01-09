@@ -1,7 +1,6 @@
 BOA - Buffer Overrun Analyzer
 =============================
 
-
 In order to compile simply run
     $ make
 
