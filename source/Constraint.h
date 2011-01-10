@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <glpk.h>
+#include <limits>
 
 #include "Buffer.h"
 
@@ -88,10 +89,28 @@ class Constraint {
     }
 
     void beDividedBy(int num) {
-      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
-        it->second = num / it->second;
+      if (num == 0) {
+        for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+          it->second = 0;
+        }
+        val_ = 0;
+      } else {
+        int extremeLimit =
+            (num > 0) ? std::numeric_limits<int>::max() : std::numeric_limits<int>::max();
+        for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+          int divisor = it->second;
+          if (divisor == 0) {
+            it->second = extremeLimit;
+          } else {
+            it->second = num / divisor;
+          }
+        }
+        if (val_ == 0) {
+          val_ = extremeLimit;
+        } else {
+          val_ = num / val_;
+        }
       }
-      val_ = num / val_;
     }
 
     /**
