@@ -9,7 +9,10 @@ using std::stringstream;
 
 namespace boa {
   enum ExpressionDir  {MIN, MAX};
-  enum ExpressionType {USED, ALLOC};
+  enum ExpressionType {USED, ALLOC, LEN};  
+
+#define Type2Str(type) ((type) == USED ? "used" : ((type) == ALLOC ? "alloc" : "len"))
+#define Dir2Str(dir) ((dir) == MIN ? "min" : "max")
 
   class VarLiteral {  
    protected:
@@ -17,16 +20,16 @@ namespace boa {
 
     VarLiteral(void* ASTNode) : ASTNode_(ASTNode) {}
 
-   public:    
+   public:       
     
     virtual string getUniqueName() const {
       stringstream ss;
-      ss << "V" << ASTNode_;
+      ss << "v@" << ASTNode_;
       return ss.str();
     }
 
     virtual string NameExpression(ExpressionDir dir, ExpressionType type) const {
-      return getUniqueName() + "!" + (type == USED ? "used" : "alloc") + "!" + (dir == MIN ? "min" : "max");
+      return getUniqueName() + "!" + Type2Str(type) + "!" + Dir2Str(dir);
     }
 
     bool operator<(const VarLiteral& other) const {

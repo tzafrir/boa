@@ -4,7 +4,12 @@
 #include "Integer.h"
 
 namespace boa {
-  typedef Integer Pointer;
+  class Pointer : public VarLiteral {
+  
+  public:
+    Pointer(void* ASTNode) : VarLiteral(ASTNode) {}
+  
+  };
 }
 
 #endif // __BOA_POINTER_H

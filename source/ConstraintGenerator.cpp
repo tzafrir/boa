@@ -175,7 +175,7 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
   }
 }
 
-void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame) {
+void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
   // FIXME - is MAX_INT enough?
   Constraint maxV, minV;
   maxV.addBig(var.NameExpression(MAX, USED));
