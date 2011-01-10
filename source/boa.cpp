@@ -58,7 +58,14 @@ class boaConsumer : public ASTConsumer {
     for (map<Pointer, vector<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
       const Pointer &ptr = pointerIt->first;
       vector<Buffer>* buffers = pointerIt->second;
-
+      
+      Constraint usedLenMax;
+      usedLenMax.addBig(ptr.NameExpression(MAX, USED));
+      usedLenMax.addSmall(ptr.NameExpression(MAX, LEN));
+      usedLenMax.SetBlame("Length constraint");        
+      constraintProblem_.AddConstraint(usedLenMax);      
+      log::os() << "Adding - " << ptr.NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, LEN) << "\n";
+      
       for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
         Constraint usedMax, usedMin, lenMax, lenMin;
 
@@ -74,22 +81,31 @@ class boaConsumer : public ASTConsumer {
         constraintProblem_.AddConstraint(usedMin);
         log::os() << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
       
-        lenMax.addBig(it->NameExpression(MAX, LEN));
-        lenMax.addSmall(ptr.NameExpression(MAX, LEN));
+        lenMax.addBig(it->NameExpression(MIN, LEN));
+        lenMax.addSmall(ptr.NameExpression(MIN, LEN));
         lenMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMax);
-        log::os() << "Adding - " << it->NameExpression(MAX, LEN) << " >= " << ptr.NameExpression(MAX, LEN) << "\n";
+        log::os() << "Adding - " << it->NameExpression(MIN, LEN) << " >= " << ptr.NameExpression(MIN, LEN) << "\n";
         
-        lenMin.addBig(ptr.NameExpression(MIN, LEN));
-        lenMin.addSmall(it->NameExpression(MIN, LEN));
+        lenMin.addBig(ptr.NameExpression(MAX, LEN));
+        lenMin.addSmall(it->NameExpression(MAX, LEN));
         lenMin.SetBlame("Pointer analyzer constraint");        
         constraintProblem_.AddConstraint(lenMin);
-        log::os() << "Adding - " << ptr.NameExpression(MIN, LEN) << " >= " << it->NameExpression(MIN, LEN) << "\n";
+        log::os() << "Adding - " << ptr.NameExpression(MAX, LEN) << " >= " << it->NameExpression(MAX, LEN) << "\n";
       }
     }
 
-    log::os() << "The buffers we have found - " << endl;
     const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
+    for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
+      Constraint constraint;
+      constraint.addBig(buf->NameExpression(MAX, USED));
+      constraint.addSmall(buf->NameExpression(MAX, LEN));
+      constraint.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(constraint);
+      log::os() << "Adding - " << buf->NameExpression(MAX, USED) << " >= " << buf->NameExpression(MAX, LEN) << "\n";
+    }
+    
+    log::os() << "The buffers we have found - " << endl;
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       log::os() << buf->getUniqueName() << endl;
       constraintProblem_.AddBuffer(*buf);

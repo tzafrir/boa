@@ -127,8 +127,8 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   VarLiteral* varLiteral = NULL;
 
   Expr* base = expr->getBase();
-  while (dyn_cast<ImplicitCastExpr>(base)) {
-    base = dyn_cast<ImplicitCastExpr>(base)->getSubExpr();
+  while (dyn_cast<CastExpr>(base)) {
+    base = dyn_cast<CastExpr>(base)->getSubExpr();
   }
 
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
