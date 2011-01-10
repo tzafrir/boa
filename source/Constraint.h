@@ -87,6 +87,13 @@ class Constraint {
       val_ /= num;        
     }
 
+    void beDividedBy(int num) {
+      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        it->second = num / it->second;
+      }
+      val_ = num / val_;
+    }
+
     /**
       Does the expression contain only a free element (no literals)?    
     */
