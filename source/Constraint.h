@@ -7,6 +7,7 @@
 #include <map>
 #include <glpk.h>
 #include <limits>
+#include <math.h>
 
 #include "Buffer.h"
 
@@ -37,15 +38,15 @@ namespace boa {
 class Constraint {
  private:
   const static int MAX_SIZE = 100;
-  int left_;
-  map<string, int> literals_;
+  double left_;
+  map<string, double> literals_;
   string blame_;
 
-  void addLiteral(int num, string var) {
+  void addLiteral(double num, string var) {
     literals_[var] += num;
   }
 
-  void addLeft(int left) {
+  void addLeft(double left) {
     left_ += left;
   }
 
@@ -53,52 +54,52 @@ class Constraint {
 
  public:
   class Expression {
-    int val_;
-    map<string, int> vars_;
+    double val_;
+    map<string, double> vars_;
    public:
     friend class Constraint;
     Expression() : val_(0) {}
     void add(const Expression& expr) {
-      for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
         add(it->first, it->second);
       }
       add(expr.val_);
     }
-    void add(const string& var, int num = 1) {vars_[var] += num;}
-    void add(int num) {val_ += num;}
+    void add(const string& var, double num = 1.0) {vars_[var] += num;}
+    void add(double num) {val_ += num;}
 
     void sub(const Expression& expr) {
-      for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
         add(it->first, -it->second);
       }
       add(-expr.val_);
     }
     
     void mul(int num) {
-      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+      for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
         it->second *= num;
       }
       val_ *= num;        
     }
 
-    void div(int num) {
-      for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+    void div(double num) {
+      for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {      
         it->second /= num;
       }
       val_ /= num;        
     }
 
-    void beDividedBy(int num) {
+    void beDividedBy(double num) {
       if (num == 0) {
-        for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+        for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
           it->second = 0;
         }
         val_ = 0;
       } else {
-        int extremeLimit =
-            (num > 0) ? std::numeric_limits<int>::max() : std::numeric_limits<int>::max();
-        for (map<string, int>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
-          int divisor = it->second;
+        double extremeLimit =
+            (num > 0) ? std::numeric_limits<double>::max() : std::numeric_limits<double>::max();
+        for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+          double divisor = it->second;
           if (divisor == 0) {
             it->second = extremeLimit;
           } else {
@@ -117,7 +118,7 @@ class Constraint {
       Does the expression contain only a free element (no literals)?    
     */
     bool IsConst() {
-      for (map<string, int>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if (it->second != 0) {
           return false;
         }
@@ -130,20 +131,21 @@ class Constraint {
     }
 
     // DEBUG
-    static string int2str(int i) {
+    static string double2str(double i) {
       std::ostringstream buffer;
       buffer << i;
       return buffer.str();
     }
+    
     string toString() {
       string s;
-      for (map<string, int>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if ((!s.empty()) && (it->second >= 0)) s += "+ ";
-        s += int2str(it->second) + "*" + it->first + " ";
+        s += double2str(it->second) + "*" + it->first + " ";
       }
       if (s.empty() || (val_ != 0)) {
         if ((!s.empty()) && (val_ >= 0)) s += "+ ";
-        s += int2str(val_);
+        s += double2str(val_);
       }
       return s;
     }
@@ -160,32 +162,32 @@ class Constraint {
   }
 
   void addBig(const Expression& expr) {
-    for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
       addBig(it->first, it->second);
     }
     addBig(expr.val_);
   }
 
-  void addBig(const string& var, int num = 1) {
+  void addBig(const string& var, double num = 1.0) {
     addLiteral(-num, var);
   }
 
-  void addBig(int num) {
+  void addBig(double num) {
     addLeft(num);
   }
 
   void addSmall(const Expression& expr) {
-    for (map<string, int>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
       addSmall(it->first, it->second);
     }
     addSmall(expr.val_);
   }
 
-  void addSmall(const string& var, int num = 1) {
+  void addSmall(const string& var, double num = 1.0) {
     addLiteral(num, var);
   }
 
-  void addSmall(int num) {
+  void addSmall(double num) {
     addLeft(-num);
   }
 
@@ -195,7 +197,7 @@ class Constraint {
   }
 
   void GetVars(set<string>& vars) const{
-    for (map<string, int>::const_iterator it = literals_.begin(); it != literals_.end(); ++it) {
+    for (map<string, double>::const_iterator it = literals_.begin(); it != literals_.end(); ++it) {
       vars.insert(it->first);
     }
   }
@@ -207,7 +209,7 @@ class Constraint {
     // TODO if size > MAX_SIZE...
 
     int count = 1;
-    for (map<string, int>::const_iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
+    for (map<string, double>::const_iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
       indices[count] = colNumbers[it->first];
       values[count] = it->second;
     }
