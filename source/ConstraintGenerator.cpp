@@ -1,8 +1,10 @@
 #include "ConstraintGenerator.h"
 #include <vector>
 #include <limits>
+#include <string>
 
 using std::vector;
+using std::string;
 
 namespace boa {
 
@@ -34,6 +36,24 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
     result.push_back(ce);
     return result;
   }
+  
+  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
+      if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
+        string funcName = funcDec->getNameInfo().getAsString();
+        if (funcName == "strlen") {
+          Expr* argument = funcCall->getArg(0);
+          while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
+            argument = cast->getSubExpr();
+          }
+          if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
+            Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
+            ce.add(p.NameExpression(max ? MAX : MIN, LEN));
+            result.push_back(ce);
+            return result;
+          }
+        }
+      }
+    }
 
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
     switch (op->getOpcode()) {
@@ -95,7 +115,7 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
         return result;
       }
       default : break;
-    }
+    }   
   }
 
   expr->dump();
@@ -175,6 +195,39 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
   }
 }
 
+void ConstraintGenerator::GenerateStringLiteralConstraints(StringLiteral *stringLiteral) {
+  Buffer buf(stringLiteral);
+  Constraint allocMax, allocMin, lenMax, lenMin;
+
+  allocMax.addBig(buf.NameExpression(MAX, ALLOC));
+  allocMax.addSmall(stringLiteral->getByteLength() + 1);
+  allocMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  cp_.AddConstraint(allocMax);
+  log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
+                stringLiteral->getByteLength() + 1 << "\n";
+
+  allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
+  allocMin.addBig(stringLiteral->getByteLength() + 1);
+  allocMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
+               stringLiteral->getByteLength() + 1 << "\n";
+  cp_.AddConstraint(allocMin);
+  
+  lenMax.addBig(buf.NameExpression(MAX, LEN));
+  lenMax.addSmall(stringLiteral->getByteLength());
+  lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  cp_.AddConstraint(lenMax);
+  log::os() << "Adding - " << buf.NameExpression(MAX, LEN) << " >= " <<
+                stringLiteral->getByteLength() << "\n";
+
+  lenMin.addSmall(buf.NameExpression(MIN, LEN));
+  lenMin.addBig(stringLiteral->getByteLength());
+  lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  log::os() << "Adding - " << buf.NameExpression(MIN, LEN) << " <= " <<
+               stringLiteral->getByteLength() << "\n";
+  cp_.AddConstraint(allocMin);
+}
+
 void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
   // FIXME - is MAX_INT enough?
   Constraint maxV, minV;
@@ -200,33 +253,38 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
       }
     }
   }
+  
+  if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
+    GenerateStringLiteralConstraints(stringLiteral);
+  }
 
   if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
     if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-      if (funcDec->getNameInfo().getAsString() == "malloc") {
+      string funcName = funcDec->getNameInfo().getAsString();
+      if (funcName == "malloc") {
         Buffer buf(funcCall);
         Expr* argument = funcCall->getArg(0);
-        while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
-          argument = implicitCast->getSubExpr();
+        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
+          argument = cast->getSubExpr();
         }
 
         GenerateGenericConstraint(buf, argument, "malloc " + getStmtLoc(S));
         return true;
-      }
+      }      
     }
   }
 
 
   if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
     if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
-      Integer intLiteral(declRef->getDecl());
-      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+      if (declRef->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+        Integer intLiteral(declRef->getDecl());
         if (op->isAssignmentOp()) {
           GenerateGenericConstraint(intLiteral, op->getRHS(), "int assignment " + getStmtLoc(S));
         }
         if (op-> isCompoundAssignmentOp()) {
           GenerateUnboundConstraint(intLiteral, "compound int assignment " + getStmtLoc(S));
-        }
+        }        
       }
     }
   }

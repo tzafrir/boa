@@ -51,6 +51,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   void GenerateVarDeclConstraints(VarDecl *var);
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
+  
+  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
 
  public:
   ConstraintGenerator(SourceManager &SM, ConstraintProblem &CP) : sm_(SM), cp_(CP) {}

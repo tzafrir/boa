@@ -60,7 +60,7 @@ class boaConsumer : public ASTConsumer {
       vector<Buffer>* buffers = pointerIt->second;
 
       for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
-        Constraint usedMax, usedMin;
+        Constraint usedMax, usedMin, lenMax, lenMin;
 
         usedMax.addBig(it->NameExpression(MAX, USED));
         usedMax.addSmall(ptr.NameExpression(MAX, USED));
@@ -73,6 +73,18 @@ class boaConsumer : public ASTConsumer {
         usedMin.SetBlame("Pointer analyzer constraint");        
         constraintProblem_.AddConstraint(usedMin);
         log::os() << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
+      
+        lenMax.addBig(it->NameExpression(MAX, LEN));
+        lenMax.addSmall(ptr.NameExpression(MAX, LEN));
+        lenMax.SetBlame("Pointer analyzer constraint");
+        constraintProblem_.AddConstraint(lenMax);
+        log::os() << "Adding - " << it->NameExpression(MAX, LEN) << " >= " << ptr.NameExpression(MAX, LEN) << "\n";
+        
+        lenMin.addBig(ptr.NameExpression(MIN, LEN));
+        lenMin.addSmall(it->NameExpression(MIN, LEN));
+        lenMin.SetBlame("Pointer analyzer constraint");        
+        constraintProblem_.AddConstraint(lenMin);
+        log::os() << "Adding - " << ptr.NameExpression(MIN, LEN) << " >= " << it->NameExpression(MIN, LEN) << "\n";
       }
     }
 
