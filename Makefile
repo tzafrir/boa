@@ -6,15 +6,15 @@ LLVM_DIR=../llvm
 BUILD=build
 SOURCE=source
 
-${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/Constraint.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o
-	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -L${LLVM_DIR}/Debug+Asserts/lib -L${LLVM_DIR}/Debug+Asserts/lib  -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/Constraint.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o -lpthread -lglpk -ldl -lm
+${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o
+	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -L${LLVM_DIR}/Debug+Asserts/lib -L${LLVM_DIR}/Debug+Asserts/lib  -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o -lpthread -lglpk -ldl -lm
 
-${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${SOURCE}/Integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/Constraint.o ${BUILD}/log.o
+${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${SOURCE}/Integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/boa.d.tmp" -MT "${BUILD}/boa.o" -MT "${BUILD}/boa.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
-${BUILD}/Constraint.o : ${SOURCE}/Constraint.cpp ${SOURCE}/Constraint.h
-	${CC} ${SOURCE}/Constraint.cpp ${CFLAGS} -c -o ${BUILD}/Constraint.o
+${BUILD}/ConstraintProblem.o: ${SOURCE}/Constraint.h ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp
+	${CC} ${SOURCE}/ConstraintProblem.cpp ${CFLAGS} -c -o ${BUILD}/ConstraintProblem.o
 
 ${BUILD}:
 	mkdir -p ${BUILD}
@@ -34,7 +34,7 @@ tests/testcases/build/%.out : tests/testcases/%.c
 	
 FORCE:
 
-${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/ConstraintGenerator.h ${BUILD}/Constraint.o ${BUILD}/log.o
+${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${SOURCE}/ConstraintGenerator.cpp ${CFLAGS} -c -o ${BUILD}/ConstraintGenerator.o
 
 ${BUILD}/log.o : ${SOURCE}/log.cpp ${SOURCE}/log.h

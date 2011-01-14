@@ -1,4 +1,5 @@
-#include "Constraint.h"
+#include "ConstraintProblem.h"
+
 #include <iostream>
 #include <glpk.h>
 #include "log.h"

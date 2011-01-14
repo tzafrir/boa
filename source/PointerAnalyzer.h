@@ -11,7 +11,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "Buffer.h"
-#include "Constraint.h"
+#include "ConstraintProblem.h"
 #include "Pointer.h"
 
 #include "log.h"

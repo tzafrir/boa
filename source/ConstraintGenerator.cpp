@@ -1,4 +1,5 @@
 #include "ConstraintGenerator.h"
+
 #include <vector>
 #include <limits>
 
