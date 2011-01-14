@@ -14,4 +14,7 @@ namespace boa {
     extern ostream& os();
   }
 }
+
+#define LOG log::os() << __FILE__ << ":" << __LINE__ << endl << "\t\t"
+
 #endif /* __BOA_LOG_H */
