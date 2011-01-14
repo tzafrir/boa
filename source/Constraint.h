@@ -55,6 +55,14 @@ class Constraint {
   class Expression {
     double val_;
     map<string, double> vars_;
+
+    // TODO(tzafrir): Create a class for all helper functions and move this method there.
+    static string DoubleToString(double i) {
+      std::ostringstream buffer;
+      buffer << i;
+      return buffer.str();
+    }
+
    public:
     friend class Constraint;
     Expression() : val_(0.0) {}
@@ -103,15 +111,6 @@ class Constraint {
     double GetConst() {
       return val_;
     }
-
-    // DEBUG
-   private:
-    static string DoubleToString(double i) {
-      std::ostringstream buffer;
-      buffer << i;
-      return buffer.str();
-    }
-   public:
 
     string toString() {
       string s;
