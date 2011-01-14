@@ -53,6 +53,19 @@ public:
     return true;
   }
 
+  bool VisitDecl(Decl* D) {
+    if (FunctionDecl* func = dyn_cast<FunctionDecl>(D)) {
+      for (unsigned i = 0; i < func->param_size(); ++i) {
+        findVarDecl(func->getParamDecl(i));
+      }
+      if (func->hasBody()) {
+        VisitStmt(func->getBody());
+      }
+    }
+    return true;
+  }
+
+
   void findVarDecl(Decl *d) {
     if (VarDecl* var = dyn_cast<VarDecl>(d)) {
       Type* varType = var->getType().getTypePtr();

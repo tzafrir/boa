@@ -213,7 +213,22 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   cp_.AddConstraint(minV);
 }
 
+
+bool ConstraintGenerator::VisitDecl(Decl* D) {
+  if (FunctionDecl* func = dyn_cast<FunctionDecl>(D)) {
+    for (unsigned i = 0; i < func->param_size(); ++i) {
+      GenerateVarDeclConstraints(func->getParamDecl(i));
+    }
+    if (func->hasBody()) {
+      VisitStmt(func->getBody());
+    }
+  }
+  return true;
+}
+
+
 bool ConstraintGenerator::VisitStmt(Stmt* S) {
+
   if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
     return GenerateArraySubscriptConstraints(expr);
   }

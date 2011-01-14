@@ -59,6 +59,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   ConstraintGenerator(SourceManager &SM, ConstraintProblem &CP) : sm_(SM), cp_(CP) {}
 
   bool VisitStmt(Stmt* S);
+
+  bool VisitDecl(Decl* D);
 };
 
 }  // namespace boa
