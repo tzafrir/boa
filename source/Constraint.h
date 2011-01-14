@@ -106,7 +106,7 @@ class Constraint {
 
     // DEBUG
    private:
-    static string DoubleToString(int i) {
+    static string DoubleToString(double i) {
       std::ostringstream buffer;
       buffer << i;
       return buffer.str();
