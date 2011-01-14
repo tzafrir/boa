@@ -66,23 +66,23 @@ class boaConsumer : public ASTConsumer {
         usedMax.addSmall(ptr.NameExpression(MAX, USED));
         usedMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMax);
-        log::os() << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
+        LOG << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
         
         usedMin.addBig(ptr.NameExpression(MIN, USED));
         usedMin.addSmall(it->NameExpression(MIN, USED));
         usedMin.SetBlame("Pointer analyzer constraint");        
         constraintProblem_.AddConstraint(usedMin);
-        log::os() << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
+        LOG << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
       }
     }
 
-    log::os() << "The buffers we have found - " << endl;
+    LOG << "The buffers we have found - " << endl;
     const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
-      log::os() << buf->getUniqueName() << endl;
+      LOG << buf->getUniqueName() << endl;
       constraintProblem_.AddBuffer(*buf);
     }
-    log::os() << "Constraint solver output - " << endl;
+    LOG << "Constraint solver output - " << endl;
     vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
     if (unsafeBuffers.empty()) {
       cerr << endl << "No overruns detected" << endl;
