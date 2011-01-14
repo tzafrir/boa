@@ -143,11 +143,11 @@ class Constraint {
     addBig(expr.val_);
   }
 
-  void addBig(const string& var, int num = 1) {
+  void addBig(const string& var, double num = 1.0) {
     addLiteral(-num, var);
   }
 
-  void addBig(int num) {
+  void addBig(double num) {
     addLeft(num);
   }
 
@@ -158,11 +158,11 @@ class Constraint {
     addSmall(expr.val_);
   }
 
-  void addSmall(const string& var, int num = 1) {
+  void addSmall(const string& var, double num = 1.0) {
     addLiteral(num, var);
   }
 
-  void addSmall(int num) {
+  void addSmall(double num) {
     addLeft(-num);
   }
 
@@ -171,7 +171,7 @@ class Constraint {
    literals_.clear();
   }
 
-  void GetVars(set<string>& vars) const{
+  void GetVars(set<string>& vars) const {
     for (map<string, double>::const_iterator it = literals_.begin(); it != literals_.end(); ++it) {
       vars.insert(it->first);
     }
