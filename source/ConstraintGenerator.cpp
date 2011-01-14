@@ -100,19 +100,10 @@ vector<Constraint::Expression>
       case BO_Div : {
         vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
         vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
-        if ((LHS.size() == 1) && (LHS[0].IsConst())) {
-          for (size_t i = 0; i < RHS.size(); ++i) {
-            RHS[i].beDividedBy(LHS[0].GetConst());
-            result.push_back(RHS[i]);
-          }
-          RHS = GenerateIntegerExpression(op->getRHS(), !max);
-          for (size_t i = 0; i < RHS.size(); ++i) {
-            RHS[i].beDividedBy(LHS[0].GetConst());
-            result.push_back(RHS[i]);
-          }
-          return result;
-        }
-        else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
+
+        // We can only handle linear constraints, so this method ignores RHS expressions that are
+        // non const.
+        if ((RHS.size() == 1) && (RHS[0].IsConst())) {
           for (size_t i = 0; i < LHS.size(); ++i) {
             LHS[i].div(RHS[0].GetConst());
             result.push_back(LHS[i]);
@@ -124,8 +115,8 @@ vector<Constraint::Expression>
           }
           return result;
         }
-        // TODO - return infinity/NaN instead of empty vector?
-        log::os() << "Division of two non-const integer expressions " << getStmtLoc(expr) << endl;
+
+        log::os() << "Non linear RHS expression " << getStmtLoc(expr) << endl;
         return result;
       }
       default : break;
