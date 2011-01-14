@@ -13,7 +13,7 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${S
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/boa.d.tmp" -MT "${BUILD}/boa.o" -MT "${BUILD}/boa.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
-${BUILD}/Constraint.o : ${SOURCE}/Constraint.cpp ${SOURCE}/Constraint.h
+${BUILD}/Constraint.o : ${SOURCE}/Constraint.cpp ${SOURCE}/Constraint.h ${BUILD}/log.o
 	${CC} ${SOURCE}/Constraint.cpp ${CFLAGS} -c -o ${BUILD}/Constraint.o
 
 ${BUILD}:
