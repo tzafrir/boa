@@ -46,6 +46,9 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
                                  const string &blame, ExpressionType type=ALLOC);
 
+  /**
+   * TODO(gai/tzafrir): Document this recursive method.
+   */
   vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
 
   void GenerateVarDeclConstraints(VarDecl *var);
