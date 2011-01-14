@@ -1,12 +1,13 @@
 #include "ConstraintGenerator.h"
+
 #include <vector>
-#include <limits>
 
 using std::vector;
 
 namespace boa {
 
-vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
+vector<Constraint::Expression>
+    ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
   vector<Constraint::Expression> result;
   Constraint::Expression ce;
 
@@ -36,6 +37,8 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
   }
 
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
+
+    // TODO(tzafrir): Factor out each case's block to a separate method.
     switch (op->getOpcode()) {
       case BO_Add : {
         vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
@@ -91,7 +94,29 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
           return result;
         }
         // TODO - return infinity/NaN instead of empty vector?
-        log::os() << "Multiplaction of two non const integer expressions " << getStmtLoc(expr) << endl;
+        LOG << "Multiplication of two non-const integer expressions " << getStmtLoc(expr) << endl;
+        return result;
+      }
+      case BO_Div : {
+        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
+
+        // We can only handle linear constraints, so this method ignores RHS expressions that are
+        // non const.
+        if ((RHS.size() == 1) && (RHS[0].IsConst())) {
+          for (size_t i = 0; i < LHS.size(); ++i) {
+            LHS[i].div(RHS[0].GetConst());
+            result.push_back(LHS[i]);
+          }
+          LHS = GenerateIntegerExpression(op->getLHS(), !max);
+          for (size_t i = 0; i < LHS.size(); ++i) {
+            LHS[i].div(RHS[0].GetConst());
+            result.push_back(LHS[i]);
+          }
+          return result;
+        }
+
+        log::os() << "Non linear RHS expression " << getStmtLoc(expr) << endl;
         return result;
       }
       default : break;
@@ -99,7 +124,7 @@ vector<Constraint::Expression> ConstraintGenerator::GenerateIntegerExpression(Ex
   }
 
   expr->dump();
-  log::os() << "Can't generate integer expression " << getStmtLoc(expr) << endl;
+  LOG << "Can't generate integer expression " << getStmtLoc(expr) << endl;
   return result;
 }
 
@@ -148,13 +173,13 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
       allocMax.addSmall(arr->getSize().getLimitedValue());
       allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
       cp_.AddConstraint(allocMax);
-      log::os() << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
+      LOG << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
                     arr->getSize().getLimitedValue() << "\n";
 
       allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
       allocMin.addBig(arr->getSize().getLimitedValue());
       allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
-      log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
+      LOG << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
                    arr->getSize().getLimitedValue() << "\n";
       cp_.AddConstraint(allocMin);
     }
@@ -171,7 +196,7 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
     }
 
     GenerateUnboundConstraint(intLiteral, "int without initializer " + getStmtLoc(var));
-    log::os() << "Integer definition without initializer on " << getStmtLoc(var) << endl;
+    LOG << "Integer definition without initializer on " << getStmtLoc(var) << endl;
   }
 }
 
@@ -252,7 +277,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr 
     allocMax.addSmall(maxExprs[i]);
     allocMax.SetBlame(blame);
     cp_.AddConstraint(allocMax);
-    log::os() << "Adding - " << var.NameExpression(MAX, type) << " >= "
+    LOG << "Adding - " << var.NameExpression(MAX, type) << " >= "
               << maxExprs[i].toString() << endl;
   }
 
@@ -263,7 +288,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr 
     allocMin.addBig(minExprs[i]);
     allocMin.SetBlame(blame);
     cp_.AddConstraint(allocMin);
-    log::os() << "Adding - " << var.NameExpression(MIN, type) << " <= "
+    LOG << "Adding - " << var.NameExpression(MIN, type) << " <= "
               << minExprs[i].toString() << endl;
   }
 }
