@@ -1,8 +1,11 @@
 #include "ConstraintGenerator.h"
 
 #include <vector>
+#include <limits>
+#include <string>
 
 using std::vector;
+using std::string;
 
 namespace boa {
 
@@ -31,10 +34,28 @@ vector<Constraint::Expression>
 
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr)) {
     Integer intLiteral(declRef->getDecl());
-    ce.add(intLiteral.NameExpression(max ? MAX : MIN));
+    ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
     result.push_back(ce);
     return result;
   }
+
+  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
+      if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
+        string funcName = funcDec->getNameInfo().getAsString();
+        if (funcName == "strlen") {
+          Expr* argument = funcCall->getArg(0);
+          while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
+            argument = cast->getSubExpr();
+          }
+          if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
+            Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
+            ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN));
+            result.push_back(ce);
+            return result;
+          }
+        }
+      }
+    }
 
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
 
@@ -80,8 +101,7 @@ vector<Constraint::Expression>
             result.push_back(RHS[i]);
           }
           return result;
-        }
-        else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
+        } else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
           for (size_t i = 0; i < LHS.size(); ++i) {
             LHS[i].mul(RHS[0].GetConst());
             result.push_back(LHS[i]);
@@ -132,8 +152,8 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
   VarLiteral* varLiteral = NULL;
 
   Expr* base = expr->getBase();
-  while (dyn_cast<ImplicitCastExpr>(base)) {
-    base = dyn_cast<ImplicitCastExpr>(base)->getSubExpr();
+  while (dyn_cast<CastExpr>(base)) {
+    base = dyn_cast<CastExpr>(base)->getSubExpr();
   }
 
   if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
@@ -141,14 +161,13 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
       if (arr->getElementType()->isAnyCharacterType()) {
         varLiteral = new Buffer(declRef->getDecl());
       }
-    }
-    else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
+    } else if (PointerType* pType =
+        dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
       if (pType->getPointeeType()->isAnyCharacterType()) {
         varLiteral = new Pointer(declRef->getDecl());
       }
     }
-  }
-  else {
+  } else {
     // TODO: Any other cases?
   }
 
@@ -157,7 +176,8 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
     return false;
   }
 
-  GenerateGenericConstraint(*varLiteral, expr->getIdx(), "array subscript " + getStmtLoc(expr), USED);
+  GenerateGenericConstraint(*varLiteral, expr->getIdx(),
+      "array subscript " + getStmtLoc(expr), VarLiteral::USED);
 
   delete varLiteral;
   return true;
@@ -169,17 +189,17 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
       Buffer buf(var);
       Constraint allocMax, allocMin;
 
-      allocMax.addBig(buf.NameExpression(MAX, ALLOC));
+      allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
       allocMax.addSmall(arr->getSize().getLimitedValue());
       allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
       cp_.AddConstraint(allocMax);
-      LOG << "Adding - " << buf.NameExpression(MAX, ALLOC) << " >= " <<
+      LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
                     arr->getSize().getLimitedValue() << "\n";
 
-      allocMin.addSmall(buf.NameExpression(MIN, ALLOC));
+      allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
       allocMin.addBig(arr->getSize().getLimitedValue());
       allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
-      LOG << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
+      LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
                    arr->getSize().getLimitedValue() << "\n";
       cp_.AddConstraint(allocMin);
     }
@@ -200,14 +220,47 @@ void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
   }
 }
 
-void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame) {
-  // FIXME - is MAX_INT enough?
+void ConstraintGenerator::GenerateStringLiteralConstraints(StringLiteral *stringLiteral) {
+  Buffer buf(stringLiteral);
+  Constraint allocMax, allocMin, lenMax, lenMin;
+
+  allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
+  allocMax.addSmall(stringLiteral->getByteLength() + 1);
+  allocMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  cp_.AddConstraint(allocMax);
+  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
+                stringLiteral->getByteLength() + 1 << "\n";
+
+  allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
+  allocMin.addBig(stringLiteral->getByteLength() + 1);
+  allocMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
+               stringLiteral->getByteLength() + 1 << "\n";
+  cp_.AddConstraint(allocMin);
+
+  lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+  lenMax.addSmall(stringLiteral->getByteLength());
+  lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  cp_.AddConstraint(lenMax);
+  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << " >= " <<
+                stringLiteral->getByteLength() << "\n";
+
+  lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+  lenMin.addBig(stringLiteral->getByteLength());
+  lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN) << " <= " <<
+               stringLiteral->getByteLength() << "\n";
+  cp_.AddConstraint(allocMin);
+}
+
+void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
+  // FIXME - is VarLiteral::MAX_INT enough?
   Constraint maxV, minV;
-  maxV.addBig(var.NameExpression(MAX, USED));
+  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::USED));
   maxV.addSmall(std::numeric_limits<int>::max());
   maxV.SetBlame(blame);
   cp_.AddConstraint(maxV);
-  minV.addSmall(var.NameExpression(MIN, USED));
+  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::USED));
   minV.addBig(std::numeric_limits<int>::min());
   minV.SetBlame(blame);
   cp_.AddConstraint(minV);
@@ -226,13 +279,18 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
     }
   }
 
+  if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
+    GenerateStringLiteralConstraints(stringLiteral);
+  }
+
   if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
     if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-      if (funcDec->getNameInfo().getAsString() == "malloc") {
+      string funcName = funcDec->getNameInfo().getAsString();
+      if (funcName == "malloc") {
         Buffer buf(funcCall);
         Expr* argument = funcCall->getArg(0);
-        while (ImplicitCastExpr *implicitCast = dyn_cast<ImplicitCastExpr>(argument)) {
-          argument = implicitCast->getSubExpr();
+        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
+          argument = cast->getSubExpr();
         }
 
         GenerateGenericConstraint(buf, argument, "malloc " + getStmtLoc(S));
@@ -244,8 +302,8 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
   if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
     if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
-      Integer intLiteral(declRef->getDecl());
-      if (op->getLHS()->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+      if (declRef->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
+        Integer intLiteral(declRef->getDecl());
         if (op->isAssignmentOp()) {
           GenerateGenericConstraint(intLiteral, op->getRHS(), "int assignment " + getStmtLoc(S));
         }
@@ -269,26 +327,27 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 }
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-                                                    const string &blame, ExpressionType type) {
+                                                    const string &blame,
+                                                    VarLiteral::ExpressionType type) {
   vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
   for (size_t i = 0; i < maxExprs.size(); ++i) {
     Constraint allocMax;
-    allocMax.addBig(var.NameExpression(MAX, type));
+    allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
     allocMax.addSmall(maxExprs[i]);
     allocMax.SetBlame(blame);
     cp_.AddConstraint(allocMax);
-    LOG << "Adding - " << var.NameExpression(MAX, type) << " >= "
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX, type) << " >= "
               << maxExprs[i].toString() << endl;
   }
 
   vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
   for (size_t i = 0; i < minExprs.size(); ++i) {
     Constraint allocMin;
-    allocMin.addSmall(var.NameExpression(MIN, type));
+    allocMin.addSmall(var.NameExpression(VarLiteral::MIN, type));
     allocMin.addBig(minExprs[i]);
     allocMin.SetBlame(blame);
     cp_.AddConstraint(allocMin);
-    LOG << "Adding - " << var.NameExpression(MIN, type) << " <= "
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
               << minExprs[i].toString() << endl;
   }
 }

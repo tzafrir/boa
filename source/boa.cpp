@@ -38,9 +38,9 @@ class boaConsumer : public ASTConsumer {
   ConstraintProblem constraintProblem_;
   ConstraintGenerator constraintGenerator_;
   bool blameOverruns_;
-  
+
  public:
-  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM), 
+  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM),
                                                        constraintGenerator_(SM, constraintProblem_),
                                                        blameOverruns_(blameOverruns) {}
 
@@ -55,29 +55,65 @@ class boaConsumer : public ASTConsumer {
 
   virtual ~boaConsumer() {
     const map<Pointer, vector<Buffer>* >& mapping = pointerAnalyzer_.getMapping();
-    for (map<Pointer, vector<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
+    for (map<Pointer, vector<Buffer>* >::const_iterator pointerIt = mapping.begin();
+         pointerIt != mapping.end();
+         ++pointerIt) {
       const Pointer &ptr = pointerIt->first;
       vector<Buffer>* buffers = pointerIt->second;
 
-      for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
-        Constraint usedMax, usedMin;
+      Constraint usedLenMax;
+      usedLenMax.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+      usedLenMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+      usedLenMax.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(usedLenMax);
+      LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+          ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
 
-        usedMax.addBig(it->NameExpression(MAX, USED));
-        usedMax.addSmall(ptr.NameExpression(MAX, USED));
+      for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {
+        Constraint usedMax, usedMin, lenMax, lenMin;
+
+        usedMax.addBig(it->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+        usedMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
         usedMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMax);
-        LOG << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
-        
-        usedMin.addBig(ptr.NameExpression(MIN, USED));
-        usedMin.addSmall(it->NameExpression(MIN, USED));
-        usedMin.SetBlame("Pointer analyzer constraint");        
+        LOG << "Adding - " << it->NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+            ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED) << "\n";
+
+        usedMin.addBig(ptr.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+        usedMin.addSmall(it->NameExpression(VarLiteral::MIN, VarLiteral::USED));
+        usedMin.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMin);
-        LOG << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
+        LOG << "Adding - " << ptr.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " >= " <<
+            it->NameExpression(VarLiteral::MIN, VarLiteral::USED) << "\n";
+
+        lenMax.addBig(it->NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+        lenMax.addSmall(ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+        lenMax.SetBlame("Pointer analyzer constraint");
+        constraintProblem_.AddConstraint(lenMax);
+        LOG << "Adding - " << it->NameExpression(VarLiteral::MIN, VarLiteral::LEN) << " >= " <<
+            ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN) << "\n";
+
+        lenMin.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+        lenMin.addSmall(it->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+        lenMin.SetBlame("Pointer analyzer constraint");
+        constraintProblem_.AddConstraint(lenMin);
+        LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << " >= " <<
+            it->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
       }
     }
 
-    LOG << "The buffers we have found - " << endl;
     const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
+    for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
+      Constraint constraint;
+      constraint.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+      constraint.addSmall(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+      constraint.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(constraint);
+      LOG << "Adding - " << buf->NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
+    }
+
+    LOG << "The buffers we have found - " << endl;
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       LOG << buf->getUniqueName() << endl;
       constraintProblem_.AddBuffer(*buf);
@@ -88,20 +124,24 @@ class boaConsumer : public ASTConsumer {
       cerr << endl << "No overruns detected" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
-    }
-    else {
+    } else {
       cerr << endl << "Possible buffer overruns on - " << endl;
       if (blameOverruns_) {
         map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
-        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin(); it != blames.end(); ++it) {
-          cerr << endl << it->first.getReadableName() << " " << it->first.getSourceLocation() << endl;
+        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin();
+             it != blames.end();
+             ++it) {
+          cerr << endl << it->first.getReadableName() << " " <<
+              it->first.getSourceLocation() << endl;
           for (size_t i = 0; i < it->second.size(); ++i) {
             cerr << "  - " << it->second[i].Blame() << endl;
           }
         }
       }
       cerr << SEPARATOR << endl;
-      for (vector<Buffer>::iterator buff = unsafeBuffers.begin(); buff != unsafeBuffers.end(); ++buff) {
+      for (vector<Buffer>::iterator buff = unsafeBuffers.begin();
+           buff != unsafeBuffers.end();
+           ++buff) {
         cerr << buff->getReadableName() << " " << buff->getSourceLocation() << endl;
       }
       cerr << SEPARATOR << endl;
@@ -112,7 +152,7 @@ class boaConsumer : public ASTConsumer {
 class boaPlugin : public PluginASTAction {
  protected:
   bool blameOverruns_;
-  
+
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
     return new boaConsumer(CI.getSourceManager(), blameOverruns_);
   }
@@ -122,8 +162,7 @@ class boaPlugin : public PluginASTAction {
     for (unsigned i = 0; i < args.size(); ++i) {
       if (args[i] == "log") {
         log::set(std::cout);
-      }
-      else if (args[i] == "blame") {
+      } else if (args[i] == "blame") {
         blameOverruns_ = true;
       }
     }

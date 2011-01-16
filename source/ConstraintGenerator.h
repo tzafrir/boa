@@ -41,10 +41,11 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
     return buff.str();
   }
 
-  void GenerateUnboundConstraint(const VarLiteral &var, const string &blame);
+  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
   void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-                                 const string &blame, ExpressionType type=ALLOC);
+                                 const string &blame,
+                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
@@ -54,6 +55,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   void GenerateVarDeclConstraints(VarDecl *var);
 
   bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
+
+  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
 
  public:
   ConstraintGenerator(SourceManager &SM, ConstraintProblem &CP) : sm_(SM), cp_(CP) {}

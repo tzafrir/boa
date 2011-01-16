@@ -66,7 +66,9 @@ class Constraint {
     friend class Constraint;
     Expression() : val_(0.0) {}
     void add(const Expression& expr) {
-      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin();
+           it != expr.vars_.end();
+           ++it) {
         add(it->first, it->second);
       }
       add(expr.val_);
@@ -75,28 +77,30 @@ class Constraint {
     void add(double num) {val_ += num;}
 
     void sub(const Expression& expr) {
-      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin();
+           it != expr.vars_.end();
+           ++it) {
         add(it->first, -it->second);
       }
       add(-expr.val_);
     }
-    
+
     void mul(double num) {
       for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
         it->second *= num;
       }
-      val_ *= num;        
+      val_ *= num;
     }
 
     void div(double num) {
       for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
         it->second /= num;
       }
-      val_ /= num;        
+      val_ /= num;
     }
 
     /**
-      Does the expression contain only a free element (no literals)?    
+      Does the expression contain only a free element (no literals)?
     */
     bool IsConst() {
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
@@ -106,7 +110,7 @@ class Constraint {
       }
       return true;
     }
-    
+
     double GetConst() {
       return val_;
     }
@@ -126,17 +130,19 @@ class Constraint {
   };
 
   Constraint() : left_(0) {}
-  
+
   void SetBlame(const string &blame) {
     blame_ = blame;
   }
-  
+
   string Blame() {
     return blame_;
   }
 
   void addBig(const Expression& expr) {
-    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin();
+         it != expr.vars_.end();
+         ++it) {
       addBig(it->first, it->second);
     }
     addBig(expr.val_);
@@ -151,7 +157,9 @@ class Constraint {
   }
 
   void addSmall(const Expression& expr) {
-    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin();
+         it != expr.vars_.end();
+         ++it) {
       addSmall(it->first, it->second);
     }
     addSmall(expr.val_);
@@ -183,7 +191,9 @@ class Constraint {
     // TODO if size > MAX_SIZE...
 
     int count = 1;
-    for (map<string, double>::const_iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
+    for (map<string, double>::const_iterator it = literals_.begin();
+         it != literals_.end();
+         ++it, ++count) {
       indices[count] = colNumbers[it->first];
       values[count] = it->second;
     }
