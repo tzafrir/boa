@@ -124,8 +124,7 @@ class boaConsumer : public ASTConsumer {
       cerr << endl << "No overruns detected" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
-    }
-    else {
+    } else {
       cerr << endl << "Possible buffer overruns on - " << endl;
       if (blameOverruns_) {
         map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
@@ -163,8 +162,7 @@ class boaPlugin : public PluginASTAction {
     for (unsigned i = 0; i < args.size(); ++i) {
       if (args[i] == "log") {
         log::set(std::cout);
-      }
-      else if (args[i] == "blame") {
+      } else if (args[i] == "blame") {
         blameOverruns_ = true;
       }
     }

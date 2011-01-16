@@ -101,8 +101,7 @@ vector<Constraint::Expression>
             result.push_back(RHS[i]);
           }
           return result;
-        }
-        else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
+        } else if ((RHS.size() == 1) && (RHS[0].IsConst())) {
           for (size_t i = 0; i < LHS.size(); ++i) {
             LHS[i].mul(RHS[0].GetConst());
             result.push_back(LHS[i]);
@@ -168,8 +167,7 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
         varLiteral = new Pointer(declRef->getDecl());
       }
     }
-  }
-  else {
+  } else {
     // TODO: Any other cases?
   }
 

@@ -40,8 +40,7 @@ public:
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
         findVarDecl(*i);
       }
-    }
-    else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
+    } else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
       if (FunctionDecl* funcDec = funcCall->getDirectCallee())
       {
          if (funcDec->getNameInfo().getAsString() == "malloc")
@@ -49,8 +48,7 @@ public:
             addMallocToSet(funcCall,funcDec);
          }
       }
-    }
-    else if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
+    } else if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
       addConstStringToSet(stringLiteral);
     }
     return true;
@@ -65,8 +63,7 @@ public:
         if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
           addBufferToSet(var);
         }
-      }
-      else if (PointerType* pType = dyn_cast<PointerType>(varType)) {
+      } else if (PointerType* pType = dyn_cast<PointerType>(varType)) {
         if (pType->getPointeeType()->isAnyCharacterType()) {
            addPointerToSet(var);
         }
