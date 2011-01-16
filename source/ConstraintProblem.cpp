@@ -4,7 +4,6 @@
 #include <glpk.h>
 #include "log.h"
 
-//#define TEST_LEN
 using std::endl;
 
 namespace boa {
