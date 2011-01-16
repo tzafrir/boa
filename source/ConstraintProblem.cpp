@@ -15,8 +15,6 @@ set<string> ConstraintProblem::CollectVars() const {
     vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED));
     vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
     vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
-    vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::LEN));
-    vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
   }
 
   for (vector<Constraint>::const_iterator constraint = constraints.begin();
@@ -103,10 +101,10 @@ vector<Buffer> ConstraintProblem::Solve(
         "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
     LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) <<
         "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
-    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::LEN) <<
+/*    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::LEN) <<
         "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::LEN)]) << endl;
     LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::LEN) <<
-        "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::LEN)]) << endl;
+        "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::LEN)]) << endl; */
 
     LOG << endl;
     if ((glp_get_col_prim(lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=

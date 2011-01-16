@@ -63,14 +63,14 @@ class boaConsumer : public ASTConsumer {
 
       Constraint usedLenMax;
       usedLenMax.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
-      usedLenMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+      usedLenMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
       usedLenMax.SetBlame("Length constraint");
       constraintProblem_.AddConstraint(usedLenMax);
       LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
-          ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
+          ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << "\n";
 
       for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {
-        Constraint usedMax, usedMin, lenMax, lenMin;
+        Constraint usedMax, usedMin, lenMax;
 
         usedMax.addBig(it->NameExpression(VarLiteral::MAX, VarLiteral::USED));
         usedMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
@@ -86,31 +86,38 @@ class boaConsumer : public ASTConsumer {
         LOG << "Adding - " << ptr.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " >= " <<
             it->NameExpression(VarLiteral::MIN, VarLiteral::USED) << "\n";
 
-        lenMax.addBig(it->NameExpression(VarLiteral::MIN, VarLiteral::LEN));
-        lenMax.addSmall(ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+        lenMax.addBig(it->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+        lenMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
         lenMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMax);
-        LOG << "Adding - " << it->NameExpression(VarLiteral::MIN, VarLiteral::LEN) << " >= " <<
-            ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN) << "\n";
-
-        lenMin.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
-        lenMin.addSmall(it->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
-        lenMin.SetBlame("Pointer analyzer constraint");
-        constraintProblem_.AddConstraint(lenMin);
-        LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << " >= " <<
-            it->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
+        LOG << "Adding - " << it->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
+            ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << "\n";
       }
     }
 
     const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
-      Constraint constraint;
-      constraint.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::USED));
-      constraint.addSmall(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
-      constraint.SetBlame("Length constraint");
-      constraintProblem_.AddConstraint(constraint);
+      Constraint UsedMin, UsedMax, LenLen;
+      UsedMax.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+      UsedMax.addSmall(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+      UsedMax.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(UsedMax);
       LOG << "Adding - " << buf->NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
-          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << "\n";
+
+      UsedMin.addSmall(buf->NameExpression(VarLiteral::MIN, VarLiteral::USED));
+      UsedMin.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+      UsedMin.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(UsedMin);
+      LOG << "Adding - " << buf->NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= " <<
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << "\n";
+
+      LenLen.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+      LenLen.addSmall(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
+      LenLen.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(LenLen);
+      LOG << "Adding - " << buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << "\n";          
     }
 
     LOG << "The buffers we have found - " << endl;

@@ -49,7 +49,7 @@ vector<Constraint::Expression>
           }
           if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
             Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
-            ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN));
+            ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN_READ));
             result.push_back(ce);
             return result;
           }
@@ -136,7 +136,7 @@ vector<Constraint::Expression>
           return result;
         }
 
-        log::os() << "Non linear RHS expression " << getStmtLoc(expr) << endl;
+        LOG << "Non linear RHS expression " << getStmtLoc(expr) << endl;
         return result;
       }
       default : break;
@@ -228,27 +228,27 @@ void ConstraintGenerator::GenerateStringLiteralConstraints(StringLiteral *string
   allocMax.addSmall(stringLiteral->getByteLength() + 1);
   allocMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
   cp_.AddConstraint(allocMax);
-  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
                 stringLiteral->getByteLength() + 1 << "\n";
 
   allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
   allocMin.addBig(stringLiteral->getByteLength() + 1);
   allocMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
                stringLiteral->getByteLength() + 1 << "\n";
   cp_.AddConstraint(allocMin);
 
-  lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+  lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
   lenMax.addSmall(stringLiteral->getByteLength());
   lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
   cp_.AddConstraint(lenMax);
-  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << " >= " <<
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
                 stringLiteral->getByteLength() << "\n";
 
-  lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+  lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
   lenMin.addBig(stringLiteral->getByteLength());
   lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-  log::os() << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN) << " <= " <<
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " <= " <<
                stringLiteral->getByteLength() << "\n";
   cp_.AddConstraint(allocMin);
 }

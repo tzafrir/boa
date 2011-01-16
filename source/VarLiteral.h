@@ -15,7 +15,7 @@ namespace boa {
 
     VarLiteral(void* ASTNode) : ASTNode_(ASTNode) {}
     enum ExpressionDir  {MIN, MAX};
-    enum ExpressionType {USED, ALLOC, LEN};
+    enum ExpressionType {USED, ALLOC, LEN_READ, LEN_WRITE};
 
     static inline string DirToString(ExpressionDir dir) {
       switch (dir) {
@@ -34,8 +34,10 @@ namespace boa {
           return "used";
         case ALLOC:
           return "alloc";
-        case LEN:
-          return "len";
+        case LEN_READ:
+          return "len-read";
+        case LEN_WRITE:
+          return "len-write";
         default:
           return "";
       }
