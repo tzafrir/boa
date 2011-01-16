@@ -162,8 +162,8 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
       if (arr->getElementType()->isAnyCharacterType()) {
         varLiteral = new Buffer(declRef->getDecl());
       }
-    }
-    else if (PointerType* pType = dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
+    } else if (PointerType* pType =
+        dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
       if (pType->getPointeeType()->isAnyCharacterType()) {
         varLiteral = new Pointer(declRef->getDecl());
       }
@@ -178,7 +178,8 @@ bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* 
     return false;
   }
 
-  GenerateGenericConstraint(*varLiteral, expr->getIdx(), "array subscript " + getStmtLoc(expr), USED);
+  GenerateGenericConstraint(*varLiteral, expr->getIdx(),
+      "array subscript " + getStmtLoc(expr), USED);
 
   delete varLiteral;
   return true;

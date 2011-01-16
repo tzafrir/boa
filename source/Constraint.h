@@ -66,7 +66,9 @@ class Constraint {
     friend class Constraint;
     Expression() : val_(0.0) {}
     void add(const Expression& expr) {
-      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin();
+           it != expr.vars_.end();
+           ++it) {
         add(it->first, it->second);
       }
       add(expr.val_);
@@ -75,7 +77,9 @@ class Constraint {
     void add(double num) {val_ += num;}
 
     void sub(const Expression& expr) {
-      for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+      for (map<string, double>::const_iterator it = expr.vars_.begin();
+           it != expr.vars_.end();
+           ++it) {
         add(it->first, -it->second);
       }
       add(-expr.val_);
@@ -136,7 +140,9 @@ class Constraint {
   }
 
   void addBig(const Expression& expr) {
-    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin();
+         it != expr.vars_.end();
+         ++it) {
       addBig(it->first, it->second);
     }
     addBig(expr.val_);
@@ -151,7 +157,9 @@ class Constraint {
   }
 
   void addSmall(const Expression& expr) {
-    for (map<string, double>::const_iterator it = expr.vars_.begin(); it != expr.vars_.end(); ++it) {
+    for (map<string, double>::const_iterator it = expr.vars_.begin();
+         it != expr.vars_.end();
+         ++it) {
       addSmall(it->first, it->second);
     }
     addSmall(expr.val_);
@@ -183,7 +191,9 @@ class Constraint {
     // TODO if size > MAX_SIZE...
 
     int count = 1;
-    for (map<string, double>::const_iterator it = literals_.begin(); it != literals_.end(); ++it, ++count) {
+    for (map<string, double>::const_iterator it = literals_.begin();
+         it != literals_.end();
+         ++it, ++count) {
       indices[count] = colNumbers[it->first];
       values[count] = it->second;
     }

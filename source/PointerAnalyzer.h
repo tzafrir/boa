@@ -92,7 +92,8 @@ public:
     Pointer p((void*)var);
     Pointers_.push_back(p);
     Pointer2Buffers_[p] = &Buffers_;
-    LOG << "Adding pointer - " << var->getNameAsString() << " at line " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
+    LOG << "Adding pointer - " << var->getNameAsString() << " at line " <<
+        sm_.getSpellingLineNumber(var->getLocation()) << endl;
   }
 
   void addConstStringToSet(StringLiteral* stringLiteral) {
