@@ -20,7 +20,6 @@ using std::vector;
 
 #include "ConstraintProblem.h"
 #include "Pointer.h"
-
 #include "log.h"
 
 using namespace clang;
@@ -60,7 +59,7 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
 
   bool VisitStmt(Stmt* S);
 
-  bool VisitDecl(Decl* D);
+  bool VisitStmt(Stmt* S, FunctionDecl* context);
 };
 
 }  // namespace boa

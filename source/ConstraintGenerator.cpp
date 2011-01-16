@@ -15,6 +15,16 @@ vector<Constraint::Expression>
     expr = dyn_cast<ImplicitCastExpr>(expr)->getSubExpr();
   }
 
+  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
+    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
+      Integer intLiteral(funcDec);
+      LOG << "CALL!" << endl;
+      ce.add(intLiteral.NameExpression(max ? MAX : MIN));
+      result.push_back(ce);
+      return result;
+    }
+  }
+
   if (SizeOfAlignOfExpr *sizeOfExpr = dyn_cast<SizeOfAlignOfExpr>(expr)) {
     if (sizeOfExpr->isSizeOf()) {
       ce.add(1); // sizeof(ANYTHING) == 1
@@ -213,24 +223,23 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   cp_.AddConstraint(minV);
 }
 
-
-bool ConstraintGenerator::VisitDecl(Decl* D) {
-  if (FunctionDecl* func = dyn_cast<FunctionDecl>(D)) {
-    for (unsigned i = 0; i < func->param_size(); ++i) {
-      GenerateVarDeclConstraints(func->getParamDecl(i));
-    }
-    if (func->hasBody()) {
-      VisitStmt(func->getBody());
-    }
-  }
-  return true;
+bool ConstraintGenerator::VisitStmt(Stmt* S) {
+  return VisitStmt(S, NULL);
 }
 
-
-bool ConstraintGenerator::VisitStmt(Stmt* S) {
-
+bool ConstraintGenerator::VisitStmt(Stmt* S, FunctionDecl* context) {
   if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
     return GenerateArraySubscriptConstraints(expr);
+  }
+
+  if (ReturnStmt *ret = dyn_cast<ReturnStmt>(S)) {
+    LOG << "RETRUN!! 1" << endl;
+
+    if (/*(ret->getRetValue()->getType()->isIntegerType()) &&*/ (context != NULL)) {
+      Integer intLiteral(context);
+      LOG << "RETRUN!! 2" << endl;
+      GenerateGenericConstraint(intLiteral, ret->getRetValue(), "Integer return " + getStmtLoc(S));
+    }
   }
 
   if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
@@ -252,6 +261,19 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
         GenerateGenericConstraint(buf, argument, "malloc " + getStmtLoc(S));
         return true;
+      }
+
+      // General function call
+      if (funcDec->hasBody()) {
+        LOG << "GO!" << endl;
+        VisitStmt(funcDec->getBody(), funcDec);
+      }
+      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
+        VarDecl *var = funcDec->getParamDecl(i);
+        if (var->getType()->isIntegerType()) {
+          Integer intLiteral(var);
+          GenerateGenericConstraint(intLiteral, funcCall->getArg(i), "int parameter " + getStmtLoc(var));
+        }
       }
     }
   }
@@ -277,6 +299,12 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
         Integer intLiteral(declRef->getDecl());
         GenerateUnboundConstraint(intLiteral, "int inc/dec " + getStmtLoc(S));
       }
+    }
+  }
+
+  if (CompoundStmt *comp = dyn_cast<CompoundStmt>(S)) {
+    for (Stmt** it = comp->body_begin(); it != comp->body_end(); ++it) {
+      VisitStmt(*it, context);
     }
   }
 
