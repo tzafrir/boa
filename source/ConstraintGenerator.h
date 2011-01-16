@@ -44,7 +44,8 @@ class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
   void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
   void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-                                 const string &blame, ExpressionType type=ALLOC);
+                                 const string &blame,
+                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.

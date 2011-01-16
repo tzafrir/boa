@@ -62,55 +62,55 @@ class boaConsumer : public ASTConsumer {
       vector<Buffer>* buffers = pointerIt->second;
 
       Constraint usedLenMax;
-      usedLenMax.addBig(ptr.NameExpression(MAX, USED));
-      usedLenMax.addSmall(ptr.NameExpression(MAX, LEN));
+      usedLenMax.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+      usedLenMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
       usedLenMax.SetBlame("Length constraint");
       constraintProblem_.AddConstraint(usedLenMax);
-      LOG << "Adding - " << ptr.NameExpression(MAX, USED) << " >= " <<
-          ptr.NameExpression(MAX, LEN) << "\n";
+      LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+          ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
 
       for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {
         Constraint usedMax, usedMin, lenMax, lenMin;
 
-        usedMax.addBig(it->NameExpression(MAX, USED));
-        usedMax.addSmall(ptr.NameExpression(MAX, USED));
+        usedMax.addBig(it->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+        usedMax.addSmall(ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED));
         usedMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMax);
-        LOG << "Adding - " << it->NameExpression(MAX, USED) << " >= " <<
-            ptr.NameExpression(MAX, USED) << "\n";
+        LOG << "Adding - " << it->NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+            ptr.NameExpression(VarLiteral::MAX, VarLiteral::USED) << "\n";
 
-        usedMin.addBig(ptr.NameExpression(MIN, USED));
-        usedMin.addSmall(it->NameExpression(MIN, USED));
+        usedMin.addBig(ptr.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+        usedMin.addSmall(it->NameExpression(VarLiteral::MIN, VarLiteral::USED));
         usedMin.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMin);
-        LOG << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " <<
-            it->NameExpression(MIN, USED) << "\n";
+        LOG << "Adding - " << ptr.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " >= " <<
+            it->NameExpression(VarLiteral::MIN, VarLiteral::USED) << "\n";
 
-        lenMax.addBig(it->NameExpression(MIN, LEN));
-        lenMax.addSmall(ptr.NameExpression(MIN, LEN));
+        lenMax.addBig(it->NameExpression(VarLiteral::MIN, VarLiteral::LEN));
+        lenMax.addSmall(ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN));
         lenMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMax);
-        LOG << "Adding - " << it->NameExpression(MIN, LEN) << " >= " <<
-            ptr.NameExpression(MIN, LEN) << "\n";
+        LOG << "Adding - " << it->NameExpression(VarLiteral::MIN, VarLiteral::LEN) << " >= " <<
+            ptr.NameExpression(VarLiteral::MIN, VarLiteral::LEN) << "\n";
 
-        lenMin.addBig(ptr.NameExpression(MAX, LEN));
-        lenMin.addSmall(it->NameExpression(MAX, LEN));
+        lenMin.addBig(ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN));
+        lenMin.addSmall(it->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
         lenMin.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMin);
-        LOG << "Adding - " << ptr.NameExpression(MAX, LEN) << " >= " <<
-            it->NameExpression(MAX, LEN) << "\n";
+        LOG << "Adding - " << ptr.NameExpression(VarLiteral::MAX, VarLiteral::LEN) << " >= " <<
+            it->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
       }
     }
 
     const vector<Buffer> &Buffers = pointerAnalyzer_.getBuffers();
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       Constraint constraint;
-      constraint.addBig(buf->NameExpression(MAX, USED));
-      constraint.addSmall(buf->NameExpression(MAX, LEN));
+      constraint.addBig(buf->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+      constraint.addSmall(buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN));
       constraint.SetBlame("Length constraint");
       constraintProblem_.AddConstraint(constraint);
-      LOG << "Adding - " << buf->NameExpression(MAX, USED) << " >= " <<
-          buf->NameExpression(MAX, LEN) << "\n";
+      LOG << "Adding - " << buf->NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN) << "\n";
     }
 
     LOG << "The buffers we have found - " << endl;
