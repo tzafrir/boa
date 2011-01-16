@@ -17,7 +17,19 @@ namespace boa {
     enum ExpressionDir  {MIN, MAX};
     enum ExpressionType {USED, ALLOC, LEN};
 
-#define Type2Str(type) ((type) == USED ? "used" : ((type) == ALLOC ? "alloc" : "len"))
+    static inline string TypeToString(ExpressionType type) {
+      switch (type) {
+        case USED:
+          return "used";
+        case ALLOC:
+          return "alloc";
+        case LEN:
+          return "len";
+        default:
+          return "";
+      }
+    }
+
 #define Dir2Str(dir) ((dir) == MIN ? "min" : "max")
 
    public:
@@ -29,7 +41,7 @@ namespace boa {
     }
 
     virtual string NameExpression(ExpressionDir dir, ExpressionType type) const {
-      return getUniqueName() + "!" + Type2Str(type) + "!" + Dir2Str(dir);
+      return getUniqueName() + "!" + TypeToString(type) + "!" + Dir2Str(dir);
     }
 
     bool operator<(const VarLiteral& other) const {
