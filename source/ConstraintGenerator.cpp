@@ -40,22 +40,22 @@ vector<Constraint::Expression>
   }
 
   if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
-      if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-        string funcName = funcDec->getNameInfo().getAsString();
-        if (funcName == "strlen") {
-          Expr* argument = funcCall->getArg(0);
-          while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
-            argument = cast->getSubExpr();
-          }
-          if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
-            Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
-            ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN_READ));
-            result.push_back(ce);
-            return result;
-          }
+    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
+      string funcName = funcDec->getNameInfo().getAsString();
+      if (funcName == "strlen") {
+        Expr* argument = funcCall->getArg(0);
+        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
+          argument = cast->getSubExpr();
+        }
+        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
+          Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
+          ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN_READ));
+          result.push_back(ce);
+          return result;
         }
       }
     }
+  }
 
   if (BinaryOperator *op = dyn_cast<BinaryOperator>(expr)) {
 
