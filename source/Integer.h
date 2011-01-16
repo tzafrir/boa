@@ -15,7 +15,7 @@ namespace boa {
     Integer(void* ASTNode) : VarLiteral(ASTNode) {}
 
     string NameExpression(ExpressionDir dir, ExpressionType type = USED) const {
-      return getUniqueName() + "!" + Dir2Str(dir);
+      return getUniqueName() + "!" + DirToString(dir);
     }
   };
 }
