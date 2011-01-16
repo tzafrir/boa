@@ -2,11 +2,13 @@
 #define __BOA_LOG_H /* */
 
 #include <string>
-#include <ostream>
+#include <iostream>
+#include <iomanip>
 
 using std::string;
 using std::ostream;
 using std::endl;
+using std::setw;
 
 namespace boa {
   namespace log {
@@ -15,6 +17,6 @@ namespace boa {
   }
 }
 
-#define LOG log::os() << __FILE__ << ":" << __LINE__ << endl << "\t\t"
+#define LOG log::os() << std::setiosflags(std::ios::left) << setw(30) << __FILE__ << ":" << setw(4) << __LINE__ << std::resetiosflags(std::ios::left) << "  "
 
 #endif /* __BOA_LOG_H */
