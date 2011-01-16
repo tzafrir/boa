@@ -9,7 +9,7 @@ namespace boa {
     } devNull;
 
     ostream *os_ = &devNull;
-    
+
     void set(ostream &os) {
       os_=&os;
     }

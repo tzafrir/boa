@@ -9,19 +9,19 @@ using std::stringstream;
 
 namespace boa {
   enum ExpressionDir  {MIN, MAX};
-  enum ExpressionType {USED, ALLOC, LEN};  
+  enum ExpressionType {USED, ALLOC, LEN};
 
 #define Type2Str(type) ((type) == USED ? "used" : ((type) == ALLOC ? "alloc" : "len"))
 #define Dir2Str(dir) ((dir) == MIN ? "min" : "max")
 
-  class VarLiteral {  
+  class VarLiteral {
    protected:
     void* ASTNode_;
 
     VarLiteral(void* ASTNode) : ASTNode_(ASTNode) {}
 
-   public:       
-    
+   public:
+
     virtual string getUniqueName() const {
       stringstream ss;
       ss << "v@" << ASTNode_;

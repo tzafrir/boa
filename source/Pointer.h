@@ -5,10 +5,10 @@
 
 namespace boa {
   class Pointer : public VarLiteral {
-  
+
   public:
     Pointer(void* ASTNode) : VarLiteral(ASTNode) {}
-  
+
   };
 }
 

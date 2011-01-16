@@ -80,23 +80,23 @@ class Constraint {
       }
       add(-expr.val_);
     }
-    
+
     void mul(double num) {
       for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
         it->second *= num;
       }
-      val_ *= num;        
+      val_ *= num;
     }
 
     void div(double num) {
       for (map<string, double>::iterator it = vars_.begin(); it != vars_.end(); ++it) {
         it->second /= num;
       }
-      val_ /= num;        
+      val_ /= num;
     }
 
     /**
-      Does the expression contain only a free element (no literals)?    
+      Does the expression contain only a free element (no literals)?
     */
     bool IsConst() {
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
@@ -106,7 +106,7 @@ class Constraint {
       }
       return true;
     }
-    
+
     double GetConst() {
       return val_;
     }
@@ -126,11 +126,11 @@ class Constraint {
   };
 
   Constraint() : left_(0) {}
-  
+
   void SetBlame(const string &blame) {
     blame_ = blame;
   }
-  
+
   string Blame() {
     return blame_;
   }

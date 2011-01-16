@@ -38,9 +38,9 @@ class boaConsumer : public ASTConsumer {
   ConstraintProblem constraintProblem_;
   ConstraintGenerator constraintGenerator_;
   bool blameOverruns_;
-  
+
  public:
-  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM), 
+  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM),
                                                        constraintGenerator_(SM, constraintProblem_),
                                                        blameOverruns_(blameOverruns) {}
 
@@ -58,15 +58,15 @@ class boaConsumer : public ASTConsumer {
     for (map<Pointer, vector<Buffer>* >::const_iterator pointerIt = mapping.begin(); pointerIt != mapping.end(); ++pointerIt) {
       const Pointer &ptr = pointerIt->first;
       vector<Buffer>* buffers = pointerIt->second;
-      
+
       Constraint usedLenMax;
       usedLenMax.addBig(ptr.NameExpression(MAX, USED));
       usedLenMax.addSmall(ptr.NameExpression(MAX, LEN));
-      usedLenMax.SetBlame("Length constraint");        
-      constraintProblem_.AddConstraint(usedLenMax);      
+      usedLenMax.SetBlame("Length constraint");
+      constraintProblem_.AddConstraint(usedLenMax);
       LOG << "Adding - " << ptr.NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, LEN) << "\n";
-      
-      for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {        
+
+      for (vector<Buffer>::const_iterator it = buffers->begin(); it != buffers->end(); ++it) {
         Constraint usedMax, usedMin, lenMax, lenMin;
 
         usedMax.addBig(it->NameExpression(MAX, USED));
@@ -74,22 +74,22 @@ class boaConsumer : public ASTConsumer {
         usedMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMax);
         LOG << "Adding - " << it->NameExpression(MAX, USED) << " >= " << ptr.NameExpression(MAX, USED) << "\n";
-        
+
         usedMin.addBig(ptr.NameExpression(MIN, USED));
         usedMin.addSmall(it->NameExpression(MIN, USED));
-        usedMin.SetBlame("Pointer analyzer constraint");        
+        usedMin.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(usedMin);
         LOG << "Adding - " << ptr.NameExpression(MIN, USED) << " >= " << it->NameExpression(MIN, USED) << "\n";
-      
+
         lenMax.addBig(it->NameExpression(MIN, LEN));
         lenMax.addSmall(ptr.NameExpression(MIN, LEN));
         lenMax.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMax);
         LOG << "Adding - " << it->NameExpression(MIN, LEN) << " >= " << ptr.NameExpression(MIN, LEN) << "\n";
-        
+
         lenMin.addBig(ptr.NameExpression(MAX, LEN));
         lenMin.addSmall(it->NameExpression(MAX, LEN));
-        lenMin.SetBlame("Pointer analyzer constraint");        
+        lenMin.SetBlame("Pointer analyzer constraint");
         constraintProblem_.AddConstraint(lenMin);
         LOG << "Adding - " << ptr.NameExpression(MAX, LEN) << " >= " << it->NameExpression(MAX, LEN) << "\n";
       }
@@ -104,7 +104,7 @@ class boaConsumer : public ASTConsumer {
       constraintProblem_.AddConstraint(constraint);
       LOG << "Adding - " << buf->NameExpression(MAX, USED) << " >= " << buf->NameExpression(MAX, LEN) << "\n";
     }
-    
+
     LOG << "The buffers we have found - " << endl;
     for (vector<Buffer>::const_iterator buf = Buffers.begin(); buf != Buffers.end(); ++buf) {
       LOG << buf->getUniqueName() << endl;
@@ -140,7 +140,7 @@ class boaConsumer : public ASTConsumer {
 class boaPlugin : public PluginASTAction {
  protected:
   bool blameOverruns_;
-  
+
   ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
     return new boaConsumer(CI.getSourceManager(), blameOverruns_);
   }

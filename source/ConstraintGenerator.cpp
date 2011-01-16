@@ -38,7 +38,7 @@ vector<Constraint::Expression>
     result.push_back(ce);
     return result;
   }
-  
+
   if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
       if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
         string funcName = funcDec->getNameInfo().getAsString();
@@ -141,7 +141,7 @@ vector<Constraint::Expression>
         return result;
       }
       default : break;
-    }   
+    }
   }
 
   expr->dump();
@@ -238,7 +238,7 @@ void ConstraintGenerator::GenerateStringLiteralConstraints(StringLiteral *string
   log::os() << "Adding - " << buf.NameExpression(MIN, ALLOC) << " <= " <<
                stringLiteral->getByteLength() + 1 << "\n";
   cp_.AddConstraint(allocMin);
-  
+
   lenMax.addBig(buf.NameExpression(MAX, LEN));
   lenMax.addSmall(stringLiteral->getByteLength());
   lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
@@ -279,7 +279,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
       }
     }
   }
-  
+
   if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
     GenerateStringLiteralConstraints(stringLiteral);
   }
@@ -296,7 +296,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
 
         GenerateGenericConstraint(buf, argument, "malloc " + getStmtLoc(S));
         return true;
-      }      
+      }
     }
   }
 
@@ -310,7 +310,7 @@ bool ConstraintGenerator::VisitStmt(Stmt* S) {
         }
         if (op-> isCompoundAssignmentOp()) {
           GenerateUnboundConstraint(intLiteral, "compound int assignment " + getStmtLoc(S));
-        }        
+        }
       }
     }
   }

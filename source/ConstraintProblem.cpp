@@ -17,7 +17,7 @@ set<string> ConstraintProblem::CollectVars() const {
     vars.insert(buffer->NameExpression(MIN, ALLOC));
     vars.insert(buffer->NameExpression(MAX, ALLOC));
     vars.insert(buffer->NameExpression(MIN, LEN));
-    vars.insert(buffer->NameExpression(MAX, LEN));   
+    vars.insert(buffer->NameExpression(MAX, LEN));
   }
 
   for (vector<Constraint>::const_iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
@@ -71,7 +71,7 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, USED)], 1.0);
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, USED)], -1.0);
     glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, ALLOC)], 1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, ALLOC)], -1.0);  
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, ALLOC)], -1.0);
   }
 
   for (size_t i = 1; i <= vars.size(); ++i) {
