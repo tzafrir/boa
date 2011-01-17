@@ -11,13 +11,15 @@ namespace boa {
 set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
   for (set<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
-    vars.insert(buffer->NameExpression(MIN, USED));
-    vars.insert(buffer->NameExpression(MAX, USED));
-    vars.insert(buffer->NameExpression(MIN, ALLOC));
-    vars.insert(buffer->NameExpression(MAX, ALLOC));
+    vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED));
+    vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED));
+    vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
+    vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
   }
 
-  for (vector<Constraint>::const_iterator constraint = constraints.begin(); constraint != constraints.end(); ++constraint) {
+  for (vector<Constraint>::const_iterator constraint = constraints.begin();
+       constraint != constraints.end();
+       ++constraint) {
     constraint->GetVars(vars);
   }
   return vars;
@@ -36,7 +38,8 @@ vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints, buffers);
 }
 
-vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {
+vector<Buffer> ConstraintProblem::Solve(
+    const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {
   vector<Buffer> unsafeBuffers;
   if (inputBuffers.empty()) {
     LOG << "No buffers" << endl;
@@ -58,17 +61,22 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
   {
     // Fill matrix
     int row = 1;
-    for (vector<Constraint>::const_iterator constraint = inputConstraints.begin(); constraint != inputConstraints.end(); ++constraint, ++row) {
+    for (vector<Constraint>::const_iterator constraint = inputConstraints.begin();
+         constraint != inputConstraints.end();
+         ++constraint, ++row) {
       constraint->AddToLPP(lp, row, varToCol);
     }
   }
 
-  for (set<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
+       buffer != inputBuffers.end();
+       ++buffer) {
     // Set objective coeficients
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, USED)], 1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, USED)], -1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MIN, ALLOC)], 1.0);
-    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(MAX, ALLOC)], -1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)], 1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)], -1.0);
+    glp_set_obj_coef(lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)], 1.0);
+    glp_set_obj_coef(
+        lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -1.0);
   }
 
   for (size_t i = 1; i <= vars.size(); ++i) {
@@ -82,16 +90,30 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
 
   // TODO - what if no solution can be found?
 
-  for (set<Buffer>::const_iterator buffer = inputBuffers.begin(); buffer != inputBuffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
+      buffer != inputBuffers.end();
+      ++buffer) {
     // Print result
-    LOG << buffer->NameExpression(MIN, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) << endl;
-    LOG << buffer->NameExpression(MAX, USED) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) << endl;
-    LOG << buffer->NameExpression(MIN, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)]) << endl;
-    LOG << buffer->NameExpression(MAX, ALLOC) << "\t = " << glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, ALLOC)]) << endl;
+    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED) <<
+        "\t = " << glp_get_col_prim(
+        lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
+    LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED) <<
+        "\t = " << glp_get_col_prim(
+        lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
+    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) <<
+        "\t = " << glp_get_col_prim(
+        lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
+    LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) <<
+        "\t = " << glp_get_col_prim(
+        lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
 
-    if ((glp_get_col_prim(lp, varToCol[buffer->NameExpression(MAX, USED)]) >= 
-         glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, ALLOC)])) ||
-        (glp_get_col_prim(lp, varToCol[buffer->NameExpression(MIN, USED)]) < 0)) {
+    LOG << endl;
+    if ((glp_get_col_prim(
+         lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
+         glp_get_col_prim(
+         lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
+         (glp_get_col_prim(
+         lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
       LOG << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
@@ -101,7 +123,8 @@ vector<Buffer> ConstraintProblem::Solve(const vector<Constraint> &inputConstrain
   return unsafeBuffers;
 }
 
-vector<Constraint> ConstraintProblem::Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const {
+vector<Constraint> ConstraintProblem::Blame(
+    const vector<Constraint> &input, const set<Buffer> &buffer) const {
   vector<Constraint> result(input);
   // super naive algorithm
   for (size_t i = 0; i < result.size(); ) {

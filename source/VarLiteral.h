@@ -8,25 +8,51 @@ using std::string;
 using std::stringstream;
 
 namespace boa {
-  enum ExpressionDir  {MIN, MAX};
-  enum ExpressionType {USED, ALLOC};
 
-  class VarLiteral {  
+  class VarLiteral {
    protected:
     void* ASTNode_;
 
     VarLiteral(void* ASTNode) : ASTNode_(ASTNode) {}
+    enum ExpressionDir  {MIN, MAX};
+    enum ExpressionType {USED, ALLOC, LEN_READ, LEN_WRITE};
 
-   public:    
-    
+    static inline string DirToString(ExpressionDir dir) {
+      switch (dir) {
+        case MIN:
+          return "min";
+        case MAX:
+          return "max";
+        default:
+          return "";
+      }
+    }
+
+    static inline string TypeToString(ExpressionType type) {
+      switch (type) {
+        case USED:
+          return "used";
+        case ALLOC:
+          return "alloc";
+        case LEN_READ:
+          return "len-read";
+        case LEN_WRITE:
+          return "len-write";
+        default:
+          return "";
+      }
+    }
+
+   public:
+
     virtual string getUniqueName() const {
       stringstream ss;
-      ss << "V" << ASTNode_;
+      ss << "v@" << ASTNode_;
       return ss.str();
     }
 
     virtual string NameExpression(ExpressionDir dir, ExpressionType type) const {
-      return getUniqueName() + "!" + (type == USED ? "used" : "alloc") + "!" + (dir == MIN ? "min" : "max");
+      return getUniqueName() + "!" + TypeToString(type) + "!" + DirToString(dir);
     }
 
     bool operator<(const VarLiteral& other) const {

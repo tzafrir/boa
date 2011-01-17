@@ -12,7 +12,7 @@ using std::stringstream;
 namespace boa {
 
   class Buffer : public VarLiteral {
-   private:    
+   private:
     string readableName_, filename_;
     int line_;
 
@@ -20,7 +20,7 @@ namespace boa {
 
     Buffer(void* ASTNode, const string& readableName, const string& filename, int line) :
       VarLiteral(ASTNode), readableName_(readableName), filename_(filename), line_(line) {}
-      
+
     Buffer(void* ASTNode) : VarLiteral(ASTNode) {}
 
     const string& getReadableName() const {

@@ -40,8 +40,7 @@ public:
       for (DeclGroupRef::iterator i = dec->decl_begin(), end = dec->decl_end(); i != end; ++i) {
         findVarDecl(*i);
       }
-    }
-    else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
+    } else if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
       if (FunctionDecl* funcDec = funcCall->getDirectCallee())
       {
          if (funcDec->getNameInfo().getAsString() == "malloc")
@@ -49,6 +48,8 @@ public:
             addMallocToSet(funcCall,funcDec);
          }
       }
+    } else if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
+      addConstStringToSet(stringLiteral);
     }
     return true;
   }
@@ -75,8 +76,7 @@ public:
         if (arr->getElementType().getTypePtr()->isAnyCharacterType()) {
           addBufferToSet(var);
         }
-      }
-      else if (PointerType* pType = dyn_cast<PointerType>(varType)) {
+      } else if (PointerType* pType = dyn_cast<PointerType>(varType)) {
         if (pType->getPointeeType()->isAnyCharacterType()) {
            addPointerToSet(var);
         }
@@ -85,13 +85,15 @@ public:
   }
 
   void addBufferToSet(VarDecl* var) {
-    Buffer b((void*)var, var->getNameAsString(), sm_.getBufferName(var->getLocation()), sm_.getSpellingLineNumber(var->getLocation()));
+    Buffer b((void*)var, var->getNameAsString(), sm_.getBufferName(var->getLocation()),
+              sm_.getSpellingLineNumber(var->getLocation()));
     Buffers_.push_back(b);
-    LOG << "Adding static buffer - " << b.getReadableName() << " at " <<  b.getSourceLocation() << endl;
+    LOG << "Adding buffer - " << b.getReadableName() << " at " <<  b.getSourceLocation() << endl;
   }
 
   void addMallocToSet(CallExpr* funcCall, FunctionDecl* func) {
-    Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()), sm_.getSpellingLineNumber(funcCall->getLocStart()));
+    Buffer b((void*)funcCall, "MALLOC", sm_.getBufferName(funcCall->getLocStart()),
+              sm_.getSpellingLineNumber(funcCall->getLocStart()));
     Buffers_.push_back(b);
     LOG << "Adding malloc buffer at " + b.getSourceLocation() << endl;
   }
@@ -100,7 +102,15 @@ public:
     Pointer p((void*)var);
     Pointers_.push_back(p);
     Pointer2Buffers_[p] = &Buffers_;
-    LOG << "Adding pointer - " << var->getNameAsString() << " at line " << sm_.getSpellingLineNumber(var->getLocation()) << endl;
+    LOG << "Adding pointer - " << var->getNameAsString() << " at line " <<
+        sm_.getSpellingLineNumber(var->getLocation()) << endl;
+  }
+
+  void addConstStringToSet(StringLiteral* stringLiteral) {
+    Buffer b((void*)stringLiteral, "Literal", sm_.getBufferName(stringLiteral->getLocStart()),
+              sm_.getSpellingLineNumber(stringLiteral->getLocStart()));
+    Buffers_.push_back(b);
+    log::os() << "Adding string literal buffer: " + stringLiteral->getString().str() << endl;
   }
 
   const vector<Buffer>& getBuffers() const {

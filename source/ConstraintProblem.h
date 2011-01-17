@@ -17,7 +17,8 @@ class ConstraintProblem {
 
   set<string> CollectVars() const;
 
-  vector<Buffer> Solve(const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const;
+  vector<Buffer> Solve(const vector<Constraint> &inputConstraints,
+                       const set<Buffer> &inputBuffers) const;
 
   vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
  public:
