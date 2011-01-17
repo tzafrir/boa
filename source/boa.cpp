@@ -117,7 +117,7 @@ class boaConsumer : public ASTConsumer {
       LenLen.SetBlame("Length constraint");
       constraintProblem_.AddConstraint(LenLen);
       LOG << "Adding - " << buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
-          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << "\n";          
+          buf->NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << "\n";
     }
 
     LOG << "The buffers we have found - " << endl;
