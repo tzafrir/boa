@@ -22,7 +22,7 @@ vector<Constraint::Expression>
     if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
       Integer intLiteral(funcDec);
       LOG << "CALL!" << endl;
-      ce.add(intLiteral.NameExpression(max ? MAX : MIN));
+      ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
       result.push_back(ce);
       return result;
     }
