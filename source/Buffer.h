@@ -5,9 +5,12 @@
 #include <sstream>
 
 #include "VarLiteral.h"
+#include "llvm/Value.h"
 
 using std::string;
 using std::stringstream;
+
+using namespace llvm;
 
 namespace boa {
 
@@ -18,10 +21,10 @@ namespace boa {
 
    public:
 
-    Buffer(void* ASTNode, const string& readableName, const string& filename, int line) :
-      VarLiteral(ASTNode), readableName_(readableName), filename_(filename), line_(line) {}
+    Buffer(const Value* ValueNode, const string& readableName, const string& filename, int line) :
+      VarLiteral(ValueNode), readableName_(readableName), filename_(filename), line_(line) {}
 
-    Buffer(void* ASTNode) : VarLiteral(ASTNode) {}
+    Buffer(const Value* ValueNode) : VarLiteral(ValueNode) {}
 
     const string& getReadableName() const {
       return readableName_;

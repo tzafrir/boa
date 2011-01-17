@@ -1,19 +1,22 @@
 #ifndef __BOA_VARLITERAL_H
 #define __BOA_VARLITERAL_H /* */
 
+#include "llvm/Value.h"
 #include <string>
 #include <sstream>
 
 using std::string;
 using std::stringstream;
 
+using namespace llvm;
+
 namespace boa {
 
   class VarLiteral {
    protected:
-    void* ASTNode_;
+    const Value* ValueNode_;
 
-    VarLiteral(void* ASTNode) : ASTNode_(ASTNode) {}
+    VarLiteral(const Value* ValueNode) : ValueNode_(ValueNode) {}
     enum ExpressionDir  {MIN, MAX};
     enum ExpressionType {USED, ALLOC, LEN_READ, LEN_WRITE};
 
@@ -47,7 +50,7 @@ namespace boa {
 
     virtual string getUniqueName() const {
       stringstream ss;
-      ss << "v@" << ASTNode_;
+      ss << "v@" << ValueNode_;
       return ss.str();
     }
 
@@ -56,7 +59,7 @@ namespace boa {
     }
 
     bool operator<(const VarLiteral& other) const {
-      return this->ASTNode_ < other.ASTNode_;
+      return this->ValueNode_ < other.ValueNode_;
     }
   };
 }
