@@ -2,6 +2,7 @@
 
 files=""
 args=""
+tmpfile=/tmp/boa_tempfile.bc #fixme
 
 for arg in $@
 do
@@ -13,7 +14,7 @@ do
 done
 
 if [ "$files" != "" ]; then
-  ../llvm/Debug+Asserts/bin/clang -cc1 -load build/boa.so -plugin boa ${args} ${files}
+  ../llvm/Debug+Asserts/bin/clang -O0 -S -emit-llvm ${files} -o /dev/stdout | ../llvm/Debug+Asserts/bin/opt -load build/boa.so -boa
 else
   echo -e " usage : \033[1m./boa [flags] <source files>\033[0m"
   echo ""

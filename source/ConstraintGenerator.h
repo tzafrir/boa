@@ -1,17 +1,21 @@
 #ifndef __BOA_CONSTRAINTGENERATOR_H
 #define __BOA_CONSTRAINTGENERATOR_H
 
-#include "clang/Frontend/FrontendPluginRegistry.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/ASTContext.h"
-#include "clang/AST/AST.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "llvm/Support/raw_ostream.h"
+//#include "clang/Frontend/FrontendPluginRegistry.h"
+//#include "clang/AST/ASTConsumer.h"
+//#include "clang/AST/ASTContext.h"
+//#include "clang/AST/AST.h"
+//#include "clang/AST/RecursiveASTVisitor.h"
+//#include "clang/Basic/SourceManager.h"
+//#include "clang/Frontend/CompilerInstance.h"
+//#include "llvm/Support/raw_ostream.h"
 
-#include <string>
-#include <sstream>
+#include "llvm/Module.h"
+#include "llvm/Function.h"
+#include "llvm/Instructions.h"
+#include "llvm/Support/InstIterator.h"
+
+
 #include <vector>
 
 using std::string;
@@ -19,50 +23,42 @@ using std::stringstream;
 using std::vector;
 
 #include "ConstraintProblem.h"
-#include "Pointer.h"
+#include "Buffer.h"
 #include "log.h"
 
-using namespace clang;
+using namespace llvm;
 
 namespace boa {
 
-class ConstraintGenerator : public RecursiveASTVisitor<ConstraintGenerator> {
-  SourceManager &sm_;
+class ConstraintGenerator {
   ConstraintProblem &cp_;
 
-  /**
-   * Generic method to get source code location of either a clang::Stmt or a clang::Decl.
-   */
-  template <class T> string getStmtLoc(T *stmt) {
-    stringstream buff;
-    buff << sm_.getBufferName(stmt->getLocStart()) << ":" <<
-            sm_.getSpellingLineNumber(stmt->getLocStart());
-    return buff.str();
-  }
+//  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
-  void GenerateUnboundConstraint(const Integer &var, const string &blame);
-
-  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-                                 const string &blame,
-                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
+//  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
+//                                 const string &blame,
+//                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */
-  vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
+//  vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
 
-  void GenerateVarDeclConstraints(VarDecl *var);
+//  void GenerateVarDeclConstraints(VarDecl *var);
 
-  bool GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr);
-
-  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
-
+//  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
+  void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
+  
+  void GenerateAllocConstraint(const AllocaInst *I);
+  
  public:
-  ConstraintGenerator(SourceManager &SM, ConstraintProblem &CP) : sm_(SM), cp_(CP) {}
+  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
 
-  bool VisitStmt(Stmt* S);
+  void VisitInstruction(const Instruction *I);
 
-  bool VisitStmt(Stmt* S, FunctionDecl* context);
+//  bool VisitStmt(Stmt* S);
+
+//  bool VisitStmt(Stmt* S, FunctionDecl* context);
 };
 
 }  // namespace boa

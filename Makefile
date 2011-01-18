@@ -14,7 +14,7 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${S
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
 ${BUILD}/ConstraintProblem.o: ${SOURCE}/Constraint.h ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp ${BUILD}/log.o
-	${CC} ${SOURCE}/ConstraintProblem.cpp ${CFLAGS} -c -o ${BUILD}/ConstraintProblem.o
+	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c ${SOURCE}/ConstraintProblem.cpp -o ${BUILD}/ConstraintProblem.o
 
 ${BUILD}:
 	mkdir -p ${BUILD}
@@ -39,11 +39,4 @@ ${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/Con
 
 ${BUILD}/log.o : ${SOURCE}/log.cpp ${SOURCE}/log.h
 	${CC} ${SOURCE}/log.cpp ${CFLAGS} -c -o ${BUILD}/log.o
-
-llvm: ${BUILD} ${BUILD}/llvm.o  ${BUILD}/log.o
-	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -L${LLVM_DIR}/Debug+Asserts/lib -L${LLVM_DIR}/Debug+Asserts/lib  -shared -o ${BUILD}/llvm.so ${BUILD}/llvm.o  ${BUILD}/log.o -lpthread -lglpk -ldl -lm
-
-${BUILD}/llvm.o: ${SOURCE}/llvm.cpp
-	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/llvm.d.tmp" -MT "${BUILD}/llvm.o" -MT "${BUILD}/llvm.d" ${SOURCE}/llvm.cpp -o ${BUILD}/llvm.o
-	mv -f ${BUILD}/llvm.d.tmp ${BUILD}/llvm.d
 
