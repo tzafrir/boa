@@ -1,9 +1,12 @@
 #include "ConstraintGenerator.h"
-//#include <vector>
+#include <vector>
+#include <map>
+
 //#include <limits>
 //#include <string>
 
-//using std::vector;
+using std::pair;
+
 //using std::string;
 
 #include "llvm/User.h"
@@ -13,6 +16,11 @@ using namespace llvm;
 
 namespace boa {
 void ConstraintGenerator::VisitInstruction(const Instruction *I) {
+  if (const DbgDeclareInst *D = dyn_cast<const DbgDeclareInst>(I)) {
+    SaveDbgDeclare(D);
+    return;
+  }
+
   switch (I->getOpcode()) {
     case Instruction::GetElementPtr :
       GenerateArraySubscriptConstraint(dyn_cast<const GetElementPtrInst>(I));
@@ -22,6 +30,26 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
       break;
     default : break; //TODO
   }
+}
+
+void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
+  // FIXME - magic numbers!
+  if (const MDString *S = dyn_cast<const MDString>(D->getVariable()->getOperand(2))) {
+    if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(3))) {
+      if (const MDString *file = dyn_cast<const MDString>(node->getOperand(1))) {
+        LOG << (void*)D->getAddress() << " name = " << S->getString().str() << " Source location - "
+            << file->getString().str() << ":" << D->getDebugLoc().getLine() << endl;
+
+        Buffer b(D->getAddress(), S->getString().str(), file->getString().str(), 
+                 D->getDebugLoc().getLine());
+
+        buffers[D->getAddress()] = b;
+        return;
+      }    
+    }
+  }
+  // else 
+  LOG << "Can't extract debug info\n";
 }
 
 void ConstraintGenerator::GenerateAllocConstraint(const AllocaInst *I) {
@@ -34,7 +62,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const AllocaInst *I) {
       allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
       allocMax.addSmall(allocSize);
 //        allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
-      //cp_.AddConstraint(allocMax);
+      cp_.AddConstraint(allocMax);
       LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
                     allocSize << "\n";
 
@@ -43,14 +71,19 @@ void ConstraintGenerator::GenerateAllocConstraint(const AllocaInst *I) {
 //        allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
       LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
                    allocSize << "\n";
-      //cp_.AddConstraint(allocMin);
+      cp_.AddConstraint(allocMin);
     }
   }
 }
 
 void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
-  Buffer b(I->getPointerOperand());
+  Buffer b = buffers[I->getPointerOperand()];
+  if (b.IsNull()) {
+    LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
+    return;
+  }
   GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
+  LOG << " Adding buffer to problem" << endl;
 }
 
 

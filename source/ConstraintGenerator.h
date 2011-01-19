@@ -15,13 +15,16 @@
 #include "llvm/Instructions.h"
 #include "llvm/Support/InstIterator.h"
 
-
+#include <map>
 #include <vector>
+#include <string>
 
 using std::string;
 using std::stringstream;
 using std::vector;
+using std::map;
 
+#include "llvm/IntrinsicInst.h"
 #include "ConstraintProblem.h"
 #include "Buffer.h"
 #include "log.h"
@@ -32,6 +35,7 @@ namespace boa {
 
 class ConstraintGenerator {
   ConstraintProblem &cp_;
+  map<const Value*, Buffer> buffers;
 
 //  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
@@ -54,6 +58,8 @@ class ConstraintGenerator {
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
 
   void GenerateAllocConstraint(const AllocaInst *I);
+  
+  void SaveDbgDeclare(const DbgDeclareInst* D);  
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}

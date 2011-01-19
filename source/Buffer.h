@@ -20,11 +20,17 @@ namespace boa {
     int line_;
 
    public:
-
+    // Default constructor, so we can create a map of Buffers
+    Buffer() : VarLiteral(NULL) {}
+    
     Buffer(const Value* ValueNode, const string& readableName, const string& filename, int line) :
       VarLiteral(ValueNode), readableName_(readableName), filename_(filename), line_(line) {}
 
     Buffer(const Value* ValueNode) : VarLiteral(ValueNode) {}
+
+    bool IsNull() {
+      return ValueNode_ == NULL;
+    }
 
     const string& getReadableName() const {
       return readableName_;
