@@ -6,13 +6,15 @@
 //using std::vector;
 //using std::string;
 
+#include "llvm/User.h"
+
 using namespace llvm;
 
 
 namespace boa {
 void ConstraintGenerator::VisitInstruction(const Instruction *I) {
   switch (I->getOpcode()) {
-    case Instruction::GetElementPtr : 
+    case Instruction::GetElementPtr :
       GenerateArraySubscriptConstraint(dyn_cast<const GetElementPtrInst>(I));
       break;
     case Instruction::Alloca :
@@ -47,10 +49,38 @@ void ConstraintGenerator::GenerateAllocConstraint(const AllocaInst *I) {
 }
 
 void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
-  LOG << "PtrElementInstr " << (void*)(I->getPointerOperand()) << '\n';  
+  Buffer b(I->getPointerOperand());
+  GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
 }
 
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
+                                                    const string &blame,
+                                                    VarLiteral::ExpressionType type) {
+//  vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
+//  for (size_t i = 0; i < maxExprs.size(); ++i) {
+//    Constraint allocMax;
+//    allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
+//    allocMax.addSmall(maxExprs[i]);
+//    allocMax.SetBlame(blame);
+//    cp_.AddConstraint(allocMax);
+//    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX, type) << " >= "
+//              << maxExprs[i].toString() << endl;
+//  }
+
+//  vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
+//  for (size_t i = 0; i < minExprs.size(); ++i) {
+//    Constraint allocMin;
+//    allocMin.addSmall(var.NameExpression(VarLiteral::MIN, type));
+//    allocMin.addBig(minExprs[i]);
+//    allocMin.SetBlame(blame);
+//    cp_.AddConstraint(allocMin);
+//    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
+//              << minExprs[i].toString() << endl;
+//  }
 }
+
+
+} // namespace boa
 
 //vector<Constraint::Expression>
 //    ConstraintGenerator::GenerateIntegerExpression(Expr *expr, bool max) {
@@ -199,41 +229,6 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 //  expr->dump();
 //  LOG << "Can't generate integer expression " << getStmtLoc(expr) << endl;
 //  return result;
-//}
-
-//bool ConstraintGenerator::GenerateArraySubscriptConstraints(ArraySubscriptExpr* expr) {
-//  VarLiteral* varLiteral = NULL;
-
-//  Expr* base = expr->getBase();
-//  while (dyn_cast<CastExpr>(base)) {
-//    base = dyn_cast<CastExpr>(base)->getSubExpr();
-//  }
-
-//  if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(base)) {
-//    if (ArrayType* arr = dyn_cast<ArrayType>(declRef->getDecl()->getType().getTypePtr())) {
-//      if (arr->getElementType()->isAnyCharacterType()) {
-//        varLiteral = new Buffer(declRef->getDecl());
-//      }
-//    } else if (PointerType* pType =
-//        dyn_cast<PointerType>(declRef->getDecl()->getType().getTypePtr())) {
-//      if (pType->getPointeeType()->isAnyCharacterType()) {
-//        varLiteral = new Pointer(declRef->getDecl());
-//      }
-//    }
-//  } else {
-//    // TODO: Any other cases?
-//  }
-
-//  if (NULL == varLiteral) {
-//    expr->dump();
-//    return false;
-//  }
-
-//  GenerateGenericConstraint(*varLiteral, expr->getIdx(),
-//      "array subscript " + getStmtLoc(expr), VarLiteral::USED);
-
-//  delete varLiteral;
-//  return true;
 //}
 
 //void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
@@ -410,32 +405,6 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 //  }
 
 //  return true;
-//}
-
-//void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-//                                                    const string &blame,
-//                                                    VarLiteral::ExpressionType type) {
-//  vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
-//  for (size_t i = 0; i < maxExprs.size(); ++i) {
-//    Constraint allocMax;
-//    allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
-//    allocMax.addSmall(maxExprs[i]);
-//    allocMax.SetBlame(blame);
-//    cp_.AddConstraint(allocMax);
-//    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX, type) << " >= "
-//              << maxExprs[i].toString() << endl;
-//  }
-
-//  vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
-//  for (size_t i = 0; i < minExprs.size(); ++i) {
-//    Constraint allocMin;
-//    allocMin.addSmall(var.NameExpression(VarLiteral::MIN, type));
-//    allocMin.addBig(minExprs[i]);
-//    allocMin.SetBlame(blame);
-//    cp_.AddConstraint(allocMin);
-//    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
-//              << minExprs[i].toString() << endl;
-//  }
 //}
 
 //} // namespace boa

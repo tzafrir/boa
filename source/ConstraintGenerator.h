@@ -35,9 +35,9 @@ class ConstraintGenerator {
 
 //  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
-//  void GenerateGenericConstraint(const VarLiteral &var, Expr *integerExpression,
-//                                 const string &blame,
-//                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
+  void GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
+                                 const string &blame,
+                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
@@ -48,9 +48,9 @@ class ConstraintGenerator {
 
 //  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
-  
+
   void GenerateAllocConstraint(const AllocaInst *I);
-  
+
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
 
