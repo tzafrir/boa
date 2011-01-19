@@ -2,7 +2,6 @@
 
 files=""
 args=""
-tmpfile=/tmp/boa_tempfile.bc #fixme
 
 for arg in $@
 do
