@@ -84,10 +84,6 @@ vector<Constraint::Expression>
   vector<Constraint::Expression> result;
   Constraint::Expression ce;
 
-//  while (dyn_cast<ImplicitCastExpr>(expr)) {
-//    expr = dyn_cast<ImplicitCastExpr>(expr)->getSubExpr();
-//  }
-
 //  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
 //    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
 //      Integer intLiteral(funcDec);
@@ -106,11 +102,11 @@ vector<Constraint::Expression>
 //    }
 //  }
 
-//  if (IntegerLiteral *literal = dyn_cast<IntegerLiteral>(expr)) {
-//    ce.add(literal->getValue().getLimitedValue());
-//    result.push_back(ce);
-//    return result;
-//  }
+  if (ConstantInt *literal = dyn_cast<ConstantInt>(expr)) {
+    ce.add(literal->getLimitedValue());
+    result.push_back(ce);
+    return result;
+  }
 
 //  if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr)) {
 //    Integer intLiteral(declRef->getDecl());
