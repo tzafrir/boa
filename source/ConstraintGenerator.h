@@ -42,7 +42,7 @@ class ConstraintGenerator {
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */
-//  vector<Constraint::Expression> GenerateIntegerExpression(Expr *expr, bool max);
+  vector<Constraint::Expression> GenerateIntegerExpression(Value *expr, bool max);
 
 //  void GenerateVarDeclConstraints(VarDecl *var);
 
