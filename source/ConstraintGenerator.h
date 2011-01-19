@@ -35,6 +35,10 @@ class ConstraintGenerator {
 
 //  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
+  void GenerateGenericConstraint(const Buffer &buf, Value *integerExpression,
+                                 const string &blame,
+                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
+
   void GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);

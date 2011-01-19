@@ -53,6 +53,16 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
 }
 
+
+void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, Value *integerExpression,
+                                                    const string &blame,
+                                                    VarLiteral::ExpressionType type) {
+  if (type == VarLiteral::USED) {
+    cp_.AddBuffer(buf);
+  }
+  GenerateGenericConstraint(dynamic_cast<const VarLiteral&>(buf), integerExpression, blame, type);
+}
+
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
@@ -76,7 +86,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Value
     cp_.AddConstraint(allocMin);
     LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
               << minExprs[i].toString() << endl;
-  }
+  }  
 }
 
 vector<Constraint::Expression>
