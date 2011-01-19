@@ -4,15 +4,13 @@
 #include <string>
 #include <sstream>
 #include "VarLiteral.h"
-
-using std::string;
-using std::stringstream;
+#include "llvm/Value.h"
 
 namespace boa {
   class Integer : public VarLiteral {
    public:
 
-    Integer(void* ASTNode) : VarLiteral(ASTNode) {}
+    Integer(const Value* node) : VarLiteral(node) {}
 
     string NameExpression(ExpressionDir dir, ExpressionType type = USED) const {
       return getUniqueName() + "!" + DirToString(dir);

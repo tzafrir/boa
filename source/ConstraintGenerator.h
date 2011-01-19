@@ -39,18 +39,18 @@ class ConstraintGenerator {
 
 //  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
-  void GenerateGenericConstraint(const Buffer &buf, Value *integerExpression,
+  void GenerateGenericConstraint(const Buffer &buf, const Value *integerExpression,
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
-  void GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
+  void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */
-  vector<Constraint::Expression> GenerateIntegerExpression(Value *expr, bool max);
+  vector<Constraint::Expression> GenerateIntegerExpression(const Value *expr, bool max);
 
 //  void GenerateVarDeclConstraints(VarDecl *var);
 
@@ -58,6 +58,8 @@ class ConstraintGenerator {
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
 
   void GenerateAllocConstraint(const AllocaInst *I);
+  
+  void GenerateStoreConstraint(const StoreInst* I);
   
   void SaveDbgDeclare(const DbgDeclareInst* D);  
 

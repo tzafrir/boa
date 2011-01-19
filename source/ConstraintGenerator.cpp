@@ -1,6 +1,7 @@
 #include "ConstraintGenerator.h"
 #include <vector>
 #include <map>
+#include "Integer.h"
 
 //#include <limits>
 //#include <string>
@@ -28,8 +29,16 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
     case Instruction::Alloca :
       GenerateAllocConstraint(dyn_cast<const AllocaInst>(I));
       break;
+    case Instruction::Store:
+      GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
+      break;
     default : break; //TODO
   }
+}
+
+void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
+  Integer intLiteral(I->getPointerOperand());
+  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
@@ -87,7 +96,7 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 }
 
 
-void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, Value *integerExpression,
+void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
   if (type == VarLiteral::USED) {
@@ -96,7 +105,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, Value *in
   GenerateGenericConstraint(dynamic_cast<const VarLiteral&>(buf), integerExpression, blame, type);
 }
 
-void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Value *integerExpression,
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
   vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
@@ -123,7 +132,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, Value
 }
 
 vector<Constraint::Expression>
-    ConstraintGenerator::GenerateIntegerExpression(Value *expr, bool max) {
+    ConstraintGenerator::GenerateIntegerExpression(const Value *expr, bool max) {
   vector<Constraint::Expression> result;
   Constraint::Expression ce;
 
@@ -145,7 +154,7 @@ vector<Constraint::Expression>
 //    }
 //  }
 
-  if (ConstantInt *literal = dyn_cast<ConstantInt>(expr)) {
+  if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
     ce.add(literal->getLimitedValue());
     result.push_back(ce);
     return result;
