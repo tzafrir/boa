@@ -24,75 +24,77 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
   switch (I->getOpcode()) {
   // Terminators
-//  case Instruction::Ret:    
-//  case Instruction::Br:     
-//  case Instruction::Switch: 
-//  case Instruction::IndirectBr: 
-//  case Instruction::Invoke: 
-//  case Instruction::Unwind: 
-//  case Instruction::Unreachable: 
+//  case Instruction::Ret:
+//  case Instruction::Br:
+//  case Instruction::Switch:
+//  case Instruction::IndirectBr:
+//  case Instruction::Invoke:
+//  case Instruction::Unwind:
+//  case Instruction::Unreachable:
 
   // Standard binary operators...
-//  case Instruction::Add: 
-//  case Instruction::FAdd: 
-//  case Instruction::Sub: 
-//  case Instruction::FSub: 
-//  case Instruction::Mul: 
-//  case Instruction::FMul: 
-//  case Instruction::UDiv: 
-//  case Instruction::SDiv: 
-//  case Instruction::FDiv: 
-//  case Instruction::URem: 
-//  case Instruction::SRem: 
-//  case Instruction::FRem: 
+//  case Instruction::Add:
+//  case Instruction::FAdd:
+//  case Instruction::Sub:
+//  case Instruction::FSub:
+//  case Instruction::Mul:
+//  case Instruction::FMul:
+//  case Instruction::UDiv:
+//  case Instruction::SDiv:
+//  case Instruction::FDiv:
+//  case Instruction::URem:
+//  case Instruction::SRem:
+//  case Instruction::FRem:
 
   // Logical operators...
-//  case Instruction::And: 
-//  case Instruction::Or : 
-//  case Instruction::Xor: 
+//  case Instruction::And:
+//  case Instruction::Or :
+//  case Instruction::Xor:
 
   // Memory instructions...
   case Instruction::Alloca:
     GenerateAllocConstraint(dyn_cast<const AllocaInst>(I));
     break;
-//  case Instruction::Load:  
-  case Instruction::Store: 
-      GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
-      break;
+  case Instruction::Load:
+    GenerateLoadConstraint(dyn_cast<const LoadInst>(I));
+    break;
+  case Instruction::Store:
+    GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
+    break;
   case Instruction::GetElementPtr:
     GenerateArraySubscriptConstraint(dyn_cast<const GetElementPtrInst>(I));
     break;
 
   // Convert instructions...
-//  case Instruction::Trunc: 
-//  case Instruction::ZExt:  
-//  case Instruction::SExt:  
+//  case Instruction::Trunc:
+//  case Instruction::ZExt:
+//  case Instruction::SExt:
 //  case Instruction::FPTrunc:
-//  case Instruction::FPExt:  
-//  case Instruction::FPToUI: 
-//  case Instruction::FPToSI: 
-//  case Instruction::UIToFP: 
-//  case Instruction::SIToFP: 
+//  case Instruction::FPExt:
+//  case Instruction::FPToUI:
+//  case Instruction::FPToSI:
+//  case Instruction::UIToFP:
+//  case Instruction::SIToFP:
 //  case Instruction::IntToPtr:
 //  case Instruction::PtrToInt:
-//  case Instruction::BitCast: 
+//  case Instruction::BitCast:
 
   // Other instructions...
-//  case Instruction::ICmp:    
-//  case Instruction::FCmp:    
-//  case Instruction::PHI:     
-//  case Instruction::Select:  
-//  case Instruction::Call:    
-//  case Instruction::Shl:     
-//  case Instruction::LShr:    
-//  case Instruction::AShr:    
-//  case Instruction::VAArg:   
-//  case Instruction::ExtractElement: 
-//  case Instruction::InsertElement:  
-//  case Instruction::ShuffleVector:  
-//  case Instruction::ExtractValue:   
-//  case Instruction::InsertValue:    
-  
+//  case Instruction::ICmp:
+//  case Instruction::FCmp:
+//  case Instruction::PHI:
+//  case Instruction::Select:
+//  case Instruction::Call:
+//  case Instruction::Shl:
+//  case Instruction::LShr:
+//  case Instruction::AShr:
+//  case Instruction::VAArg:
+//  case Instruction::ExtractElement:
+//  case Instruction::InsertElement:
+//  case Instruction::ShuffleVector:
+//  case Instruction::ExtractValue:
+//  case Instruction::InsertValue:
+
   default : break; //TODO
   }
 }
@@ -100,6 +102,11 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   Integer intLiteral(I->getPointerOperand());
   GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+}
+
+void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
+  Integer intLiteral(I);
+  GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
@@ -110,15 +117,15 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         LOG << (void*)D->getAddress() << " name = " << S->getString().str() << " Source location - "
             << file->getString().str() << ":" << D->getDebugLoc().getLine() << endl;
 
-        Buffer b(D->getAddress(), S->getString().str(), file->getString().str(), 
+        Buffer b(D->getAddress(), S->getString().str(), file->getString().str(),
                  D->getDebugLoc().getLine());
 
         buffers[D->getAddress()] = b;
         return;
-      }    
+      }
     }
   }
-  // else 
+  // else
   LOG << "Can't extract debug info\n";
 }
 
@@ -189,7 +196,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const
     cp_.AddConstraint(allocMin);
     LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
               << minExprs[i].toString() << endl;
-  }  
+  }
 }
 
 vector<Constraint::Expression>

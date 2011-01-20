@@ -61,6 +61,8 @@ class ConstraintGenerator {
   
   void GenerateStoreConstraint(const StoreInst* I);
   
+  void GenerateLoadConstraint(const LoadInst* I);
+  
   void SaveDbgDeclare(const DbgDeclareInst* D);  
 
  public:
