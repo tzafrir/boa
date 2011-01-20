@@ -228,13 +228,6 @@ vector<Constraint::Expression>
     return result;
   }
 
-//  if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(expr)) {
-//    Integer intLiteral(declRef->getDecl());
-//    ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
-//    result.push_back(ce);
-//    return result;
-//  }
-
 //  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
 //    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
 //      string funcName = funcDec->getNameInfo().getAsString();
@@ -339,8 +332,10 @@ vector<Constraint::Expression>
 //    }
 //  }
 
-  expr->dump();
-  LOG << "Can't generate integer expression " << endl;
+  // Otherwise, this is a reference to another var definition
+  Integer intLiteral(expr);
+  ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
+  result.push_back(ce);
   return result;
 }
 
