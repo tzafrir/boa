@@ -7,7 +7,7 @@
 //#include <string>
 
 using std::pair;
-using Expression;
+typedef boa::Constraint::Expression Expression;
 
 //using std::string;
 
@@ -116,7 +116,7 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
    
-  Integer intLiteral(I->getPointerOperand());
+  Integer intLiteral(I);
   
   Constraint maxCons, minCons;
   maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
@@ -136,7 +136,7 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
   minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
    
-  Integer intLiteral(I->getPointerOperand());
+  Integer intLiteral(I);
   
   Constraint maxCons, minCons;
   maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
@@ -244,10 +244,9 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,
   cp_.AddConstraint(allocMin);
   LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
             << minExpr.toString() << endl;
-  }
 }
 
-Expression ConstraintGenerator::GenerateIntegerExpression(const Value *expr, 
+Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Value *expr, 
                                                             VarLiteral::ExpressionDir dir) {
   Expression result;
 

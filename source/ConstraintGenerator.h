@@ -50,7 +50,7 @@ class ConstraintGenerator {
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */
-  vector<Constraint::Expression> GenerateIntegerExpression(const Value *expr, bool max);
+  Constraint::Expression GenerateIntegerExpression(const Value *expr, VarLiteral::ExpressionDir dir);
 
 //  void GenerateVarDeclConstraints(VarDecl *var);
 
@@ -64,6 +64,8 @@ class ConstraintGenerator {
   void GenerateLoadConstraint(const LoadInst* I);
 
   void GenerateAddConstraint(const BinaryOperator* I);
+  
+  void GenerateSubConstraint(const BinaryOperator* I);
   
   void SaveDbgDeclare(const DbgDeclareInst* D);  
 
