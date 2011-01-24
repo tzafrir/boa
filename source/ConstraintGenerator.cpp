@@ -97,7 +97,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 //  case Instruction::ExtractValue:
 //  case Instruction::InsertValue:
 
-  default : 
+  default :
     LOG << "unhandled instruction - " << endl;
     I->dump();
     break; //TODO
@@ -105,11 +105,11 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 }
 
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
-  
+
   //Constraint::Expression ce;
   GenerateIntegerExpression(I->getOperand(0), true);
   GenerateIntegerExpression(I->getOperand(1), true);
-  //TODO 
+  //TODO
 //  Integer intLiteral(I->getPointerOperand());
 //  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "add instruction");
 }
@@ -179,18 +179,15 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 }
 
 
-void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, const Value *integerExpression,
-                                                    const string &blame,
-                                                    VarLiteral::ExpressionType type) {
-  if (type == VarLiteral::USED) {
-    cp_.AddBuffer(buf);
-  }
-  GenerateGenericConstraint(dynamic_cast<const VarLiteral&>(buf), integerExpression, blame, type);
-}
-
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
+  if (type == VarLiteral::USED) {
+    if (const Buffer* buf = dynamic_cast<const Buffer*>(&var)) {
+      cp_.AddBuffer(*buf);
+    }
+  }
+
   vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
   for (size_t i = 0; i < maxExprs.size(); ++i) {
     Constraint allocMax;
