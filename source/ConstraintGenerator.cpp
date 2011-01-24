@@ -33,7 +33,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 //  case Instruction::Unreachable:
 
   // Standard binary operators...
-//  case Instruction::Add:
+  case Instruction::Add:
+    GenerateAddConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
 //  case Instruction::FAdd:
 //  case Instruction::Sub:
 //  case Instruction::FSub:
@@ -95,8 +97,21 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 //  case Instruction::ExtractValue:
 //  case Instruction::InsertValue:
 
-  default : break; //TODO
+  default : 
+    LOG << "unhandled instruction - " << endl;
+    I->dump();
+    break; //TODO
   }
+}
+
+void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
+  
+  //Constraint::Expression ce;
+  GenerateIntegerExpression(I->getOperand(0), true);
+  GenerateIntegerExpression(I->getOperand(1), true);
+  //TODO 
+//  Integer intLiteral(I->getPointerOperand());
+//  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "add instruction");
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
