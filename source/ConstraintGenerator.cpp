@@ -310,17 +310,16 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
     return;
   }
   GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
-  LOG << " Adding buffer to problem" << endl;
 }
 
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
-  if (type == VarLiteral::USED) {
-    if (const Buffer* buf = dynamic_cast<const Buffer*>(&var)) {
-      cp_.AddBuffer(*buf);
-    }
+  if (type == VarLiteral::USED && var.IsBuffer()) {
+    Buffer& buf = (Buffer&)var;
+    cp_.AddBuffer(buf);
+    LOG << " Adding buffer to problem" << endl;
   }
                                               
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
