@@ -7,6 +7,7 @@
 //#include <string>
 
 using std::pair;
+using Expression;
 
 //using std::string;
 
@@ -16,6 +17,7 @@ using namespace llvm;
 
 
 namespace boa {
+
 void ConstraintGenerator::VisitInstruction(const Instruction *I) {
   if (const DbgDeclareInst *D = dyn_cast<const DbgDeclareInst>(I)) {
     SaveDbgDeclare(D);
@@ -37,7 +39,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
     GenerateAddConstraint(dyn_cast<const BinaryOperator>(I));
     break;
 //  case Instruction::FAdd:
-//  case Instruction::Sub:
+  case Instruction::Sub:
+    GenerateSubConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
 //  case Instruction::FSub:
 //  case Instruction::Mul:
 //  case Instruction::FMul:
@@ -106,13 +110,45 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   
-  //Constraint::Expression ce;
-  GenerateIntegerExpression(I->getOperand(0), true);
-  GenerateIntegerExpression(I->getOperand(1), true);
-  //TODO 
-//  Integer intLiteral(I->getPointerOperand());
-//  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "add instruction");
+  Expression maxResult, minResult;
+  maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
+  minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
+  maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
+  minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
+   
+  Integer intLiteral(I->getPointerOperand());
+  
+  Constraint maxCons, minCons;
+  maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons.addSmall(maxResult);
+  minCons.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons.addBig(minResult);
+  cp_.AddConstraint(maxCons);
+  cp_.AddConstraint(minCons);
 }
+
+
+void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
+  
+  Expression maxResult, minResult;
+  maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
+  minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
+  maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
+  minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
+   
+  Integer intLiteral(I->getPointerOperand());
+  
+  Constraint maxCons, minCons;
+  maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons.addSmall(maxResult);
+  minCons.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons.addBig(minResult);
+  cp_.AddConstraint(maxCons);
+  cp_.AddConstraint(minCons);
+}
+
+
+
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   Integer intLiteral(I->getPointerOperand());
@@ -188,58 +224,35 @@ void ConstraintGenerator::GenerateGenericConstraint(const Buffer &buf, const Val
   GenerateGenericConstraint(dynamic_cast<const VarLiteral&>(buf), integerExpression, blame, type);
 }
 
-void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
-                                                    const string &blame,
-                                                    VarLiteral::ExpressionType type) {
-  vector<Constraint::Expression> maxExprs = GenerateIntegerExpression(integerExpression, true);
-  for (size_t i = 0; i < maxExprs.size(); ++i) {
-    Constraint allocMax;
-    allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
-    allocMax.addSmall(maxExprs[i]);
-    allocMax.SetBlame(blame);
-    cp_.AddConstraint(allocMax);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX, type) << " >= "
-              << maxExprs[i].toString() << endl;
-  }
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, 
+        const Value *integerExpression, const string &blame, VarLiteral::ExpressionType type) {
+                                              
+  Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
+  Constraint allocMax;
+  allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
+  allocMax.addSmall(maxExpr);
+  allocMax.SetBlame(blame);
+  cp_.AddConstraint(allocMax);
+  LOG << "Adding - " << var.NameExpression(VarLiteral::MAX, type) << " >= "
+            << maxExpr.toString() << endl;
 
-  vector<Constraint::Expression> minExprs = GenerateIntegerExpression(integerExpression, false);
-  for (size_t i = 0; i < minExprs.size(); ++i) {
-    Constraint allocMin;
-    allocMin.addSmall(var.NameExpression(VarLiteral::MIN, type));
-    allocMin.addBig(minExprs[i]);
-    allocMin.SetBlame(blame);
-    cp_.AddConstraint(allocMin);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
-              << minExprs[i].toString() << endl;
+  Expression minExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MIN);
+  Constraint allocMin;
+  allocMin.addSmall(var.NameExpression(VarLiteral::MIN, type));
+  allocMin.addBig(minExpr);
+  allocMin.SetBlame(blame);
+  cp_.AddConstraint(allocMin);
+  LOG << "Adding - " << var.NameExpression(VarLiteral::MIN, type) << " <= "
+            << minExpr.toString() << endl;
   }
 }
 
-vector<Constraint::Expression>
-    ConstraintGenerator::GenerateIntegerExpression(const Value *expr, bool max) {
-  vector<Constraint::Expression> result;
-  Constraint::Expression ce;
-
-//  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
-//    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-//      Integer intLiteral(funcDec);
-//      LOG << "CALL!" << endl;
-//      ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
-//      result.push_back(ce);
-//      return result;
-//    }
-//  }
-
-//  if (SizeOfAlignOfExpr *sizeOfExpr = dyn_cast<SizeOfAlignOfExpr>(expr)) {
-//    if (sizeOfExpr->isSizeOf()) {
-//      ce.add(1); // sizeof(ANYTHING) == 1
-//      result.push_back(ce);
-//      return result;
-//    }
-//  }
+Expression ConstraintGenerator::GenerateIntegerExpression(const Value *expr, 
+                                                            VarLiteral::ExpressionDir dir) {
+  Expression result;
 
   if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
-    ce.add(literal->getLimitedValue());
-    result.push_back(ce);
+    result.add(literal->getLimitedValue());
     return result;
   }
 
@@ -265,25 +278,12 @@ vector<Constraint::Expression>
 
 //    // TODO(tzafrir): Factor out each case's block to a separate method.
 //    switch (op->getOpcode()) {
-//      case BO_Add : {
-//        vector<Constraint::Expression> LHExpressions = GenerateIntegerExpression(op->getLHS(), max);
-//        vector<Constraint::Expression> RHExpressions = GenerateIntegerExpression(op->getRHS(), max);
-//        for (size_t i = 0; i < LHExpressions.size(); ++i) {
-//          for (size_t j = 0; j < RHExpressions.size(); ++j) {
-//            Constraint::Expression loopCE;
-//            loopCE.add(LHExpressions[i]);
-//            loopCE.add(RHExpressions[j]);
-//            result.push_back(loopCE);
-//          }
-//        }
-//        return result;
-//      }
 //      case BO_Sub : {
-//        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
-//        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), !max);
+//        vector<Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+//        vector<Expression> RHS = GenerateIntegerExpression(op->getRHS(), !max);
 //        for (size_t i = 0; i < LHS.size(); ++i) {
 //          for (size_t j = 0; j < RHS.size(); ++j) {
-//            Constraint::Expression loopCE;
+//            Expression loopCE;
 //            loopCE.add(LHS[i]);
 //            loopCE.sub(RHS[j]);
 //            result.push_back(loopCE);
@@ -292,8 +292,8 @@ vector<Constraint::Expression>
 //        return result;
 //      }
 //      case BO_Mul : {
-//        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
-//        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
+//        vector<Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+//        vector<Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
 //        if ((LHS.size() == 1) && (LHS[0].IsConst())) {
 //          for (size_t i = 0; i < RHS.size(); ++i) {
 //            RHS[i].mul(LHS[0].GetConst());
@@ -322,8 +322,8 @@ vector<Constraint::Expression>
 //        return result;
 //      }
 //      case BO_Div : {
-//        vector<Constraint::Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
-//        vector<Constraint::Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
+//        vector<Expression> LHS = GenerateIntegerExpression(op->getLHS(), max);
+//        vector<Expression> RHS = GenerateIntegerExpression(op->getRHS(), max);
 
 //        // We can only handle linear constraints, so this method ignores RHS expressions that are
 //        // non const.
@@ -349,8 +349,7 @@ vector<Constraint::Expression>
 
   // Otherwise, this is a reference to another var definition
   Integer intLiteral(expr);
-  ce.add(intLiteral.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN));
-  result.push_back(ce);
+  result.add(intLiteral.NameExpression(dir));
   return result;
 }
 
@@ -383,7 +382,7 @@ vector<Constraint::Expression>
 //  if (var->getType()->isIntegerType()) {
 //    Integer intLiteral(var);
 //    if (var->hasInit()) {
-//      vector<Constraint::Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true);
+//      vector<Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true);
 //      if (!maxInits.empty()) {
 //        GenerateGenericConstraint(intLiteral, var->getInit(), "int declaration " + getStmtLoc(var));
 //        return;
