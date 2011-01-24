@@ -39,10 +39,6 @@ class ConstraintGenerator {
 
 //  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
-  void GenerateGenericConstraint(const Buffer &buf, const Value *integerExpression,
-                                 const string &blame,
-                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
-
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);
@@ -58,14 +54,14 @@ class ConstraintGenerator {
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
 
   void GenerateAllocConstraint(const AllocaInst *I);
-  
+
   void GenerateStoreConstraint(const StoreInst* I);
-  
+
   void GenerateLoadConstraint(const LoadInst* I);
 
   void GenerateAddConstraint(const BinaryOperator* I);
-  
-  void SaveDbgDeclare(const DbgDeclareInst* D);  
+
+  void SaveDbgDeclare(const DbgDeclareInst* D);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
