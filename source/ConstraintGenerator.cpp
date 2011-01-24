@@ -43,10 +43,14 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
     GenerateSubConstraint(dyn_cast<const BinaryOperator>(I));
     break;
 //  case Instruction::FSub:
-//  case Instruction::Mul:
+  case Instruction::Mul:
+    GenerateMulConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
 //  case Instruction::FMul:
 //  case Instruction::UDiv:
-//  case Instruction::SDiv:
+  case Instruction::SDiv:
+    GenerateDivConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
 //  case Instruction::FDiv:
 //  case Instruction::URem:
 //  case Instruction::SRem:
@@ -124,7 +128,12 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   minCons.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
   minCons.addBig(minResult);
   cp_.AddConstraint(maxCons);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << maxResult.toString() << endl;
+
   cp_.AddConstraint(minCons);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+          << minResult.toString() << endl;
 }
 
 
@@ -144,9 +153,100 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   minCons.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
   minCons.addBig(minResult);
   cp_.AddConstraint(maxCons);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << maxResult.toString() << endl;
   cp_.AddConstraint(minCons);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+        << minResult.toString() << endl;
 }
 
+void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
+  Integer intLiteral(I);
+  Expression operand0Max = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);
+  Expression operand1Max = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
+  Expression operand0Min = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
+  Expression operand1Min = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN);
+  
+  Expression *minOperand, *maxOperand;
+  double constOperand;
+  
+  if (operand0Max.IsConst()) {
+    constOperand = operand0Max.GetConst();
+    minOperand = &operand1Min;
+    maxOperand = &operand1Max;
+  }
+  else if (operand1Max.IsConst()) {
+    constOperand = operand1Max.GetConst();
+    minOperand = &operand0Min;
+    maxOperand = &operand0Max;
+  }
+  else {
+    GenerateUnboundConstraint(intLiteral, "Unconst multiplication.");
+    return;
+  }
+
+  minOperand->mul(constOperand);
+  maxOperand->mul(constOperand);
+  
+  Constraint maxCons1, minCons1, maxCons2, minCons2;
+  maxCons1.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons1.addSmall(*maxOperand);
+  maxCons2.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons2.addSmall(*minOperand);
+  minCons1.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons1.addBig(*minOperand);
+  minCons2.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons2.addBig(*maxOperand);
+  cp_.AddConstraint(maxCons1);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << maxOperand->toString() << endl;
+  cp_.AddConstraint(maxCons2);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << minOperand->toString() << endl;
+  cp_.AddConstraint(minCons1);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+            << maxOperand->toString() << endl;
+  cp_.AddConstraint(minCons2);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+            << minOperand->toString() << endl;
+}
+
+void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
+  Integer intLiteral(I);
+  Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
+  if (!operand1.IsConst()) {
+    GenerateUnboundConstraint(intLiteral, "Non-const denominator.");
+    return;
+  }
+  double constOperand = operand1.GetConst();
+  Expression minOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);  
+  Expression maxOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
+
+  minOperand.div(constOperand);
+  maxOperand.div(constOperand);
+  
+  Constraint maxCons1, minCons1, maxCons2, minCons2;
+  maxCons1.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons1.addSmall(maxOperand);
+  maxCons2.addBig(intLiteral.NameExpression(VarLiteral::MAX));
+  maxCons2.addSmall(minOperand);
+  minCons1.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons1.addBig(minOperand);
+  minCons2.addSmall(intLiteral.NameExpression(VarLiteral::MIN));
+  minCons2.addBig(maxOperand);
+  cp_.AddConstraint(maxCons1);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << maxOperand.toString() << endl;
+  cp_.AddConstraint(maxCons2);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MAX) << " >= "
+            << minOperand.toString() << endl;
+  cp_.AddConstraint(minCons1);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+            << maxOperand.toString() << endl;
+  cp_.AddConstraint(minCons2);
+  LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
+            << minOperand.toString() << endl;
+}
 
 
 
@@ -353,9 +453,6 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 }
 
 
-} // namespace boa
-
-
 //void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
 //  if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
 //    if (arr->getElementType()->isAnyCharacterType()) {
@@ -426,18 +523,18 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 //  cp_.AddConstraint(allocMin);
 //}
 
-//void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
-//  // FIXME - is VarLiteral::MAX_INT enough?
-//  Constraint maxV, minV;
-//  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::USED));
-//  maxV.addSmall(std::numeric_limits<int>::max());
-//  maxV.SetBlame(blame);
-//  cp_.AddConstraint(maxV);
-//  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::USED));
-//  minV.addBig(std::numeric_limits<int>::min());
-//  minV.SetBlame(blame);
-//  cp_.AddConstraint(minV);
-//}
+void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
+  // FIXME - is VarLiteral::MAX_INT enough?
+  Constraint maxV, minV;
+  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  maxV.addSmall(std::numeric_limits<int>::max());
+  maxV.SetBlame(blame);
+  cp_.AddConstraint(maxV);
+  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+  minV.addBig(std::numeric_limits<int>::min());
+  minV.SetBlame(blame);
+  cp_.AddConstraint(minV);
+}
 
 //bool ConstraintGenerator::VisitStmt(Stmt* S) {
 //  return VisitStmt(S, NULL);
@@ -532,4 +629,4 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 //  return true;
 //}
 
-//} // namespace boa
+} // namespace boa

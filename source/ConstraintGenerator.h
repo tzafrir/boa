@@ -27,6 +27,7 @@ using std::map;
 #include "llvm/IntrinsicInst.h"
 #include "ConstraintProblem.h"
 #include "Buffer.h"
+#include "Integer.h"
 #include "log.h"
 
 using namespace llvm;
@@ -37,7 +38,7 @@ class ConstraintGenerator {
   ConstraintProblem &cp_;
   map<const Value*, Buffer> buffers;
 
-//  void GenerateUnboundConstraint(const Integer &var, const string &blame);
+  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
   void GenerateGenericConstraint(const Buffer &buf, const Value *integerExpression,
                                  const string &blame,
@@ -66,6 +67,10 @@ class ConstraintGenerator {
   void GenerateAddConstraint(const BinaryOperator* I);
   
   void GenerateSubConstraint(const BinaryOperator* I);
+  
+  void GenerateMulConstraint(const BinaryOperator* I);
+  
+  void GenerateDivConstraint(const BinaryOperator* I);
   
   void SaveDbgDeclare(const DbgDeclareInst* D);  
 
