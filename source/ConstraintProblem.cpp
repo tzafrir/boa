@@ -44,13 +44,13 @@ inline bool isMax(string s) {
 }
 
 
-/** 
-  RowData store all the data of a single lp matrix row, so the row can be removed and returned later 
+/**
+  RowData store all the data of a single lp matrix row, so the row can be removed and returned later
 */
 struct RowData {
   // because of llvm command structure, each constraint affect 3(?) variables at the most
-  static const int MAX_VARS = 10; 
-  
+  static const int MAX_VARS = 10;
+
   int indices[MAX_VARS];
   double values[MAX_VARS];
   int nonZeros;
@@ -59,7 +59,7 @@ struct RowData {
 
 /**
   Remove a row from a linear problem matrix, create "unbound constraints" instead
-  
+
   The new constraints created at the end of the matrix, and all the data regarding the removed row
   retured. Use returnRowToLP with the returned RowData in order to get the lp back to the original
   state (note you must call "returnRowToLP" before removing any other rows from the LP, or else the
@@ -71,29 +71,29 @@ inline RowData removeRowFromLP(glp_prob* lp, int row, map<int, string>& colToVar
   res.nonZeros = glp_get_mat_row(lp, row, res.indices, res.values);
   res.bound = glp_get_row_ub(lp, row);
 
-  glp_set_row_bnds(lp, row, GLP_FR, 0.0, 0.0);        
-  
+  glp_set_row_bnds(lp, row, GLP_FR, 0.0, 0.0);
+
   int ind[2];
   double val[2];
   for (int i = 1; i <= res.nonZeros; ++i) {
     ind[1] = res.indices[i];
     val[1] = (isMax(colToVar[res.indices[i]]) ? -1 : 1);
-    int r = glp_add_rows(lp, 1);    
+    int r = glp_add_rows(lp, 1);
     glp_set_row_bnds(lp, r, GLP_UP, 0.0, std::numeric_limits<int>::min());
     glp_set_mat_row(lp, r, 1, ind, val);
   }
-  return res;  
+  return res;
 }
 
 /**
   Return a removed row back to the LP and remove the related "unbound constraints"
-  
+
   This function assumes that it is called right after "row" was removed using "removeRowFromLP",
-  if there wasany other manipulation on the matrix rows between the two calls - the result may be 
+  if there wasany other manipulation on the matrix rows between the two calls - the result may be
   unexpected
 */
 inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
-  glp_set_row_bnds(lp, row, GLP_UP, 0.0, data.bound);      
+  glp_set_row_bnds(lp, row, GLP_UP, 0.0, data.bound);
 
   int ind[RowData::MAX_VARS]; // rows to be deleted from lp
   ind[0] = glp_get_num_rows(lp) - data.nonZeros; // last row to stay
@@ -103,14 +103,14 @@ inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
   glp_del_rows(lp, data.nonZeros, ind);
 }
 
-/** 
+/**
   Remove a minimal set of constraints that makes the lp infeasble.
-  
-  Each of the variables in the removed rows will become "unbound" (e.g. - ...!max >= MAX_INT  or 
-  ...!min <= MIN_INT). 
-  
+
+  Each of the variables in the removed rows will become "unbound" (e.g. - ...!max >= MAX_INT  or
+  ...!min <= MIN_INT).
+
   The removed set is *A* minimal in the sense that these lines alone form an infeasble problem, and
-  each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is 
+  each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
   no such set which is smaller in size.
 */
 inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, string>& colToVar) {
@@ -184,12 +184,12 @@ vector<Buffer> ConstraintProblem::Solve(
   glp_init_smcp(&params);
   params.msg_lev = GLP_MSG_OFF;
   glp_simplex(lp, &params);
-  
+
   while (!IsFeasble(glp_get_status(lp))) {
     removeInfeasble(lp, params, colToVar);
     glp_simplex(lp, &params);
   }
-  
+
   // TODO - what if no solution can be found? (glp_get_status(lp) != GLP_OPT)
 
   for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
