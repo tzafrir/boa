@@ -27,6 +27,7 @@ using std::map;
 #include "llvm/IntrinsicInst.h"
 #include "ConstraintProblem.h"
 #include "Buffer.h"
+#include "Integer.h"
 #include "log.h"
 
 using namespace llvm;
@@ -37,7 +38,7 @@ class ConstraintGenerator {
   ConstraintProblem &cp_;
   map<const Value*, Buffer> buffers;
 
-//  void GenerateUnboundConstraint(const Integer &var, const string &blame);
+  void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  const string &blame,
@@ -46,7 +47,7 @@ class ConstraintGenerator {
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */
-  vector<Constraint::Expression> GenerateIntegerExpression(const Value *expr, bool max);
+  Constraint::Expression GenerateIntegerExpression(const Value *expr, VarLiteral::ExpressionDir dir);
 
 //  void GenerateVarDeclConstraints(VarDecl *var);
 
@@ -61,7 +62,15 @@ class ConstraintGenerator {
 
   void GenerateAddConstraint(const BinaryOperator* I);
 
+  void GenerateSubConstraint(const BinaryOperator* I);
+
+  void GenerateMulConstraint(const BinaryOperator* I);
+
+  void GenerateDivConstraint(const BinaryOperator* I);
+
   void SaveDbgDeclare(const DbgDeclareInst* D);
+
+  void GenerateSExtConstraint(const SExtInst* I);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
