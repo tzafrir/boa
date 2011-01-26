@@ -63,12 +63,14 @@ class ConstraintGenerator {
   void GenerateAddConstraint(const BinaryOperator* I);
 
   void GenerateSubConstraint(const BinaryOperator* I);
-  
+
   void GenerateMulConstraint(const BinaryOperator* I);
-  
+
   void GenerateDivConstraint(const BinaryOperator* I);
-  
+
   void SaveDbgDeclare(const DbgDeclareInst* D);
+
+  void GenerateSExtConstraint(const SExtInst* I);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
