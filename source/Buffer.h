@@ -41,6 +41,9 @@ namespace boa {
       ss << filename_ << ":" << line_;
       return ss.str();
     }
+    
+    bool inline IsBuffer() const { return true; }
+    
   };
 }
 
