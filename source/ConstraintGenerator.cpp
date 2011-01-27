@@ -250,8 +250,8 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
 }
 
 void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
-  Integer intLiteral(I->getOperand(1));
-  GenerateGenericConstraint(intLiteral, I, "sign extension instruction");
+  Integer intLiteral(I);
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction");
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
