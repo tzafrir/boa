@@ -1,1 +1,3 @@
 HAS ByName p
+NOT ByName q
+HAS ByName r
