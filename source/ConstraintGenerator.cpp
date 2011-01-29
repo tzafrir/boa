@@ -86,7 +86,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 //  case Instruction::FCmp:
 //  case Instruction::PHI:
 //  case Instruction::Select:
-//  case Instruction::Call:
+  case Instruction::Call:
+    GenerateCallConstraint(dyn_cast<const CallInst>(I));
+    break;
 //  case Instruction::Shl:
 //  case Instruction::LShr:
 //  case Instruction::AShr:
@@ -115,6 +117,15 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
+  if (need_to_handle_malloc_call) {
+    Value const * po = I->getPointerOperand();
+    Buffer buf(po);
+    GenerateGenericConstraint(buf, last_malloc_parameter,
+        "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
+    need_to_handle_malloc_call = false;
+    return;
+  }
+
   Integer intLiteral(I->getPointerOperand());
   GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
 }
@@ -178,6 +189,35 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   LOG << " Adding buffer to problem" << endl;
 }
 
+void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
+  Function* f = I->getCalledFunction();
+  if (f != NULL && f->getNameStr() == "malloc") {
+    if (const ConstantInt* ci = dyn_cast<const ConstantInt>(I->getArgOperand(0))) {
+
+      // Hold the parameter value until next instruction is handled, when we know what buffer is the
+      // result of this malloc call.
+      this->last_malloc_parameter = (Value*)ci;
+      this->need_to_handle_malloc_call = true;
+    } else {
+      LOG << "Unable to retrieve malloc argument" << endl;
+    }
+  }
+
+//      // General function call
+//      if (funcDec->hasBody()) {
+//        LOG << "GO!" << endl;
+//        VisitStmt(funcDec->getBody(), funcDec);
+//      }
+//      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
+//        VarDecl *var = funcDec->getParamDecl(i);
+//        if (var->getType()->isIntegerType()) {
+//          Integer intLiteral(var);
+//          GenerateGenericConstraint(intLiteral, funcCall->getArg(i), "int parameter " + getStmtLoc(var));
+//        }
+//      }
+//    }
+//  }
+}
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
@@ -467,35 +507,6 @@ vector<Constraint::Expression>
 
 //  if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
 //    GenerateStringLiteralConstraints(stringLiteral);
-//  }
-
-//  if (CallExpr* funcCall = dyn_cast<CallExpr>(S)) {
-//    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-//      string funcName = funcDec->getNameInfo().getAsString();
-//      if (funcName == "malloc") {
-//        Buffer buf(funcCall);
-//        Expr* argument = funcCall->getArg(0);
-//        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
-//          argument = cast->getSubExpr();
-//        }
-
-//        GenerateGenericConstraint(buf, argument, "malloc " + getStmtLoc(S));
-//        return true;
-//      }
-
-//      // General function call
-//      if (funcDec->hasBody()) {
-//        LOG << "GO!" << endl;
-//        VisitStmt(funcDec->getBody(), funcDec);
-//      }
-//      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
-//        VarDecl *var = funcDec->getParamDecl(i);
-//        if (var->getType()->isIntegerType()) {
-//          Integer intLiteral(var);
-//          GenerateGenericConstraint(intLiteral, funcCall->getArg(i), "int parameter " + getStmtLoc(var));
-//        }
-//      }
-//    }
 //  }
 
 

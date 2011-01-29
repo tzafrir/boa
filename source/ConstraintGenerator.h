@@ -61,16 +61,32 @@ class ConstraintGenerator {
 
   void GenerateAddConstraint(const BinaryOperator* I);
 
+  void GenerateCallConstraint(const CallInst* I);
+
   void SaveDbgDeclare(const DbgDeclareInst* D);
 
  public:
-  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
+  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP), need_to_handle_malloc_call(false) {}
 
   void VisitInstruction(const Instruction *I);
 
 //  bool VisitStmt(Stmt* S);
 
 //  bool VisitStmt(Stmt* S, FunctionDecl* context);
+
+ private:
+
+  /**
+   * malloc calls are of the form:
+   *   %2 = call i8* @malloc(i64 4)
+   *   store i8* %2, i8** %buf1, align 8
+   *
+   * This temporarily holds the value of the parameter to malloc until processing the next
+   * instruction, when a Buffer instance can be created.
+   */
+  Value* last_malloc_parameter;
+  bool need_to_handle_malloc_call;
+
 };
 
 }  // namespace boa
