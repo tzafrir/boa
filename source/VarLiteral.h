@@ -17,6 +17,8 @@ namespace boa {
     const Value* ValueNode_;
 
     VarLiteral(const Value* ValueNode) : ValueNode_(ValueNode) {}
+
+  public:
     enum ExpressionDir  {MIN, MAX};
     enum ExpressionType {USED, ALLOC, LEN_READ, LEN_WRITE};
 
