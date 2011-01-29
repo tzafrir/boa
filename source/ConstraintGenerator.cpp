@@ -117,12 +117,12 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
-  if (need_to_handle_malloc_call) {
+  if (needToHandleMallocCall) {
     Value const * po = I->getPointerOperand();
     Buffer buf(po);
-    GenerateGenericConstraint(buf, last_malloc_parameter,
+    GenerateGenericConstraint(buf, lastMallocParameter,
         "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
-    need_to_handle_malloc_call = false;
+    needToHandleMallocCall = false;
     return;
   }
 
@@ -194,8 +194,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (f != NULL && f->getNameStr() == "malloc") {
     // Hold the parameter value until next instruction is handled, when we know what buffer is the
     // result of this malloc call.
-    this->last_malloc_parameter = (Value*)I->getArgOperand(0);
-    this->need_to_handle_malloc_call = true;
+    this->lastMallocParameter = (Value*)I->getArgOperand(0);
+    this->needToHandleMallocCall = true;
   }
 
 //      // General function call

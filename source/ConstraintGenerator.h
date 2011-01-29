@@ -66,7 +66,7 @@ class ConstraintGenerator {
   void SaveDbgDeclare(const DbgDeclareInst* D);
 
  public:
-  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP), need_to_handle_malloc_call(false) {}
+  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP), needToHandleMallocCall(false) {}
 
   void VisitInstruction(const Instruction *I);
 
@@ -84,8 +84,8 @@ class ConstraintGenerator {
    * This temporarily holds the value of the parameter to malloc until processing the next
    * instruction, when a Buffer instance can be created.
    */
-  Value* last_malloc_parameter;
-  bool need_to_handle_malloc_call;
+  Value* lastMallocParameter;
+  bool needToHandleMallocCall;
 
 };
 
