@@ -192,15 +192,10 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   Function* f = I->getCalledFunction();
   if (f != NULL && f->getNameStr() == "malloc") {
-    if (const ConstantInt* ci = dyn_cast<const ConstantInt>(I->getArgOperand(0))) {
-
-      // Hold the parameter value until next instruction is handled, when we know what buffer is the
-      // result of this malloc call.
-      this->last_malloc_parameter = (Value*)ci;
-      this->need_to_handle_malloc_call = true;
-    } else {
-      LOG << "Unable to retrieve malloc argument" << endl;
-    }
+    // Hold the parameter value until next instruction is handled, when we know what buffer is the
+    // result of this malloc call.
+    this->last_malloc_parameter = (Value*)I->getArgOperand(0);
+    this->need_to_handle_malloc_call = true;
   }
 
 //      // General function call
