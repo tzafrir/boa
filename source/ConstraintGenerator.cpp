@@ -117,15 +117,6 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
-  if (needToHandleMallocCall) {
-    Value const * po = I->getPointerOperand();
-    Buffer buf(po);
-    GenerateGenericConstraint(buf, lastMallocParameter,
-        "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
-    needToHandleMallocCall = false;
-    return;
-  }
-
   Integer intLiteral(I->getPointerOperand());
   GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
 }
@@ -192,10 +183,23 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   Function* f = I->getCalledFunction();
   if (f != NULL && f->getNameStr() == "malloc") {
-    // Hold the parameter value until next instruction is handled, when we know what buffer is the
-    // result of this malloc call.
-    this->lastMallocParameter = (Value*)I->getArgOperand(0);
-    this->needToHandleMallocCall = true;
+    // malloc calls are of the form:
+    //   %2 = call i8* @malloc(i64 4)
+    //   ...
+    //   store i8* %2, i8** %buf1, align 8
+    //
+    // This method gets all the instructions that use the result of the malloc call and generates
+    // alloc constraints for them.
+    for (Value::const_use_iterator use = I->use_begin(); use != I->use_end(); ++use) {
+      const User* user = *use;
+      if (const StoreInst* si = dyn_cast<const StoreInst>(user)) {
+        Value const * po = si->getPointerOperand();
+        Buffer buf(po);
+        GenerateGenericConstraint(buf, I->getArgOperand(0),
+            "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
+        return;
+      }
+    }
   }
 
 //      // General function call
