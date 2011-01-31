@@ -596,6 +596,7 @@ void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const st
 
 // Static.
 string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
+  // Magic numbers that lead us through the various debug nodes to where the filename is.
   if (const MDNode* n1 =
       dyn_cast<const MDNode>(I->getMetadata(LLVMContext::MD_dbg)->getOperand(2))) {
     if (const MDNode* n2 = dyn_cast<const MDNode>(n1->getOperand(1))) {
