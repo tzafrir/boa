@@ -142,36 +142,21 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
 
     GenerateAllocConstraint(G, ar);
 
-    {Constraint lenMax, lenMin;
+    Constraint lenMax, lenMin;
 
-    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    lenMax.addSmall(len);
+    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+    lenMax.addSmall(len - 1);
 //    lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
     cp_.AddConstraint(lenMax);
-    LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
-                  len << "\n";
-
-    lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    lenMin.addBig(len);
-//    lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-    cp_.AddConstraint(lenMin);
-    LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " <= " <<
-                 len << "\n";
-    }
-
-    {Constraint lenMax, lenMin; //FIXME - remove!
-    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
-    lenMax.addSmall(len);
-    cp_.AddConstraint(lenMax);
     LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
-                  len << "\n";
+                  (len - 1) << "\n";
 
     lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
-    lenMin.addBig(len);
+    lenMin.addBig(len - 1);
+//    lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
     cp_.AddConstraint(lenMin);
     LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= " <<
-                 len << "\n";
-    }
+                 (len - 1) << "\n";
   }
 }
 
