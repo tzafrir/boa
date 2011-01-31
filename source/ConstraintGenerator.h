@@ -64,6 +64,8 @@ class ConstraintGenerator {
 
   void GenerateSubConstraint(const BinaryOperator* I);
   
+  void GenerateCallConstraint(const CallInst* I);
+
   void GenerateMulConstraint(const BinaryOperator* I);
   
   void GenerateDivConstraint(const BinaryOperator* I);
@@ -83,6 +85,7 @@ class ConstraintGenerator {
 //  bool VisitStmt(Stmt* S);
 
 //  bool VisitStmt(Stmt* S, FunctionDecl* context);
+
 };
 
 }  // namespace boa

@@ -25,13 +25,12 @@ static const string SEPARATOR("---");
 class boa : public ModulePass {
  private:
   ConstraintProblem constraintProblem_;
-  ConstraintGenerator constraintGenerator_;
 
  public:
   static char ID;
 
 
-  boa() : ModulePass(ID), constraintGenerator_(constraintProblem_) {
+  boa() : ModulePass(ID) {
     log::set(cerr); // TODO - print log only when neseccery
    }
 
@@ -43,7 +42,8 @@ class boa : public ModulePass {
     for (Module::const_iterator it = M.begin(); it != M.end(); ++it) {
       const Function *F = it;
       for (const_inst_iterator ii = inst_begin(F); ii != inst_end(F); ++ii) {
-        constraintGenerator_.VisitInstruction(&(*ii));
+        ConstraintGenerator constraintGenerator(constraintProblem_);
+        constraintGenerator.VisitInstruction(&(*ii));
       }
     }
     return false;
