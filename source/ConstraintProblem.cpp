@@ -136,6 +136,13 @@ vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints, buffers);
 }
 
+inline void setBufferCoef(glp_prob *lp, const Buffer &b, double base, map<string, int> varToCol) {
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
+}
+
 vector<Buffer> ConstraintProblem::Solve(
     const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {
   vector<Buffer> unsafeBuffers;
@@ -174,10 +181,7 @@ vector<Buffer> ConstraintProblem::Solve(
 
   for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
     // Set objective coeficients
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MIN, VarLiteral::USED )],  1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MAX, VarLiteral::USED )], -1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -1.0);
+    setBufferCoef(lp, *b, 1.0, varToCol);
   }
 
   glp_smcp params;
@@ -185,11 +189,29 @@ vector<Buffer> ConstraintProblem::Solve(
   params.msg_lev = GLP_MSG_OFF;
   glp_simplex(lp, &params);
 
-  while (!IsFeasble(glp_get_status(lp))) {
-    removeInfeasble(lp, params, colToVar);
-    glp_simplex(lp, &params);
-  }
+  int status = glp_get_status(lp);
+  while (status != GLP_OPT) {
+    while (!IsFeasble(status)) {
+      removeInfeasble(lp, params, colToVar);
+      glp_simplex(lp, &params);
+      status = glp_get_status(lp);
+    }
+    while (status == GLP_UNBND) {
+      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
+        setBufferCoef(lp, *b, 0.0, varToCol);
+      }
 
+      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
+        setBufferCoef(lp, *b, 1.0, varToCol);
+        glp_simplex(lp, &params);
+        if (glp_get_status(lp) == GLP_UNBND) {
+          setBufferCoef(lp, *b, 0.0, varToCol);
+        }
+      }
+      glp_simplex(lp, &params);
+      status = glp_get_status(lp);
+    }
+  }
   // TODO - what if no solution can be found? (glp_get_status(lp) != GLP_OPT)
 
   for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
