@@ -35,14 +35,15 @@ class boa : public ModulePass {
    }
 
   virtual bool runOnModule(Module &M) {
+    ConstraintGenerator constraintGenerator(constraintProblem_);
+
     for (Module::const_global_iterator it = M.global_begin(); it != M.global_end(); ++it) {
       const GlobalValue *g = it;
-      constraintGenerator_.VisitGlobal(g);
+      constraintGenerator.VisitGlobal(g);
     }
     for (Module::const_iterator it = M.begin(); it != M.end(); ++it) {
       const Function *F = it;
       for (const_inst_iterator ii = inst_begin(F); ii != inst_end(F); ++ii) {
-        ConstraintGenerator constraintGenerator(constraintProblem_);
         constraintGenerator.VisitInstruction(&(*ii));
       }
     }
