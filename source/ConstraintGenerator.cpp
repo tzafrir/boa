@@ -2,6 +2,7 @@
 #include <vector>
 #include <map>
 #include "Integer.h"
+#include "Pointer.h"
 
 //#include <limits>
 //#include <string>
@@ -355,7 +356,11 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   Function* f = I->getCalledFunction();
-  if (f != NULL && f->getNameStr() == "malloc") {
+  if (f == NULL) {
+    return;
+  }
+  
+  if (f->getNameStr() == "malloc") {
     // malloc calls are of the form:
     //   %2 = call i8* @malloc(i64 4)
     //   ...
@@ -374,10 +379,31 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       }
     }
   }
+  
+  if (f->getNameStr() == "strlen") {
+    Pointer p(I->getArgOperand(0));
+    Integer var(I);
+
+    Constraint cMax;
+    cMax.addBig(var.NameExpression(VarLiteral::MAX));
+    cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    cMax.SetBlame("strlen call");
+    cp_.AddConstraint(cMax);
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
+              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
+
+    Constraint cMin;
+    cMin.addSmall(var.NameExpression(VarLiteral::MIN));
+    cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    cMin.SetBlame("strlen call");
+    cp_.AddConstraint(cMin);
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
+              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
+    return;
+  }  
 
 //      // General function call
 //      if (funcDec->hasBody()) {
-//        LOG << "GO!" << endl;
 //        VisitStmt(funcDec->getBody(), funcDec);
 //      }
 //      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
@@ -427,24 +453,6 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
     result.add(literal->getLimitedValue());
     return result;
   }
-
-//  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
-//    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-//      string funcName = funcDec->getNameInfo().getAsString();
-//      if (funcName == "strlen") {
-//        Expr* argument = funcCall->getArg(0);
-//        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
-//          argument = cast->getSubExpr();
-//        }
-//        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
-//          Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
-//          ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN_READ));
-//          result.push_back(ce);
-//          return result;
-//        }
-//      }
-//    }
-//  }
 
   // Otherwise, this is a reference to another var definition
   Integer intLiteral(expr);
