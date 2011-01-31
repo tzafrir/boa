@@ -126,7 +126,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
 
     GenerateAllocConstraint(G, ar);
 
-    Constraint lenMax, lenMin;
+    {Constraint lenMax, lenMin;
 
     lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
     lenMax.addSmall(len);
@@ -141,6 +141,21 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     cp_.AddConstraint(lenMin);
     LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " <= " <<
                  len << "\n";
+    }
+
+    {Constraint lenMax, lenMin;
+    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+    lenMax.addSmall(len);
+    cp_.AddConstraint(lenMax);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+                  len << "\n";
+
+    lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+    lenMin.addBig(len);
+    cp_.AddConstraint(lenMin);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= " <<
+                 len << "\n";
+    }
   }
 }
 
@@ -297,6 +312,13 @@ void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
   LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= 0 \n";
 }
 
+Pointer makePointer(const Value *I) {
+  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
+    return G->getOperand(0);
+  }
+  return I;
+}
+
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
@@ -306,11 +328,7 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
       GeneratePointerDerefConstraint(I->getPointerOperand());
     }
     else {
-      Pointer pFrom(I->getValueOperand()), pTo(I->getPointerOperand());
-      if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I->getValueOperand())) {
-        // store from a string literal
-        pFrom = G->getOperand(0);
-      }
+      Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
       GenerateBufferAliasConstraint(pFrom, pTo);
     }
   }
@@ -360,8 +378,9 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       c.addSmall(offsets[dir]);
       c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
       cp_.AddConstraint(c);
-      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " + " << dirs[1] <<
-                    relOp[dir] << from.NameExpression(dirs[dir], types[type]) << "\n";
+      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " + " <<
+             offsets[1].toString() << relOp[dir] << from.NameExpression(dirs[dir], types[type]) <<
+             "\n";
     }
   }
 }
@@ -418,11 +437,12 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
     LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
     return;
   }
+
   cp_.AddBuffer(b);
+
   LOG << " Adding buffer to problem" << endl;
 
-
-  GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1));
+  GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1 ));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
@@ -452,7 +472,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (f->getNameStr() == "strlen") {
-    Pointer p(I->getArgOperand(0));
+    Pointer p(makePointer(I->getArgOperand(0)));
     Integer var(I);
 
     Constraint cMax;
@@ -471,6 +491,10 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
               << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
     return;
+  }
+
+  if (f->getNameStr() == "strcpy") {
+    GenerateBufferAliasConstraint(makePointer(I->getArgOperand(1)), makePointer(I->getArgOperand(0)));
   }
 
 //      // General function call
