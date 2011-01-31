@@ -28,7 +28,7 @@ namespace boa {
 
 class ConstraintGenerator {
   ConstraintProblem &cp_;
-  map<const Value*, Buffer> buffers;
+  map<const Value*, bool> allocedBuffers;
 
   void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
@@ -44,6 +44,8 @@ class ConstraintGenerator {
     }
     return I;
   }
+
+  void AddBuffer(const Buffer& buf);
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
