@@ -44,6 +44,9 @@ class ConstraintGenerator {
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
+  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to);
+                                 
+
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */

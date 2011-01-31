@@ -130,7 +130,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
     GenerateAllocConstraint(G, ar);
-    
+
     Constraint lenMax, lenMin;
 
     lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
@@ -290,9 +290,41 @@ void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
-  Integer intLiteral(I->getPointerOperand());
-  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
+    if (!(pType->getElementType()->isPointerTy())) {
+      // store into a pointer - store int value
+      Integer intLiteral(I->getPointerOperand());
+      GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+    }
+    else {
+      Pointer pFrom(I->getValueOperand()), pTo(I->getPointerOperand());
+      GenerateBufferAliasConstraint(pFrom, pTo);
+    }
+  }
+  else {
+    LOG << "Error - Trying to store into a non pointer type" << endl;
+  }
 }
+
+void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to) {
+  static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
+  static const int dirCoef[2] = {-1, 1};
+  static const char *relOp[2] = {" <= ", " >= "};
+  static const VarLiteral::ExpressionType types[3] = 
+                      {VarLiteral::USED, VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
+   
+  for (int type = 0; type < 3; ++type) {
+    for (int dir = 0; dir < 2; ++ dir) {
+      Constraint c;
+      c.addBig(to.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
+      c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
+      cp_.AddConstraint(c);
+      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << relOp[dir] <<
+                    from.NameExpression(dirs[dir], types[type]) << "\n";      
+    }
+  }
+}
+
 
 void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
   Integer intLiteral(I);
@@ -359,7 +391,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (f == NULL) {
     return;
   }
-  
+
   if (f->getNameStr() == "malloc") {
     // malloc calls are of the form:
     //   %2 = call i8* @malloc(i64 4)
@@ -379,7 +411,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       }
     }
   }
-  
+
   if (f->getNameStr() == "strlen") {
     Pointer p(I->getArgOperand(0));
     Integer var(I);
@@ -400,7 +432,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
               << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
     return;
-  }  
+  }
 
 //      // General function call
 //      if (funcDec->hasBody()) {
