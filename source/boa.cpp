@@ -25,6 +25,7 @@ using std::ios_base;
 using namespace llvm;
 
 cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
+cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -37,7 +38,7 @@ class boa : public ModulePass {
   static char ID;
 
 
-  boa() : ModulePass(ID) {
+  boa() : ModulePass(ID), constraintProblem_(OutputGlpk) {
     if (LogFile != "") {
       ofstream* logfile = new ofstream();
       logfile->open(LogFile.c_str());
