@@ -19,6 +19,7 @@ using std::map;
 #include "ConstraintProblem.h"
 #include "Buffer.h"
 #include "Integer.h"
+#include "Pointer.h"
 #include "log.h"
 
 using namespace llvm;
@@ -37,6 +38,12 @@ class ConstraintGenerator {
 
   void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const Value *offset = NULL);
 
+  static Pointer makePointer(const Value *I) {
+    if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
+      return G->getOperand(0);
+    }
+    return I;
+  }
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.

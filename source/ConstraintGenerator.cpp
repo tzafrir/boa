@@ -316,13 +316,6 @@ void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
   LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= 0 \n";
 }
 
-Pointer makePointer(const Value *I) {
-  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
-    return G->getOperand(0);
-  }
-  return I;
-}
-
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
