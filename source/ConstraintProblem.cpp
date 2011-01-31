@@ -186,7 +186,11 @@ vector<Buffer> ConstraintProblem::Solve(
 
   glp_smcp params;
   glp_init_smcp(&params);
-  params.msg_lev = GLP_MSG_OFF;
+  if (outputGlpk) {
+    params.msg_lev = GLP_MSG_ALL;
+  } else {
+    params.msg_lev = GLP_MSG_ERR;
+  }
   glp_simplex(lp, &params);
 
   int status = glp_get_status(lp);
