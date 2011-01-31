@@ -360,7 +360,6 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {1, -1};
-//  static const char *relOp[2] = {" <= ", " >= "};
   static const VarLiteral::ExpressionType types[2] = {VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
   static const int typeCoef[2] = {-1, 1};
 
@@ -376,7 +375,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
     for (int dir = 0; dir < 2; ++ dir) {
       Constraint c;
       c.addBig(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      c.addSmall(offsets[dir]);
+      c.addBig(offsets[dir]);
       c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
       cp_.AddConstraint(c);
       LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " * " <<
@@ -446,7 +445,7 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 
   LOG << " Adding buffer to problem" << endl;
 
-  GenerateBufferAliasConstraint(b, I, *(I->idx_begin() + 1 ));
+  GenerateBufferAliasConstraint(b, I, I->getOperand(I->getNumOperands()-1));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
