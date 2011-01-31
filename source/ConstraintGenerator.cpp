@@ -116,8 +116,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
   const Type *t = G->getType();
   if (const PointerType *p = dyn_cast<const PointerType>(t)) {
     t = p->getElementType();
-  }
-  else {
+  } else {
     LOG << "can't handle global variable" << endl;
     return;
   }
@@ -224,13 +223,11 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
     constOperand = operand0Max.GetConst();
     minOperand = &operand1Min;
     maxOperand = &operand1Max;
-  }
-  else if (operand1Max.IsConst()) {
+  } else if (operand1Max.IsConst()) {
     constOperand = operand1Max.GetConst();
     minOperand = &operand0Min;
     maxOperand = &operand0Max;
-  }
-  else {
+  } else {
     GenerateUnboundConstraint(intLiteral, "Unconst multiplication.");
     return;
   }
@@ -323,14 +320,12 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
       Integer intLiteral(I->getPointerOperand());
       GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
       GeneratePointerDerefConstraint(I->getPointerOperand());
-    }
-    else {
+    } else {
       Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
       GenerateBufferAliasConstraint(pFrom, pTo);
 //      GeneratePointerDerefConstraint(I->getPointerOperand());
     }
-  }
-  else {
+  } else {
     LOG << "Error - Trying to store into a non pointer type" << endl;
   }
 }
@@ -342,13 +337,11 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
       Integer intLiteral(I);
       GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
       GeneratePointerDerefConstraint(I->getPointerOperand());
-    }
-    else {
+    } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
       GenerateBufferAliasConstraint(pFrom, pTo);
     }
-  }
-  else {
+  } else {
     LOG << "Error - Trying to load from a non pointer type" << endl;
   }
 }
