@@ -1,8 +1,8 @@
 #include "llvm/Pass.h"
 #include "llvm/Module.h"
 #include "llvm/Function.h"
-#include <iostream>
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InstIterator.h"
 
 //#include "Buffer.h"
@@ -11,13 +11,21 @@
 #include "ConstraintProblem.h"
 #include "log.h"
 
+#include <fstream>
+#include <iostream>
+
 //#include <vector>
 
 //using std::vector;
 
 using std::cerr;
+using std::ofstream;
+using std::ios_base;
 
 using namespace llvm;
+
+cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
+cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -30,8 +38,12 @@ class boa : public ModulePass {
   static char ID;
 
 
-  boa() : ModulePass(ID) {
-    log::set(cerr); // TODO - print log only when neseccery
+  boa() : ModulePass(ID), constraintProblem_(OutputGlpk) {
+    if (LogFile != "") {
+      ofstream* logfile = new ofstream();
+      logfile->open(LogFile.c_str());
+      log::set(*logfile);
+    }
    }
 
   virtual bool runOnModule(Module &M) {
@@ -152,13 +164,11 @@ class boa : public ModulePass {
     }
   }
 
-
 };
 }
 
 char boa::boa::ID = 0;
 static RegisterPass<boa::boa> X("boa", "boa - buffer overrun analyzer");
-
 
 //// DEBUG
 //#include <iostream>

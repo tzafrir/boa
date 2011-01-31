@@ -14,6 +14,7 @@ class ConstraintProblem {
   const vector<Constraint> NO_CONSTRAINTS;
   vector<Constraint> constraints;
   set<Buffer> buffers;
+  bool outputGlpk;
 
   set<string> CollectVars() const;
 
@@ -22,6 +23,8 @@ class ConstraintProblem {
 
   vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
  public:
+  ConstraintProblem(bool output_glpk) : outputGlpk(output_glpk) {}
+
   void AddBuffer(const Buffer& buffer) {
     buffers.insert(buffer);
   }
