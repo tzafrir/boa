@@ -72,8 +72,6 @@ class ConstraintGenerator {
 
   void GenerateDivConstraint(const BinaryOperator* I);
 
-  void GenerateCallConstraint(const CallInst* I);
-
   void SaveDbgDeclare(const DbgDeclareInst* D);
 
   void GenerateSExtConstraint(const SExtInst* I);
