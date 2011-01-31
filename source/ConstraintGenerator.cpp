@@ -306,13 +306,30 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   }
 }
 
+void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
+    if (!(pType->getElementType()->isPointerTy())) {
+      // load from a pointer - load int value
+      Integer intLiteral(I);
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
+    }
+    else {
+      Pointer pFrom(I->getPointerOperand()), pTo(I);
+      GenerateBufferAliasConstraint(pFrom, pTo);
+    }
+  }
+  else {
+    LOG << "Error - Trying to load from a non pointer type" << endl;
+  }
+}
+
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {-1, 1};
   static const char *relOp[2] = {" <= ", " >= "};
-  static const VarLiteral::ExpressionType types[3] = 
+  static const VarLiteral::ExpressionType types[3] =
                       {VarLiteral::USED, VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
-   
+
   for (int type = 0; type < 3; ++type) {
     for (int dir = 0; dir < 2; ++ dir) {
       Constraint c;
@@ -320,15 +337,9 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
       cp_.AddConstraint(c);
       LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << relOp[dir] <<
-                    from.NameExpression(dirs[dir], types[type]) << "\n";      
+                    from.NameExpression(dirs[dir], types[type]) << "\n";
     }
   }
-}
-
-
-void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
-  Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
