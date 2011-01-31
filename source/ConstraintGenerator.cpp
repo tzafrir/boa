@@ -143,7 +143,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
                  len << "\n";
     }
 
-    {Constraint lenMax, lenMin;
+    {Constraint lenMax, lenMin; //FIXME - remove!
     lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
     lenMax.addSmall(len);
     cp_.AddConstraint(lenMax);
@@ -188,8 +188,8 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
-  maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
-  minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
+  maxResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
+  minResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
 
   Integer intLiteral(I);
 
@@ -330,6 +330,7 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
     else {
       Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
       GenerateBufferAliasConstraint(pFrom, pTo);
+//      GeneratePointerDerefConstraint(I->getPointerOperand());
     }
   }
   else {
