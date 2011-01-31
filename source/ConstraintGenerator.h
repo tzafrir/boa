@@ -54,7 +54,7 @@ class ConstraintGenerator {
 //  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
 
-  void GenerateAllocConstraint(const AllocaInst *I);
+  void GenerateAllocaConstraint(const AllocaInst *I);
 
   void GenerateStoreConstraint(const StoreInst* I);
 
@@ -70,10 +70,15 @@ class ConstraintGenerator {
   
   void SaveDbgDeclare(const DbgDeclareInst* D);
 
+  void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
+  
+
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
 
   void VisitInstruction(const Instruction *I);
+  
+  void VisitGlobal(const GlobalValue *G);
 
 //  bool VisitStmt(Stmt* S);
 
