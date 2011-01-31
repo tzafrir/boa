@@ -4,16 +4,10 @@
 #include "Integer.h"
 #include "Pointer.h"
 #include "llvm/Constants.h"
-
-//#include <limits>
-//#include <string>
+#include "llvm/User.h"
 
 using std::pair;
 typedef boa::Constraint::Expression Expression;
-
-//using std::string;
-
-#include "llvm/User.h"
 
 using namespace llvm;
 

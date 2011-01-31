@@ -1,15 +1,6 @@
 #ifndef __BOA_CONSTRAINTGENERATOR_H
 #define __BOA_CONSTRAINTGENERATOR_H
 
-//#include "clang/Frontend/FrontendPluginRegistry.h"
-//#include "clang/AST/ASTConsumer.h"
-//#include "clang/AST/ASTContext.h"
-//#include "clang/AST/AST.h"
-//#include "clang/AST/RecursiveASTVisitor.h"
-//#include "clang/Basic/SourceManager.h"
-//#include "clang/Frontend/CompilerInstance.h"
-//#include "llvm/Support/raw_ostream.h"
-
 #include "llvm/Module.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
@@ -54,7 +45,6 @@ class ConstraintGenerator {
 
 //  void GenerateVarDeclConstraints(VarDecl *var);
 
-//  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
 
   void GeneratePointerDerefConstraint(const Value* I);
@@ -88,11 +78,6 @@ class ConstraintGenerator {
   void VisitInstruction(const Instruction *I);
 
   void VisitGlobal(const GlobalValue *G);
-
-//  bool VisitStmt(Stmt* S);
-
-//  bool VisitStmt(Stmt* S, FunctionDecl* context);
-
 };
 
 }  // namespace boa
