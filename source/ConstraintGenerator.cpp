@@ -290,12 +290,26 @@ void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
   GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction");
 }
 
+void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
+  Buffer buf(I);
+  Constraint cMax, cMin;
+
+  cMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  cp_.AddConstraint(cMax);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= 0 \n";
+
+  cMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+  cp_.AddConstraint(cMin);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= 0 \n";
+}
+
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
       Integer intLiteral(I->getPointerOperand());
       GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+      GeneratePointerDerefConstraint(I->getPointerOperand());
     }
     else {
       Pointer pFrom(I->getValueOperand()), pTo(I->getPointerOperand());
@@ -317,6 +331,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
       // load from a pointer - load int value
       Integer intLiteral(I);
       GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
+      GeneratePointerDerefConstraint(I->getPointerOperand());
     }
     else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
@@ -328,21 +343,31 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
   }
 }
 
-void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to) {
+void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
+                                                        const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {-1, 1};
   static const char *relOp[2] = {" <= ", " >= "};
   static const VarLiteral::ExpressionType types[3] =
                       {VarLiteral::USED, VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
 
+  Constraint::Expression offsets[2];
+  if (offset) {
+    offsets[0] = GenerateIntegerExpression(offset, dirs[0]);
+    offsets[0].mul(dirCoef[0]);
+    offsets[1] = GenerateIntegerExpression(offset, dirs[1]);
+    offsets[1].mul(dirCoef[1]);
+  }
+
   for (int type = 0; type < 3; ++type) {
     for (int dir = 0; dir < 2; ++ dir) {
       Constraint c;
       c.addBig(to.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
+      c.addSmall(offsets[dir]);
       c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
       cp_.AddConstraint(c);
-      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << relOp[dir] <<
-                    from.NameExpression(dirs[dir], types[type]) << "\n";
+      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " + " << dirs[1] <<
+                    relOp[dir] << from.NameExpression(dirs[dir], types[type]) << "\n";
     }
   }
 }
@@ -399,7 +424,11 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
     LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
     return;
   }
-  GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
+  cp_.AddBuffer(b);
+  LOG << " Adding buffer to problem" << endl;
+
+
+  GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {

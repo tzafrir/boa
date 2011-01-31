@@ -44,8 +44,8 @@ class ConstraintGenerator {
                                  const string &blame,
                                  VarLiteral::ExpressionType type = VarLiteral::ALLOC);
 
-  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to);
-                                 
+  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const Value *offset = NULL);
+
 
   /**
    * TODO(gai/tzafrir): Document this recursive method.
@@ -56,6 +56,8 @@ class ConstraintGenerator {
 
 //  void GenerateStringLiteralConstraints(StringLiteral *stringLiteral);
   void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
+
+  void GeneratePointerDerefConstraint(const Value* I);
 
   void GenerateAllocaConstraint(const AllocaInst *I);
 
@@ -78,13 +80,13 @@ class ConstraintGenerator {
   void GenerateSExtConstraint(const SExtInst* I);
 
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
-  
+
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
 
   void VisitInstruction(const Instruction *I);
-  
+
   void VisitGlobal(const GlobalValue *G);
 
 //  bool VisitStmt(Stmt* S);
