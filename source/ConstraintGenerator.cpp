@@ -4,6 +4,7 @@
 #include "Integer.h"
 #include "Pointer.h"
 #include "llvm/Constants.h"
+#include "llvm/LLVMContext.h"
 #include "llvm/User.h"
 
 using std::pair;
@@ -454,7 +455,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       const User* user = *use;
       if (const StoreInst* si = dyn_cast<const StoreInst>(user)) {
         Value const * po = si->getPointerOperand();
-        Buffer buf(po);
+        Buffer buf(po, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
+        cp_.AddBuffer(buf);
         GenerateGenericConstraint(buf, I->getArgOperand(0),
             "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
         return;
@@ -598,6 +600,23 @@ void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const st
   cp_.AddConstraint(minV);
 }
 
+// Static.
+string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
+  if (const MDNode* n1 =
+      dyn_cast<const MDNode>(I->getMetadata(LLVMContext::MD_dbg)->getOperand(2))) {
+    if (const MDNode* n2 = dyn_cast<const MDNode>(n1->getOperand(1))) {
+      if (const MDNode* n3 = dyn_cast<const MDNode>(n2->getOperand(2))) {
+        if (const MDNode* filenamenode = dyn_cast<const MDNode>(n3->getOperand(3))) {
+          if (const MDString* filename =
+              dyn_cast<const MDString>(filenamenode->getOperand(3))) {
+            return filename->getString().str();
+          }
+        }
+      }
+    }
+  }
+  return "";
+}
 //bool ConstraintGenerator::VisitStmt(Stmt* S) {
 //  return VisitStmt(S, NULL);
 //}
