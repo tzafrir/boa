@@ -8,7 +8,7 @@ namespace boa {
   class Pointer : public VarLiteral {
 
   public:
-    Pointer(Value* node) : VarLiteral(node) {}
+    Pointer(const Value* node) : VarLiteral(node) {}
   };
 }
 
