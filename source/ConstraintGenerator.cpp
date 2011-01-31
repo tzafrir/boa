@@ -315,6 +315,12 @@ void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
 }
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
+  // Check if current instruction was handled earlier (e.g. while handling a malloc call).
+  if (handled[I]) {
+    LOG << "Skipping StoreInst which was already handled" << endl;
+    return;
+  }
+
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
@@ -459,6 +465,9 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
         Value const * po = si->getPointerOperand();
         GenerateGenericConstraint(buf, I->getArgOperand(0),
             "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
+
+        // Mark this instruction as handled.
+        handled[si] = true;
         return;
       }
     }
