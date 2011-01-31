@@ -63,14 +63,16 @@ class ConstraintGenerator {
   void GenerateAddConstraint(const BinaryOperator* I);
 
   void GenerateSubConstraint(const BinaryOperator* I);
-  
+
   void GenerateCallConstraint(const CallInst* I);
 
   void GenerateMulConstraint(const BinaryOperator* I);
-  
+
   void GenerateDivConstraint(const BinaryOperator* I);
-  
+
   void SaveDbgDeclare(const DbgDeclareInst* D);
+
+  void GenerateSExtConstraint(const SExtInst* I);
 
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
   

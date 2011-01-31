@@ -78,7 +78,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
   // Convert instructions...
 //  case Instruction::Trunc:
 //  case Instruction::ZExt:
-//  case Instruction::SExt:
+  case Instruction::SExt:
+    GenerateSExtConstraint(dyn_cast<const SExtInst>(I));
+    break;
 //  case Instruction::FPTrunc:
 //  case Instruction::FPExt:
 //  case Instruction::FPToUI:
@@ -152,9 +154,9 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
   maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
-   
+
   Integer intLiteral(I);
-  
+
   Constraint maxCons, minCons;
   maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
   maxCons.addSmall(maxResult);
@@ -171,15 +173,15 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
 
 
 void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
-  
+
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
   maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
   minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
-   
+
   Integer intLiteral(I);
-  
+
   Constraint maxCons, minCons;
   maxCons.addBig(intLiteral.NameExpression(VarLiteral::MAX));
   maxCons.addSmall(maxResult);
@@ -199,10 +201,10 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
   Expression operand1Max = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   Expression operand0Min = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
   Expression operand1Min = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN);
-  
+
   Expression *minOperand, *maxOperand;
   double constOperand;
-  
+
   if (operand0Max.IsConst()) {
     constOperand = operand0Max.GetConst();
     minOperand = &operand1Min;
@@ -220,7 +222,7 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
 
   minOperand->mul(constOperand);
   maxOperand->mul(constOperand);
-  
+
   Constraint maxCons1, minCons1, maxCons2, minCons2;
   maxCons1.addBig(intLiteral.NameExpression(VarLiteral::MAX));
   maxCons1.addSmall(*maxOperand);
@@ -252,12 +254,12 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
     return;
   }
   double constOperand = operand1.GetConst();
-  Expression minOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);  
+  Expression minOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);
   Expression maxOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
 
   minOperand.div(constOperand);
   maxOperand.div(constOperand);
-  
+
   Constraint maxCons1, minCons1, maxCons2, minCons2;
   maxCons1.addBig(intLiteral.NameExpression(VarLiteral::MAX));
   maxCons1.addSmall(maxOperand);
@@ -281,7 +283,10 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
             << minOperand.toString() << endl;
 }
 
-
+void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
+  Integer intLiteral(I);
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction");
+}
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   Integer intLiteral(I->getPointerOperand());
@@ -394,7 +399,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const
     cp_.AddBuffer(buf);
     LOG << " Adding buffer to problem" << endl;
   }
-                                              
+
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
   Constraint allocMax;
   allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
@@ -414,7 +419,7 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const
             << minExpr.toString() << endl;
 }
 
-Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Value *expr, 
+Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Value *expr,
                                                             VarLiteral::ExpressionDir dir) {
   Expression result;
 
