@@ -449,19 +449,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     //   ...
     //   store i8* %2, i8** %buf1, align 8
     //
-    // This method gets all the instructions that use the result of the malloc call and generates
-    // alloc constraints for them.
-    for (Value::const_use_iterator use = I->use_begin(); use != I->use_end(); ++use) {
-      const User* user = *use;
-      if (const StoreInst* si = dyn_cast<const StoreInst>(user)) {
-        Buffer buf(I, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
-        cp_.AddBuffer(buf);
-        Value const * po = si->getPointerOperand();
-        GenerateGenericConstraint(buf, I->getArgOperand(0),
-            "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
-        return;
-      }
-    }
+    // This method generates an Alloc expression for the malloc call, and the store instruction will
+    // generate a BufferAlias.
+    LOG << I << " malloc call" << endl;
+    Buffer buf(I, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
+    cp_.AddBuffer(buf);
+    GenerateGenericConstraint(buf, I->getArgOperand(0), "malloc call", VarLiteral::ALLOC);
+    return;
   }
 
   if (f->getNameStr() == "strlen") {
