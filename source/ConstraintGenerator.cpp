@@ -16,7 +16,7 @@ namespace boa {
 
 void ConstraintGenerator::AddBuffer(const Buffer& buf) {
   cp_.AddBuffer(buf);
-  
+
   Constraint cReadMax, cWriteMax;
   cReadMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
   cReadMax.addSmall(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
@@ -147,7 +147,6 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     // string literals are global arrays
     unsigned len = ar->getNumElements();
     Buffer buf(G, "string literal", "", 0); // TODO - file? line?
-    buffers[G] = buf;
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
     GenerateAllocConstraint(G, ar);
@@ -167,7 +166,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     cp_.AddConstraint(lenMin);
     LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= " <<
                  (len - 1) << "\n";
-    
+
     AddBuffer(buf);
   }
 }
@@ -379,9 +378,9 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       c.addSmall(offsets[dir]);
       c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
       cp_.AddConstraint(c);
-      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " * " <<  
-             dirCoef[dir] << " * " << typeCoef[type] << " >= " << offsets[dir].toString() << 
-             " + " << from.NameExpression(dirs[dir], types[type]) << " * " <<  dirCoef[dir] << 
+      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " * " <<
+             dirCoef[dir] << " * " << typeCoef[type] << " >= " << offsets[dir].toString() <<
+             " + " << from.NameExpression(dirs[dir], types[type]) << " * " <<  dirCoef[dir] <<
              " *  " << typeCoef[type] << "\n";
     }
   }
@@ -398,9 +397,10 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         Buffer b(D->getAddress(), S->getString().str(), file->getString().str(),
                  D->getDebugLoc().getLine());
 
-        buffers[D->getAddress()] = b;
-        AddBuffer(b);
-        
+        if (allocedBuffers[D->getAddress()]) {
+          AddBuffer(b);
+        }
+
         return;
       }
     }
@@ -413,6 +413,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
   Buffer buf(I);
   double allocSize = aType->getNumElements();
   Constraint allocMax, allocMin;
+  allocedBuffers[I] = true;
 
   allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
   allocMax.addSmall(allocSize);
@@ -436,7 +437,7 @@ void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
 }
 
 void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
-  Buffer b = buffers[I->getPointerOperand()];
+  Buffer b(I->getPointerOperand());
   if (b.IsNull()) {
     LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
     return;
@@ -481,23 +482,42 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Constraint cMax;
     cMax.addBig(var.NameExpression(VarLiteral::MAX));
     cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    cMax.addSmall(1);
     cMax.SetBlame("strlen call");
     cp_.AddConstraint(cMax);
     LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
-              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
+              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " + 1" << endl;
 
     Constraint cMin;
     cMin.addSmall(var.NameExpression(VarLiteral::MIN));
     cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    cMax.addBig(1);
     cMin.SetBlame("strlen call");
     cp_.AddConstraint(cMin);
     LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
-              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
+              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
     return;
   }
 
   if (f->getNameStr() == "strcpy") {
-    GenerateBufferAliasConstraint(makePointer(I->getArgOperand(1)), makePointer(I->getArgOperand(0)));
+    Pointer from(makePointer(I->getArgOperand(1))), to(makePointer(I->getArgOperand(0)));
+
+    Constraint cMax;
+    cMax.addBig(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
+    cMax.addSmall(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    cMax.SetBlame("strcpy call");
+    cp_.AddConstraint(cMax);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << " >= "
+              << from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
+
+    Constraint cMin;
+    cMin.addSmall(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
+    cMin.addBig(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    cMin.SetBlame("strcpy call");
+    cp_.AddConstraint(cMin);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
+              << from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
+
   }
 
 //      // General function call

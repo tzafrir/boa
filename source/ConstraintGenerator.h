@@ -28,7 +28,7 @@ namespace boa {
 
 class ConstraintGenerator {
   ConstraintProblem &cp_;
-  map<const Value*, Buffer> buffers;
+  map<const Value*, bool> allocedBuffers;
 
   void GenerateUnboundConstraint(const Integer &var, const string &blame);
 
