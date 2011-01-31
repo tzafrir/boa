@@ -532,12 +532,6 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
-//  if (type == VarLiteral::USED && var.IsBuffer()) {
-//    Buffer& buf = (Buffer&)var;
-//    cp_.AddBuffer(buf);
-//    LOG << " Adding buffer to problem" << endl;
-//  }
-
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
   Constraint allocMax;
   allocMax.addBig(var.NameExpression(VarLiteral::MAX, type));
