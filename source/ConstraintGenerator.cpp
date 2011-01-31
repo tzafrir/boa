@@ -359,7 +359,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
-  static const int dirCoef[2] = {-1, 1};
+  static const int dirCoef[2] = {1, -1};
 //  static const char *relOp[2] = {" <= ", " >= "};
   static const VarLiteral::ExpressionType types[2] = {VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
   static const int typeCoef[2] = {-1, 1};
@@ -446,7 +446,7 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 
   LOG << " Adding buffer to problem" << endl;
 
-  GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1 ));
+  GenerateBufferAliasConstraint(b, I, *(I->idx_begin() + 1 ));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
