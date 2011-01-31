@@ -454,9 +454,9 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     for (Value::const_use_iterator use = I->use_begin(); use != I->use_end(); ++use) {
       const User* user = *use;
       if (const StoreInst* si = dyn_cast<const StoreInst>(user)) {
-        Value const * po = si->getPointerOperand();
-        Buffer buf(po, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
+        Buffer buf(I, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
         cp_.AddBuffer(buf);
+        Value const * po = si->getPointerOperand();
         GenerateGenericConstraint(buf, I->getArgOperand(0),
             "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
         return;
