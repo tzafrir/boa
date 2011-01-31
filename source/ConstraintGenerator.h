@@ -80,6 +80,7 @@ class ConstraintGenerator {
 
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
 
+  static string GetInstructionFilename(const Instruction* I);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
