@@ -3,6 +3,7 @@
 #include <map>
 #include "Integer.h"
 #include "Pointer.h"
+#include "llvm/Constants.h"
 
 //#include <limits>
 //#include <string>
@@ -298,6 +299,10 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
     }
     else {
       Pointer pFrom(I->getValueOperand()), pTo(I->getPointerOperand());
+      if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I->getValueOperand())) {
+        // store from a string literal
+        pFrom = G->getOperand(0);
+      }
       GenerateBufferAliasConstraint(pFrom, pTo);
     }
   }
