@@ -45,6 +45,8 @@ class ConstraintGenerator {
     return I;
   }
 
+  void AddBuffer(const Buffer& buf);
+
   /**
    * TODO(gai/tzafrir): Document this recursive method.
    */

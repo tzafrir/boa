@@ -14,6 +14,19 @@ using namespace llvm;
 
 namespace boa {
 
+void ConstraintGenerator::AddBuffer(const Buffer& buf) {
+  cp_.AddBuffer(buf);
+  
+  Constraint cRead, cWrite;
+  cRead.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+  cRead.addSmall(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  cp_.AddConstraint(cRead);
+
+  cWrite.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  cWrite.addSmall(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
+  cp_.AddConstraint(cWrite);
+}
+
 void ConstraintGenerator::VisitInstruction(const Instruction *I) {
   if (const DbgDeclareInst *D = dyn_cast<const DbgDeclareInst>(I)) {
     SaveDbgDeclare(D);
@@ -397,9 +410,10 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
 }
 
 void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType) {
-  Buffer buf(I);
+  Buffer buf = buffers[I];
   double allocSize = aType->getNumElements();
   Constraint allocMax, allocMin;
+  AddBuffer(buf);
 
   allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
   allocMax.addSmall(allocSize);
@@ -429,8 +443,6 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
     return;
   }
 
-  cp_.AddBuffer(b);
-
   LOG << " Adding buffer to problem" << endl;
 
   GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1 ));
@@ -457,6 +469,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
         Buffer buf(po);
         GenerateGenericConstraint(buf, I->getArgOperand(0),
             "dynamic allocation of " + po->getNameStr(), VarLiteral::ALLOC);
+        AddBuffer(buf);
         return;
       }
     }
@@ -506,11 +519,11 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
-  if (type == VarLiteral::USED && var.IsBuffer()) {
-    Buffer& buf = (Buffer&)var;
-    cp_.AddBuffer(buf);
-    LOG << " Adding buffer to problem" << endl;
-  }
+//  if (type == VarLiteral::USED && var.IsBuffer()) {
+//    Buffer& buf = (Buffer&)var;
+//    cp_.AddBuffer(buf);
+//    LOG << " Adding buffer to problem" << endl;
+//  }
 
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
   Constraint allocMax;
