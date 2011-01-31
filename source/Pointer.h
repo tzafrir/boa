@@ -2,13 +2,13 @@
 #define __BOA_POINTER_H /* */
 
 #include "Integer.h"
+#include "llvm/Value.h"
 
 namespace boa {
   class Pointer : public VarLiteral {
 
   public:
-    Pointer(void* ASTNode) : VarLiteral(ASTNode) {}
-
+    Pointer(Value* node) : VarLiteral(node) {}
   };
 }
 
