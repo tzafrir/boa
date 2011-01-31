@@ -60,7 +60,7 @@ namespace boa {
       return getUniqueName() + "!" + TypeToString(type) + "!" + DirToString(dir);
     }
     
-    virtual inline bool IsBuffer() const { return false; }
+    virtual bool IsBuffer() const { return false; }
 
     bool operator<(const VarLiteral& other) const {
       return this->ValueNode_ < other.ValueNode_;

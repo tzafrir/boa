@@ -5,15 +5,15 @@ args=""
 
 for arg in $@
 do
-  if [ "${arg:0:1}" = "-" ]; then
-    args="$args -plugin-arg-boa ${arg:1}"
+  if [ "$arg" == "-log" ]; then
+    args="$args -logfile /dev/stderr"
   else
     files="$files $arg"
   fi
 done
 
 if [ "$files" != "" ]; then
-  ../llvm/Debug+Asserts/bin/clang -g -O0 -c -emit-llvm ${files} -o /dev/stdout | ../llvm/Debug+Asserts/bin/opt -load build/boa.so -boa > /dev/null
+  ../llvm/Debug+Asserts/bin/clang -g -O0 -c -emit-llvm ${files} -o /dev/stdout | ../llvm/Debug+Asserts/bin/opt -load build/boa.so $args -boa > /dev/null
 else
   echo -e " usage : \033[1m./boa [flags] <source files>\033[0m"
   echo ""

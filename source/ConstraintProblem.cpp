@@ -35,7 +35,7 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
   }
 }
 
-inline bool IsFeasble(int status) {
+inline bool IsFeasable(int status) {
   return ((status != GLP_INFEAS) && (status != GLP_NOFEAS));
 }
 
@@ -89,7 +89,7 @@ inline RowData removeRowFromLP(glp_prob* lp, int row, map<int, string>& colToVar
   Return a removed row back to the LP and remove the related "unbound constraints"
 
   This function assumes that it is called right after "row" was removed using "removeRowFromLP",
-  if there wasany other manipulation on the matrix rows between the two calls - the result may be
+  if there was any other manipulation on the matrix rows between the two calls - the result may be
   unexpected
 */
 inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
@@ -104,17 +104,17 @@ inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
 }
 
 /**
-  Remove a minimal set of constraints that makes the lp infeasble.
+  Remove a minimal set of constraints that makes the lp inFeasable.
 
   Each of the variables in the removed rows will become "unbound" (e.g. - ...!max >= MAX_INT  or
   ...!min <= MIN_INT).
 
-  The removed set is *A* minimal in the sense that these lines alone form an infeasble problem, and
+  The removed set is *A* minimal in the sense that these lines alone form an inFeasable problem, and
   each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
   no such set which is smaller in size.
 */
-inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, string>& colToVar) {
-  LOG << "No feasble solution, running taint analysis - " << endl;
+inline void removeInFeasable(glp_prob* lp, const glp_smcp &params, map<int, string>& colToVar) {
+  LOG << "No Feasable solution, running taint analysis - " << endl;
   glp_prob *tmp;
   tmp = glp_create_prob();
   glp_copy_prob(tmp, lp, GLP_OFF);
@@ -122,7 +122,7 @@ inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, strin
   for (int i = 1, rows = glp_get_num_rows(tmp); i <= rows; ++i) {
     RowData data = removeRowFromLP(tmp, i, colToVar);
     glp_simplex(tmp, &params);
-    if (IsFeasble(glp_get_status(tmp))) {
+    if (IsFeasable(glp_get_status(tmp))) {
       removeRowFromLP(lp, i, colToVar);
       returnRowToLP(tmp, i, data);
       LOG << " removing row " << i << endl;
@@ -134,6 +134,13 @@ inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, strin
 
 vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints, buffers);
+}
+
+inline void setBufferCoef(glp_prob *lp, const Buffer &b, double base, map<string, int> varToCol) {
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
+  glp_set_obj_coef(lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
 }
 
 vector<Buffer> ConstraintProblem::Solve(
@@ -174,22 +181,41 @@ vector<Buffer> ConstraintProblem::Solve(
 
   for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
     // Set objective coeficients
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MIN, VarLiteral::USED )],  1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MAX, VarLiteral::USED )], -1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  1.0);
-    glp_set_obj_coef(lp, varToCol[b->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -1.0);
+    setBufferCoef(lp, *b, 1.0, varToCol);
   }
 
   glp_smcp params;
   glp_init_smcp(&params);
-  params.msg_lev = GLP_MSG_OFF;
+  if (outputGlpk) {
+    params.msg_lev = GLP_MSG_ALL;
+  } else {
+    params.msg_lev = GLP_MSG_ERR;
+  }
   glp_simplex(lp, &params);
 
-  while (!IsFeasble(glp_get_status(lp))) {
-    removeInfeasble(lp, params, colToVar);
-    glp_simplex(lp, &params);
-  }
+  int status = glp_get_status(lp);
+  while (status != GLP_OPT) {
+    while (!IsFeasable(status)) {
+      removeInFeasable(lp, params, colToVar);
+      glp_simplex(lp, &params);
+      status = glp_get_status(lp);
+    }
+    while (status == GLP_UNBND) {
+      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
+        setBufferCoef(lp, *b, 0.0, varToCol);
+      }
 
+      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
+        setBufferCoef(lp, *b, 1.0, varToCol);
+        glp_simplex(lp, &params);
+        if (glp_get_status(lp) == GLP_UNBND) {
+          setBufferCoef(lp, *b, 0.0, varToCol);
+        }
+      }
+      glp_simplex(lp, &params);
+      status = glp_get_status(lp);
+    }
+  }
   // TODO - what if no solution can be found? (glp_get_status(lp) != GLP_OPT)
 
   for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
