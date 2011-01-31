@@ -114,8 +114,12 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
 void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
   const Type *t = G->getType();
-  while (const PointerType *p = dyn_cast<const PointerType>(t)) {
+  if (const PointerType *p = dyn_cast<const PointerType>(t)) {
     t = p->getElementType();
+  }
+  else {
+    LOG << "can't handle global variable" << endl;
+    return;
   }
   if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
     // string literals are global arrays
