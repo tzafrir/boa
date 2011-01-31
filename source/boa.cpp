@@ -43,8 +43,6 @@ class boa : public ModulePass {
       ofstream* logfile = new ofstream();
       logfile->open(LogFile.c_str());
       log::set(*logfile);
-    } else {
-      log::set(cerr);
     }
    }
 
