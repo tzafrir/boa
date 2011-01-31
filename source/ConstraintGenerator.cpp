@@ -2,16 +2,12 @@
 #include <vector>
 #include <map>
 #include "Integer.h"
-
-//#include <limits>
-//#include <string>
+#include "Pointer.h"
+#include "llvm/Constants.h"
+#include "llvm/User.h"
 
 using std::pair;
 typedef boa::Constraint::Expression Expression;
-
-//using std::string;
-
-#include "llvm/User.h"
 
 using namespace llvm;
 
@@ -63,7 +59,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
   // Memory instructions...
   case Instruction::Alloca:
-    GenerateAllocConstraint(dyn_cast<const AllocaInst>(I));
+    GenerateAllocaConstraint(dyn_cast<const AllocaInst>(I));
     break;
   case Instruction::Load:
     GenerateLoadConstraint(dyn_cast<const LoadInst>(I));
@@ -116,6 +112,56 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
   }
 }
 
+void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
+  const Type *t = G->getType();
+  if (const PointerType *p = dyn_cast<const PointerType>(t)) {
+    t = p->getElementType();
+  } else {
+    LOG << "can't handle global variable" << endl;
+    return;
+  }
+  if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
+    // string literals are global arrays
+    unsigned len = ar->getNumElements();
+    Buffer buf(G, "string literal", "", 0); // TODO - file? line?
+    buffers[G] = buf;
+    LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
+
+    GenerateAllocConstraint(G, ar);
+
+    {Constraint lenMax, lenMin;
+
+    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    lenMax.addSmall(len);
+//    lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+    cp_.AddConstraint(lenMax);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
+                  len << "\n";
+
+    lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    lenMin.addBig(len);
+//    lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
+    cp_.AddConstraint(lenMin);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " <= " <<
+                 len << "\n";
+    }
+
+    {Constraint lenMax, lenMin; //FIXME - remove!
+    lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+    lenMax.addSmall(len);
+    cp_.AddConstraint(lenMax);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= " <<
+                  len << "\n";
+
+    lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+    lenMin.addBig(len);
+    cp_.AddConstraint(lenMin);
+    LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= " <<
+                 len << "\n";
+    }
+  }
+}
+
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
@@ -145,8 +191,8 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
-  maxResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
-  minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
+  maxResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
+  minResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
 
   Integer intLiteral(I);
 
@@ -177,13 +223,11 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
     constOperand = operand0Max.GetConst();
     minOperand = &operand1Min;
     maxOperand = &operand1Max;
-  }
-  else if (operand1Max.IsConst()) {
+  } else if (operand1Max.IsConst()) {
     constOperand = operand1Max.GetConst();
     minOperand = &operand0Min;
     maxOperand = &operand0Max;
-  }
-  else {
+  } else {
     GenerateUnboundConstraint(intLiteral, "Unconst multiplication.");
     return;
   }
@@ -256,14 +300,80 @@ void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
   GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction");
 }
 
+void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
+  Buffer buf(I);
+  Constraint cMax, cMin;
+
+  cMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  cp_.AddConstraint(cMax);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::USED) << " >= 0 \n";
+
+  cMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+  cp_.AddConstraint(cMin);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::USED) << " <= 0 \n";
+}
+
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
-  Integer intLiteral(I->getPointerOperand());
-  GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
+    if (!(pType->getElementType()->isPointerTy())) {
+      // store into a pointer - store int value
+      Integer intLiteral(I->getPointerOperand());
+      GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+      GeneratePointerDerefConstraint(I->getPointerOperand());
+    } else {
+      Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
+      GenerateBufferAliasConstraint(pFrom, pTo);
+//      GeneratePointerDerefConstraint(I->getPointerOperand());
+    }
+  } else {
+    LOG << "Error - Trying to store into a non pointer type" << endl;
+  }
 }
 
 void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
-  Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
+    if (!(pType->getElementType()->isPointerTy())) {
+      // load from a pointer - load int value
+      Integer intLiteral(I);
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
+      GeneratePointerDerefConstraint(I->getPointerOperand());
+    } else {
+      Pointer pFrom(I->getPointerOperand()), pTo(I);
+      GenerateBufferAliasConstraint(pFrom, pTo);
+    }
+  } else {
+    LOG << "Error - Trying to load from a non pointer type" << endl;
+  }
+}
+
+void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
+                                                        const Value *offset) {
+  static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
+  static const int dirCoef[2] = {-1, 1};
+  static const char *relOp[2] = {" <= ", " >= "};
+  static const VarLiteral::ExpressionType types[3] =
+                      {VarLiteral::USED, VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
+
+  Constraint::Expression offsets[2];
+  if (offset) {
+    offsets[0] = GenerateIntegerExpression(offset, dirs[0]);
+    offsets[0].mul(dirCoef[0]);
+    offsets[1] = GenerateIntegerExpression(offset, dirs[1]);
+    offsets[1].mul(dirCoef[1]);
+  }
+
+  for (int type = 0; type < 3; ++type) {
+    for (int dir = 0; dir < 2; ++ dir) {
+      Constraint c;
+      c.addBig(to.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
+      c.addSmall(offsets[dir]);
+      c.addSmall(from.NameExpression(dirs[dir], types[type]), dirCoef[dir]);
+      cp_.AddConstraint(c);
+      LOG << "Adding - " << to.NameExpression(dirs[dir], types[type]) << " + " <<
+             offsets[1].toString() << relOp[dir] << from.NameExpression(dirs[dir], types[type]) <<
+             "\n";
+    }
+  }
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
@@ -286,26 +396,28 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   LOG << "Can't extract debug info\n";
 }
 
-void ConstraintGenerator::GenerateAllocConstraint(const AllocaInst *I) {
+void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType) {
+  Buffer buf(I);
+  double allocSize = aType->getNumElements();
+  Constraint allocMax, allocMin;
+
+  allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
+  allocMax.addSmall(allocSize);
+  cp_.AddConstraint(allocMax);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
+                allocSize << "\n";
+
+  allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
+  allocMin.addBig(allocSize);
+  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
+               allocSize << "\n";
+  cp_.AddConstraint(allocMin);
+}
+
+void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getType())) {
     if (const ArrayType *aType = dyn_cast<const ArrayType>(pType->getElementType())) {
-      Buffer buf(I);
-      double allocSize = aType->getNumElements();
-      Constraint allocMax, allocMin;
-
-      allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
-      allocMax.addSmall(allocSize);
-//        allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
-      cp_.AddConstraint(allocMax);
-      LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
-                    allocSize << "\n";
-
-      allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
-      allocMin.addBig(allocSize);
-//        allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
-      LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
-                   allocSize << "\n";
-      cp_.AddConstraint(allocMin);
+      GenerateAllocConstraint(I, aType);
     }
   }
 }
@@ -316,12 +428,21 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
     LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
     return;
   }
-  GenerateGenericConstraint(b, *(I->idx_begin()+1), "array subscript", VarLiteral::USED);
+
+  cp_.AddBuffer(b);
+
+  LOG << " Adding buffer to problem" << endl;
+
+  GenerateBufferAliasConstraint(I, b, *(I->idx_begin() + 1 ));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   Function* f = I->getCalledFunction();
-  if (f != NULL && f->getNameStr() == "malloc") {
+  if (f == NULL) {
+    return;
+  }
+
+  if (f->getNameStr() == "malloc") {
     // malloc calls are of the form:
     //   %2 = call i8* @malloc(i64 4)
     //   ...
@@ -341,9 +462,34 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
   }
 
+  if (f->getNameStr() == "strlen") {
+    Pointer p(makePointer(I->getArgOperand(0)));
+    Integer var(I);
+
+    Constraint cMax;
+    cMax.addBig(var.NameExpression(VarLiteral::MAX));
+    cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    cMax.SetBlame("strlen call");
+    cp_.AddConstraint(cMax);
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
+              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
+
+    Constraint cMin;
+    cMin.addSmall(var.NameExpression(VarLiteral::MIN));
+    cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    cMin.SetBlame("strlen call");
+    cp_.AddConstraint(cMin);
+    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
+              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
+    return;
+  }
+
+  if (f->getNameStr() == "strcpy") {
+    GenerateBufferAliasConstraint(makePointer(I->getArgOperand(1)), makePointer(I->getArgOperand(0)));
+  }
+
 //      // General function call
 //      if (funcDec->hasBody()) {
-//        LOG << "GO!" << endl;
 //        VisitStmt(funcDec->getBody(), funcDec);
 //      }
 //      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
@@ -394,24 +540,6 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
     return result;
   }
 
-//  if (CallExpr* funcCall = dyn_cast<CallExpr>(expr)) {
-//    if (FunctionDecl* funcDec = funcCall->getDirectCallee()) {
-//      string funcName = funcDec->getNameInfo().getAsString();
-//      if (funcName == "strlen") {
-//        Expr* argument = funcCall->getArg(0);
-//        while (CastExpr *cast = dyn_cast<CastExpr>(argument)) {
-//          argument = cast->getSubExpr();
-//        }
-//        if (DeclRefExpr *declRef = dyn_cast<DeclRefExpr>(argument)) {
-//          Pointer p(declRef->getDecl()); // Treat all args as pointers. A buffer is cast to char*
-//          ce.add(p.NameExpression(max ? VarLiteral::MAX : VarLiteral::MIN, VarLiteral::LEN_READ));
-//          result.push_back(ce);
-//          return result;
-//        }
-//      }
-//    }
-//  }
-
   // Otherwise, this is a reference to another var definition
   Integer intLiteral(expr);
   result.add(intLiteral.NameExpression(dir));
@@ -456,38 +584,6 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 //  }
 //}
 
-//void ConstraintGenerator::GenerateStringLiteralConstraints(StringLiteral *stringLiteral) {
-//  Buffer buf(stringLiteral);
-//  Constraint allocMax, allocMin, lenMax, lenMin;
-
-//  allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
-//  allocMax.addSmall(stringLiteral->getByteLength() + 1);
-//  allocMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-//  cp_.AddConstraint(allocMax);
-//  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
-//                stringLiteral->getByteLength() + 1 << "\n";
-
-//  allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
-//  allocMin.addBig(stringLiteral->getByteLength() + 1);
-//  allocMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-//  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
-//               stringLiteral->getByteLength() + 1 << "\n";
-//  cp_.AddConstraint(allocMin);
-
-//  lenMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-//  lenMax.addSmall(stringLiteral->getByteLength());
-//  lenMax.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-//  cp_.AddConstraint(lenMax);
-//  LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " >= " <<
-//                stringLiteral->getByteLength() << "\n";
-
-//  lenMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-//  lenMin.addBig(stringLiteral->getByteLength());
-//  lenMin.SetBlame("string literal buffer declaration " + getStmtLoc(stringLiteral));
-//  LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " <= " <<
-//               stringLiteral->getByteLength() << "\n";
-//  cp_.AddConstraint(allocMin);
-//}
 
 void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
   // FIXME - is VarLiteral::MAX_INT enough?
