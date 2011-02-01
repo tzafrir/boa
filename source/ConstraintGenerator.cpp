@@ -566,45 +566,6 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
   return result;
 }
 
-
-//void ConstraintGenerator::GenerateVarDeclConstraints(VarDecl *var) {
-//  if (ConstantArrayType* arr = dyn_cast<ConstantArrayType>(var->getType().getTypePtr())) {
-//    if (arr->getElementType()->isAnyCharacterType()) {
-//      Buffer buf(var);
-//      Constraint allocMax, allocMin;
-
-//      allocMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
-//      allocMax.addSmall(arr->getSize().getLimitedValue());
-//      allocMax.SetBlame("static char buffer declaration " + getStmtLoc(var));
-//      cp_.AddConstraint(allocMax);
-//      LOG << "Adding - " << buf.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) << " >= " <<
-//                    arr->getSize().getLimitedValue() << "\n";
-
-//      allocMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
-//      allocMin.addBig(arr->getSize().getLimitedValue());
-//      allocMin.SetBlame("static char buffer declaration " + getStmtLoc(var));
-//      LOG << "Adding - " << buf.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) << " <= " <<
-//                   arr->getSize().getLimitedValue() << "\n";
-//      cp_.AddConstraint(allocMin);
-//    }
-//  }
-
-//  if (var->getType()->isIntegerType()) {
-//    Integer intLiteral(var);
-//    if (var->hasInit()) {
-//      vector<Expression> maxInits  = GenerateIntegerExpression(var->getInit(), true);
-//      if (!maxInits.empty()) {
-//        GenerateGenericConstraint(intLiteral, var->getInit(), "int declaration " + getStmtLoc(var));
-//        return;
-//      }
-//    }
-
-//    GenerateUnboundConstraint(intLiteral, "int without initializer " + getStmtLoc(var));
-//    LOG << "Integer definition without initializer on " << getStmtLoc(var) << endl;
-//  }
-//}
-
-
 void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
   // FIXME - is VarLiteral::MAX_INT enough?
   Constraint maxV, minV;
@@ -636,68 +597,15 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
   }
   return "";
 }
-//bool ConstraintGenerator::VisitStmt(Stmt* S) {
-//  return VisitStmt(S, NULL);
-//}
 
+// return stmnt
 //bool ConstraintGenerator::VisitStmt(Stmt* S, FunctionDecl* context) {
-//  if (ArraySubscriptExpr* expr = dyn_cast<ArraySubscriptExpr>(S)) {
-//    return GenerateArraySubscriptConstraints(expr);
-//  }
-
 //  if (ReturnStmt *ret = dyn_cast<ReturnStmt>(S)) {
-//    LOG << "RETRUN!! 1" << endl;
-
 //    if (/*(ret->getRetValue()->getType()->isIntegerType()) &&*/ (context != NULL)) {
 //      Integer intLiteral(context);
-//      LOG << "RETRUN!! 2" << endl;
 //      GenerateGenericConstraint(intLiteral, ret->getRetValue(), "Integer return " + getStmtLoc(S));
 //    }
 //  }
-
-//  if (DeclStmt* dec = dyn_cast<DeclStmt>(S)) {
-//    for (DeclGroupRef::iterator decIt = dec->decl_begin(); decIt != dec->decl_end(); ++decIt) {
-//      if (VarDecl* var = dyn_cast<VarDecl>(*decIt)) {
-//        GenerateVarDeclConstraints(var);
-//      }
-//    }
-//  }
-
-//  if (StringLiteral* stringLiteral = dyn_cast<StringLiteral>(S)) {
-//    GenerateStringLiteralConstraints(stringLiteral);
-//  }
-
-
-//  if (BinaryOperator* op = dyn_cast<BinaryOperator>(S)) {
-//    if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getLHS())) {
-//      if (declRef->getType()->isIntegerType() && op->getRHS()->getType()->isIntegerType()) {
-//        Integer intLiteral(declRef->getDecl());
-//        if (op->isAssignmentOp()) {
-//          GenerateGenericConstraint(intLiteral, op->getRHS(), "int assignment " + getStmtLoc(S));
-//        }
-//        if (op-> isCompoundAssignmentOp()) {
-//          GenerateUnboundConstraint(intLiteral, "compound int assignment " + getStmtLoc(S));
-//        }
-//      }
-//    }
-//  }
-
-//  if (UnaryOperator* op = dyn_cast<UnaryOperator>(S)) {
-//    if (op->getSubExpr()->getType()->isIntegerType() && op->isIncrementDecrementOp()) {
-//      if (DeclRefExpr* declRef = dyn_cast<DeclRefExpr>(op->getSubExpr())) {
-//        Integer intLiteral(declRef->getDecl());
-//        GenerateUnboundConstraint(intLiteral, "int inc/dec " + getStmtLoc(S));
-//      }
-//    }
-//  }
-
-//  if (CompoundStmt *comp = dyn_cast<CompoundStmt>(S)) {
-//    for (Stmt** it = comp->body_begin(); it != comp->body_end(); ++it) {
-//      VisitStmt(*it, context);
-//    }
-//  }
-
-//  return true;
 //}
 
 } // namespace boa
