@@ -5,19 +5,16 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InstIterator.h"
 
-//#include "Buffer.h"
-//#include "Constraint.h"
+#include "Buffer.h"
 #include "ConstraintGenerator.h"
 #include "ConstraintProblem.h"
 #include "log.h"
 
 #include <fstream>
 #include <iostream>
+#include <vector>
 
-//#include <vector>
-
-//using std::vector;
-
+using std::vector;
 using std::cerr;
 using std::ofstream;
 using std::ios_base;
