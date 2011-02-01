@@ -4,6 +4,7 @@
 #include "llvm/Module.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
+#include "llvm/IntrinsicInst.h"
 #include "llvm/Support/InstIterator.h"
 
 #include <map>
@@ -13,7 +14,6 @@ using std::string;
 using std::stringstream;
 using std::map;
 
-#include "llvm/IntrinsicInst.h"
 #include "ConstraintProblem.h"
 #include "Buffer.h"
 #include "Integer.h"
