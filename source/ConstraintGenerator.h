@@ -7,12 +7,10 @@
 #include "llvm/Support/InstIterator.h"
 
 #include <map>
-#include <vector>
 #include <string>
 
 using std::string;
 using std::stringstream;
-using std::vector;
 using std::map;
 
 #include "llvm/IntrinsicInst.h"
