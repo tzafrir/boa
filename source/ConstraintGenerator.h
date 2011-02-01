@@ -54,12 +54,7 @@ class ConstraintGenerator {
     order to deal with getElementPtr that might appear as a constantExpr (and not a reference to
     another instruction) in an instruction parameter.
   */
-  static Pointer makePointer(const Value *I) {
-    if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
-      return G->getOperand(0);
-    }
-    return I;
-  }
+  static Pointer makePointer(const Value *I);
 
   /**
     Extract variable declration data from debug information

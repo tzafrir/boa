@@ -598,6 +598,14 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
   return "";
 }
 
+//Static.
+Pointer ConstraintGenerator::makePointer(const Value *I) {
+  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
+    return G->getOperand(0);
+  }
+  return I;
+}
+
 // return stmnt
 //bool ConstraintGenerator::VisitStmt(Stmt* S, FunctionDecl* context) {
 //  if (ReturnStmt *ret = dyn_cast<ReturnStmt>(S)) {
