@@ -160,66 +160,8 @@ class boa : public ModulePass {
       cerr << SEPARATOR << endl;
     }
   }
-
 };
 }
 
 char boa::boa::ID = 0;
 static RegisterPass<boa::boa> X("boa", "boa - buffer overrun analyzer");
-
-//// DEBUG
-//#include <iostream>
-//using std::cerr;
-//using std::endl;
-
-//using namespace clang;
-
-//namespace {
-
-//class boaConsumer : public ASTConsumer {
-// private:
-//  SourceManager &sm_;
-//  PointerASTVisitor pointerAnalyzer_;
-//  ConstraintProblem constraintProblem_;
-//  ConstraintGenerator constraintGenerator_;
-//  bool blameOverruns_;
-
-// public:
-//  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM),
-//                                                       constraintGenerator_(SM, constraintProblem_),
-//                                                       blameOverruns_(blameOverruns) {}
-
-//  virtual void HandleTopLevelDecl(DeclGroupRef DG) {
-//    for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
-//      Decl *D = *i;
-//      pointerAnalyzer_.TraverseDecl(D);
-//      pointerAnalyzer_.findVarDecl(D);
-//      constraintGenerator_.TraverseDecl(D);
-//    }
-//  }
-
-//  }
-//};
-
-//class boaPlugin : public PluginASTAction {
-// protected:
-//  bool blameOverruns_;
-
-//  ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
-//    return new boaConsumer(CI.getSourceManager(), blameOverruns_);
-//  }
-
-//  bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args) {
-//    blameOverruns_ = false;
-//    for (unsigned i = 0; i < args.size(); ++i) {
-//      if (args[i] == "log") {
-//        log::set(std::cout);
-//      } else if (args[i] == "blame") {
-//        blameOverruns_ = true;
-//      }
-//    }
-//    return true;
-//  }
-//};
-
-//}
