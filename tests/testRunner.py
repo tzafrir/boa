@@ -123,6 +123,7 @@ def main():
     errs.write("Usage: %s [testName]*\n" % sys.argv[0])
     errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
+    exit(1)
   testName = sys.argv[1]
   testOutput = runTest(testName)
   val = applyAssertions(testName, testOutput)
