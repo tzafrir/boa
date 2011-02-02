@@ -564,6 +564,14 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
         GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function");
       }
     }
+    // get return value
+    if (I->getType()->isPointerTy()) {
+      GenerateBufferAliasConstraint(makePointer(f), makePointer(I));
+    }
+    else {
+      Integer intLiteral(I);
+      GenerateGenericConstraint(intLiteral, f, "user function call", VarLiteral::USED);
+    }
   }
 }
 
