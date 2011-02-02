@@ -8,6 +8,16 @@ using std::endl;
 
 namespace boa {
 
+/**
+ * A printing function for GLPK.
+ *
+ * @see { glpk.pdf / glp_term_hook }
+ */
+static int printToLog(void *info, const char *s) {
+  log::os() << s;
+  return 1;  // Non zero.
+}
+
 set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
   for (set<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
@@ -186,6 +196,7 @@ vector<Buffer> ConstraintProblem::Solve(
 
   glp_smcp params;
   glp_init_smcp(&params);
+  glp_term_hook(&printToLog, NULL);
   if (outputGlpk) {
     params.msg_lev = GLP_MSG_ALL;
   } else {
