@@ -500,24 +500,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strcpy") {
-    Pointer from(makePointer(I->getArgOperand(1))), to(makePointer(I->getArgOperand(0)));
-
-    Constraint cMax;
-    cMax.addBig(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
-    cMax.addSmall(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    cMax.SetBlame("strcpy call");
-    cp_.AddConstraint(cMax);
-    LOG << "Adding - " << to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << " >= "
-              << from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
-
-    Constraint cMin;
-    cMin.addSmall(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
-    cMin.addBig(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    cMin.SetBlame("strcpy call");
-    cp_.AddConstraint(cMin);
-    LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
-              << from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
-
+    GenerateStringCopyConstraint(I);
     return;
   }
 
@@ -547,7 +530,14 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "sprintf") {
-
+    if (I->getNumOperands() != 3) {
+      Pointer to(makePointer(I->getArgOperand(0)));
+      GenerateUnboundConstraint(to, "sprintf with unknown length format string");
+    }
+    else {
+      GenerateStringCopyConstraint(I);
+    }
+    return;    
   }
 
   // General function call
@@ -583,6 +573,27 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       }
     }
   }
+}
+
+void ConstraintGenerator::GenerateStringCopyConstraint(const CallInst* I) {
+    Pointer from(makePointer(I->getArgOperand(1))), to(makePointer(I->getArgOperand(0)));
+
+    Constraint cMax;
+    cMax.addBig(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
+    cMax.addSmall(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    cMax.SetBlame("strcpy call");
+    cp_.AddConstraint(cMax);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << " >= "
+              << from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << endl;
+
+    Constraint cMin;
+    cMin.addSmall(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
+    cMin.addBig(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    cMin.SetBlame("strcpy call");
+    cp_.AddConstraint(cMin);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
+              << from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
+
 }
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,

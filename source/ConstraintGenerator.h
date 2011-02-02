@@ -103,6 +103,7 @@ class ConstraintGenerator {
 
   void GenerateCallConstraint(const CallInst* I);
 
+  void GenerateStringCopyConstraint(const CallInst* I);
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
   */
