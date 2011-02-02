@@ -8,6 +8,16 @@ using std::endl;
 
 namespace boa {
 
+/**
+ * A printing function for GLPK.
+ *
+ * @see { glpk.pdf / glp_term_hook }
+ */
+static int printToLog(void *info, const char *s) {
+  log::os() << s;
+  return 1;  // Non zero.
+}
+
 set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
   for (set<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
@@ -35,7 +45,7 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
   }
 }
 
-inline bool IsFeasble(int status) {
+inline bool IsFeasable(int status) {
   return ((status != GLP_INFEAS) && (status != GLP_NOFEAS));
 }
 
@@ -89,7 +99,7 @@ inline RowData removeRowFromLP(glp_prob* lp, int row, map<int, string>& colToVar
   Return a removed row back to the LP and remove the related "unbound constraints"
 
   This function assumes that it is called right after "row" was removed using "removeRowFromLP",
-  if there wasany other manipulation on the matrix rows between the two calls - the result may be
+  if there was any other manipulation on the matrix rows between the two calls - the result may be
   unexpected
 */
 inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
@@ -104,17 +114,17 @@ inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
 }
 
 /**
-  Remove a minimal set of constraints that makes the lp infeasble.
+  Remove a minimal set of constraints that makes the lp inFeasable.
 
   Each of the variables in the removed rows will become "unbound" (e.g. - ...!max >= MAX_INT  or
   ...!min <= MIN_INT).
 
-  The removed set is *A* minimal in the sense that these lines alone form an infeasble problem, and
+  The removed set is *A* minimal in the sense that these lines alone form an inFeasable problem, and
   each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
   no such set which is smaller in size.
 */
-inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, string>& colToVar) {
-  LOG << "No feasble solution, running taint analysis - " << endl;
+inline void removeInFeasable(glp_prob* lp, const glp_smcp &params, map<int, string>& colToVar) {
+  LOG << "No Feasable solution, running taint analysis - " << endl;
   glp_prob *tmp;
   tmp = glp_create_prob();
   glp_copy_prob(tmp, lp, GLP_OFF);
@@ -122,7 +132,7 @@ inline void removeInfeasble(glp_prob* lp, const glp_smcp &params, map<int, strin
   for (int i = 1, rows = glp_get_num_rows(tmp); i <= rows; ++i) {
     RowData data = removeRowFromLP(tmp, i, colToVar);
     glp_simplex(tmp, &params);
-    if (IsFeasble(glp_get_status(tmp))) {
+    if (IsFeasable(glp_get_status(tmp))) {
       removeRowFromLP(lp, i, colToVar);
       returnRowToLP(tmp, i, data);
       LOG << " removing row " << i << endl;
@@ -186,13 +196,18 @@ vector<Buffer> ConstraintProblem::Solve(
 
   glp_smcp params;
   glp_init_smcp(&params);
-  params.msg_lev = GLP_MSG_OFF;
+  glp_term_hook(&printToLog, NULL);
+  if (outputGlpk) {
+    params.msg_lev = GLP_MSG_ALL;
+  } else {
+    params.msg_lev = GLP_MSG_ERR;
+  }
   glp_simplex(lp, &params);
 
   int status = glp_get_status(lp);
   while (status != GLP_OPT) {
-    while (!IsFeasble(status)) {
-      removeInfeasble(lp, params, colToVar);
+    while (!IsFeasable(status)) {
+      removeInFeasable(lp, params, colToVar);
       glp_simplex(lp, &params);
       status = glp_get_status(lp);
     }

@@ -1,23 +1,28 @@
 #include "llvm/Pass.h"
 #include "llvm/Module.h"
 #include "llvm/Function.h"
-#include <iostream>
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InstIterator.h"
 
-//#include "Buffer.h"
-//#include "Constraint.h"
+#include "Buffer.h"
 #include "ConstraintGenerator.h"
 #include "ConstraintProblem.h"
 #include "log.h"
 
-//#include <vector>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
-//using std::vector;
-
+using std::vector;
 using std::cerr;
+using std::ofstream;
+using std::ios_base;
 
 using namespace llvm;
+
+cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
+cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -30,8 +35,12 @@ class boa : public ModulePass {
   static char ID;
 
 
-  boa() : ModulePass(ID) {
-    log::set(cerr); // TODO - print log only when neseccery
+  boa() : ModulePass(ID), constraintProblem_(OutputGlpk) {
+    if (LogFile != "") {
+      ofstream* logfile = new ofstream();
+      logfile->open(LogFile.c_str());
+      log::set(*logfile);
+    }
    }
 
   virtual bool runOnModule(Module &M) {
@@ -44,7 +53,7 @@ class boa : public ModulePass {
     for (Module::const_iterator it = M.begin(); it != M.end(); ++it) {
       const Function *F = it;
       for (const_inst_iterator ii = inst_begin(F); ii != inst_end(F); ++ii) {
-        constraintGenerator.VisitInstruction(&(*ii));
+        constraintGenerator.VisitInstruction(&(*ii), F);
       }
     }
     return false;
@@ -151,68 +160,8 @@ class boa : public ModulePass {
       cerr << SEPARATOR << endl;
     }
   }
-
-
 };
 }
 
 char boa::boa::ID = 0;
 static RegisterPass<boa::boa> X("boa", "boa - buffer overrun analyzer");
-
-
-//// DEBUG
-//#include <iostream>
-//using std::cerr;
-//using std::endl;
-
-//using namespace clang;
-
-//namespace {
-
-//class boaConsumer : public ASTConsumer {
-// private:
-//  SourceManager &sm_;
-//  PointerASTVisitor pointerAnalyzer_;
-//  ConstraintProblem constraintProblem_;
-//  ConstraintGenerator constraintGenerator_;
-//  bool blameOverruns_;
-
-// public:
-//  boaConsumer(SourceManager &SM, bool blameOverruns) : sm_(SM), pointerAnalyzer_(SM),
-//                                                       constraintGenerator_(SM, constraintProblem_),
-//                                                       blameOverruns_(blameOverruns) {}
-
-//  virtual void HandleTopLevelDecl(DeclGroupRef DG) {
-//    for (DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i) {
-//      Decl *D = *i;
-//      pointerAnalyzer_.TraverseDecl(D);
-//      pointerAnalyzer_.findVarDecl(D);
-//      constraintGenerator_.TraverseDecl(D);
-//    }
-//  }
-
-//  }
-//};
-
-//class boaPlugin : public PluginASTAction {
-// protected:
-//  bool blameOverruns_;
-
-//  ASTConsumer *CreateASTConsumer(CompilerInstance &CI, llvm::StringRef) {
-//    return new boaConsumer(CI.getSourceManager(), blameOverruns_);
-//  }
-
-//  bool ParseArgs(const CompilerInstance &CI, const std::vector<std::string>& args) {
-//    blameOverruns_ = false;
-//    for (unsigned i = 0; i < args.size(); ++i) {
-//      if (args[i] == "log") {
-//        log::set(std::cout);
-//      } else if (args[i] == "blame") {
-//        blameOverruns_ = true;
-//      }
-//    }
-//    return true;
-//  }
-//};
-
-//}
