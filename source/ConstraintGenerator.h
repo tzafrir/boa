@@ -42,7 +42,7 @@ class ConstraintGenerator {
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  const string &blame,
-                                 VarLiteral::ExpressionType type = VarLiteral::ALLOC);
+                                 VarLiteral::ExpressionType type);
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"

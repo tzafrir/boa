@@ -307,7 +307,8 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
 
 void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
   Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction");
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction",
+                            VarLiteral::USED);
 }
 
 void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I) {
@@ -328,7 +329,8 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
       Integer intLiteral(I->getPointerOperand());
-      GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction");
+      GenerateGenericConstraint(intLiteral, I->getValueOperand(), "store instruction",
+                                VarLiteral::USED);
       GeneratePointerDerefConstraint(I->getPointerOperand());
     } else {
       Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
@@ -345,7 +347,8 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // load from a pointer - load int value
       Integer intLiteral(I);
-      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction");
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction",
+                                VarLiteral::USED);
       GeneratePointerDerefConstraint(I->getPointerOperand());
     } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
@@ -518,6 +521,35 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  if (functionName == "strncpy") {
+    Pointer to(makePointer(I->getArgOperand(0)));
+    Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
+    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
+
+    Constraint cMax;
+    cMax.addBig(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
+    cMax.addSmall(maxExp);
+    cMax.addSmall(-1);
+    cMax.SetBlame("strncpy call");
+    cp_.AddConstraint(cMax);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE) << " <= "
+              << maxExp.toString() << endl;
+
+    Constraint cMin;
+    cMin.addSmall(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
+    cMin.addBig(minExp);
+    cMin.addBig(-1);
+    cMin.SetBlame("strncpy call");
+    cp_.AddConstraint(cMin);
+    LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
+              << minExp.toString() << endl;
+    return;
+  }
+
+  if (functionName == "sprintf") {
+
+  }
+
   // General function call
   if (f->isDeclaration()) {
     // has no body, assuming ovverrun in each buffer, and unbound return value
@@ -546,13 +578,15 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       }
       else {
         Integer to(it);
-        GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function");
+        GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function",
+                                  VarLiteral::LEN_WRITE);
       }
     }
   }
 }
 
-void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
+void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,
+                                                    const Value *integerExpression,
                                                     const string &blame,
                                                     VarLiteral::ExpressionType type) {
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
