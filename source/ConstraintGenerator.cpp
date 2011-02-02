@@ -455,7 +455,9 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "malloc") {
+  string functionName = f->getNameStr();
+
+  if (functionName == "malloc") {
     // malloc calls are of the form:
     //   %2 = call i8* @malloc(i64 4)
     //   ...
@@ -470,7 +472,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "strlen") {
+  if (functionName == "strlen") {
     Pointer p(makePointer(I->getArgOperand(0)));
     Integer var(I);
 
@@ -494,7 +496,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "strcpy") {
+  if (functionName == "strcpy") {
     Pointer from(makePointer(I->getArgOperand(1))), to(makePointer(I->getArgOperand(0)));
 
     Constraint cMax;
@@ -513,21 +515,41 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
               << from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
 
+    return;
   }
 
-//      // General function call
-//      if (funcDec->hasBody()) {
-//        VisitStmt(funcDec->getBody(), funcDec);
-//      }
-//      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
-//        VarDecl *var = funcDec->getParamDecl(i);
-//        if (var->getType()->isIntegerType()) {
-//          Integer intLiteral(var);
-//          GenerateGenericConstraint(intLiteral, funcCall->getArg(i), "int parameter " + getStmtLoc(var));
-//        }
-//      }
-//    }
-//  }
+  // General function call
+  if (f->isDeclaration()) {
+    // has no body, assuming ovverrun in each buffer, and unbound return value
+    const unsigned params = I->getNumOperands() - 1; // the last operand is the called function
+    for (unsigned i = 0; i< params; ++i) {
+      if (I->getOperand(i)->getType()->isPointerTy()) {
+        Pointer p(makePointer(I->getOperand(i)));
+        GenerateUnboundConstraint(p, "unknown function call");
+      }
+    }
+    if (I->getType()->isPointerTy()) {
+      GenerateUnboundConstraint(makePointer(I), "unknown function call");
+    }
+    else {
+      Integer intLiteral(I);
+      GenerateUnboundConstraint(intLiteral, "unknown function call");
+    }
+  }
+  else {
+    //has body, pass arguments
+    int i = 0;
+    for (Function::const_arg_iterator it = f->arg_begin(); it != f->arg_end(); ++it, ++i) {
+      if (it->getType()->isPointerTy()) {
+        Pointer from(I->getOperand(i)), to(it);
+        GenerateBufferAliasConstraint(from, to);
+      }
+      else {
+        Integer to(it);
+        GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function");
+      }
+    }
+  }
 }
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
@@ -567,14 +589,14 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
   return result;
 }
 
-void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
+void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame) {
   // FIXME - is VarLiteral::MAX_INT enough?
   Constraint maxV, minV;
-  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
   maxV.addSmall(std::numeric_limits<int>::max());
   maxV.SetBlame(blame);
   cp_.AddConstraint(maxV);
-  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
   minV.addBig(std::numeric_limits<int>::min());
   minV.SetBlame(blame);
   cp_.AddConstraint(minV);
