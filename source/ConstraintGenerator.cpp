@@ -38,7 +38,7 @@ void ConstraintGenerator::AddBuffer(const Buffer& buf) {
   // TODO - LOG
 }
 
-void ConstraintGenerator::VisitInstruction(const Instruction *I) {
+void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function *F) {
   if (const DbgDeclareInst *D = dyn_cast<const DbgDeclareInst>(I)) {
     SaveDbgDeclare(D);
     return;
@@ -46,7 +46,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
   switch (I->getOpcode()) {
   // Terminators
-//  case Instruction::Ret:
+  case Instruction::Ret:
+    GenerateReturnConstraint(dyn_cast<const ReturnInst>(I), F);
+    break;
 //  case Instruction::Br:
 //  case Instruction::Switch:
 //  case Instruction::IndirectBr:
@@ -169,6 +171,19 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
                  (len - 1) << "\n";
 
     AddBuffer(buf);
+  }
+}
+
+void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Function *F) {
+  if (I->getReturnValue()) { // non void
+    if (F->getReturnType()->isPointerTy()) {
+      Pointer from(makePointer(I->getReturnValue())), to(F);
+      GenerateBufferAliasConstraint(from, to);
+    }
+    else {
+      Integer intLiteral(F);
+      GenerateGenericConstraint(intLiteral, I->getReturnValue(), "return value", VarLiteral::USED);
+    }
   }
 }
 
@@ -571,6 +586,14 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
         GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function",
                                   VarLiteral::LEN_WRITE);
       }
+    }
+    // get return value
+    if (I->getType()->isPointerTy()) {
+      GenerateBufferAliasConstraint(makePointer(f), makePointer(I));
+    }
+    else {
+      Integer intLiteral(I);
+      GenerateGenericConstraint(intLiteral, f, "user function call", VarLiteral::USED);
     }
   }
 }

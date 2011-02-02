@@ -53,7 +53,7 @@ class boa : public ModulePass {
     for (Module::const_iterator it = M.begin(); it != M.end(); ++it) {
       const Function *F = it;
       for (const_inst_iterator ii = inst_begin(F); ii != inst_end(F); ++ii) {
-        constraintGenerator.VisitInstruction(&(*ii));
+        constraintGenerator.VisitInstruction(&(*ii), F);
       }
     }
     return false;
