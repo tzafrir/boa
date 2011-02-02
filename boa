@@ -12,13 +12,18 @@ OUTPUT_GLPK=""
 
 for arg in $@
 do
-  if [ "$arg" == "-log" ]; then
-    args="$args -logfile /dev/stderr"
-  elif [ "$arg" == "-output_glpk" ]; then
-    OUTPUT_GLPK=$arg
-  else
-    files="$files $arg"
-  fi
+  # Bash switch statement:
+  case "$arg" in
+    -log)
+      args="$args -logfile /dev/stderr"
+    ;;
+    -output_glpk)
+      OUTPUT_GLPK=$arg
+    ;;
+    *)
+      files="$files $arg"
+    ;;
+  esac
 done
 
 
