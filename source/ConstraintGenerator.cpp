@@ -101,14 +101,22 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 //  case Instruction::Trunc:
 //  case Instruction::ZExt:
   case Instruction::SExt:
-    GenerateSExtConstraint(dyn_cast<const SExtInst>(I));
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int sign extend");
     break;
 //  case Instruction::FPTrunc:
-//  case Instruction::FPExt  :
+  case Instruction::FPExt:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Float sign extend");
+    break;
 //  case Instruction::FPToUI:
-//  case Instruction::FPToSI:
-//  case Instruction::UIToFP:
-//  case Instruction::SIToFP:
+  case Instruction::FPToSI:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Float to int cast");
+    break;
+  case Instruction::UIToFP:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Uint to float cast");
+    break;
+  case Instruction::SIToFP:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int to float cast");
+    break;
 //  case Instruction::IntToPtr:
 //  case Instruction::PtrToInt:
 //  case Instruction::BitCast:
@@ -320,9 +328,9 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
             << minOperand.toString() << endl;
 }
 
-void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
+void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string& blame) {
   Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction",
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), blame,
                             VarLiteral::USED);
 }
 
@@ -552,7 +560,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     else {
       GenerateStringCopyConstraint(I);
     }
-    return;    
+    return;
   }
 
   // General function call
@@ -651,7 +659,11 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
     return result;
   }
   if (const ConstantFP *fpLiteral = dyn_cast<const ConstantFP>(expr)) {
-    result.add(fpLiteral->getValueAPF().convertToDouble());
+    APFloat apFloat(fpLiteral->getValueAPF());
+    bool ignore;
+    apFloat.convert(APFloat::IEEEdouble, APFloat::rmTowardPositive, &ignore);
+
+    result.add(apFloat.convertToDouble());
     return result;
   }
 

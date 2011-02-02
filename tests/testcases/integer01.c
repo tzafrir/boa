@@ -1,4 +1,3 @@
-// BOA-TEST   0
 // one simple int
 int main() {
   int i;
