@@ -446,7 +446,6 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   LOG << " Adding buffer to problem" << endl;
 
   Pointer ptr(I);
-
   GenerateBufferAliasConstraint(b, ptr, I->getOperand(I->getNumOperands()-1));
 }
 
@@ -558,7 +557,7 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
   Expression result;
 
   if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
-    result.add(literal->getLimitedValue());
+    result.add(literal->getSExtValue());
     return result;
   }
 
