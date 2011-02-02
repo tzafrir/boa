@@ -102,6 +102,7 @@ class ConstraintGenerator {
   void GenerateLoadConstraint(const LoadInst* I);
 
   void GenerateCallConstraint(const CallInst* I);
+  void GenerateReturnConstraint(const ReturnInst* I, const Function *F);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
@@ -118,7 +119,7 @@ class ConstraintGenerator {
   /**
     Generate constraints out of a specific instruction
   */
-  void VisitInstruction(const Instruction *I);
+  void VisitInstruction(const Instruction *I, const Function *F);
 
   /**
     Generate constraints out of global variable declerations/definitions

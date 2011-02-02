@@ -38,7 +38,7 @@ void ConstraintGenerator::AddBuffer(const Buffer& buf) {
   // TODO - LOG
 }
 
-void ConstraintGenerator::VisitInstruction(const Instruction *I) {
+void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function *F) {
   if (const DbgDeclareInst *D = dyn_cast<const DbgDeclareInst>(I)) {
     SaveDbgDeclare(D);
     return;
@@ -46,7 +46,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I) {
 
   switch (I->getOpcode()) {
   // Terminators
-//  case Instruction::Ret:
+  case Instruction::Ret:
+    GenerateReturnConstraint(dyn_cast<const ReturnInst>(I), F);
+    break;
 //  case Instruction::Br:
 //  case Instruction::Switch:
 //  case Instruction::IndirectBr:
@@ -169,6 +171,19 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
                  (len - 1) << "\n";
 
     AddBuffer(buf);
+  }
+}
+
+void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Function *F) {
+  if (I->getReturnValue()) { // non void
+    if (F->getReturnType()->isPointerTy()) {
+      Pointer from(makePointer(I->getReturnValue())), to(F);
+      GenerateBufferAliasConstraint(from, to);
+    }
+    else {
+      Integer intLiteral(F);
+      GenerateGenericConstraint(intLiteral, I->getReturnValue(), "return value", VarLiteral::USED);
+    }
   }
 }
 
@@ -446,7 +461,6 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   LOG << " Adding buffer to problem" << endl;
 
   Pointer ptr(I);
-
   GenerateBufferAliasConstraint(b, ptr, I->getOperand(I->getNumOperands()-1));
 }
 
@@ -580,7 +594,7 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
   Expression result;
 
   if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
-    result.add(literal->getLimitedValue());
+    result.add(literal->getSExtValue());
     return result;
   }
 
