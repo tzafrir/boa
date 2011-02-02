@@ -100,8 +100,12 @@ This method has a side effect of printing all failing assertions to stderr.
       assertionType = BYNAME
     elif assertionTypeValue == "ByLocation":
       assertionType = BYLOCATION
-    else:
+    elif assertionTypeValue == "ByBoth":
       assertionType = BYBOTH
+    else:
+      errs.write("Invalid assertion type \"" + assertionTypeValue + "\" in line " +
+          str(lineNumber) + "\n")
+      exit(1)
     if assertionType == BYNAME:
       contains = listContains(dismantleListOfTuples(testOutput, 0), values[2])
     elif assertionType == BYLOCATION:
@@ -123,6 +127,7 @@ def main():
     errs.write("Usage: %s [testName]*\n" % sys.argv[0])
     errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
+    exit(1)
   testName = sys.argv[1]
   testOutput = runTest(testName)
   val = applyAssertions(testName, testOutput)
