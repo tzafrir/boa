@@ -512,9 +512,29 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     LOG << "Adding - " << to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE) << " <= "
               << from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << endl;
 
+    return;
   }
 
-//      // General function call
+  // General function call
+  if (f->isDeclaration()) {
+    // has no body, assuming ovverrun in each buffer, and unbound return value
+    const unsigned params = I->getNumOperands() - 1; // the last operand is the called function
+    for (unsigned i = 0; i< params; ++i) {
+      if (I->getOperand(i)->getType()->isPointerTy()) {
+        Pointer p(makePointer(I->getOperand(i)));
+        GenerateUnboundConstraint(p, "unknown function call");
+      }
+    }
+    if (I->getType()->isPointerTy()) {
+      GenerateUnboundConstraint(makePointer(I), "unknown function call");
+    }
+    else {
+      Integer intLiteral(I);
+      GenerateUnboundConstraint(intLiteral, "unknown function call");
+    }
+  }
+  else {
+    //has body, pass arguments
 //      if (funcDec->hasBody()) {
 //        VisitStmt(funcDec->getBody(), funcDec);
 //      }
@@ -526,7 +546,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 //        }
 //      }
 //    }
-//  }
+  }
 }
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
@@ -566,14 +586,14 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
   return result;
 }
 
-void ConstraintGenerator::GenerateUnboundConstraint(const Integer &var, const string &blame) {
+void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame) {
   // FIXME - is VarLiteral::MAX_INT enough?
   Constraint maxV, minV;
-  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::USED));
+  maxV.addBig(var.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
   maxV.addSmall(std::numeric_limits<int>::max());
   maxV.SetBlame(blame);
   cp_.AddConstraint(maxV);
-  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::USED));
+  minV.addSmall(var.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
   minV.addBig(std::numeric_limits<int>::min());
   minV.SetBlame(blame);
   cp_.AddConstraint(minV);

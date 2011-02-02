@@ -35,7 +35,7 @@ class ConstraintGenerator {
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
   */
-  void GenerateUnboundConstraint(const Integer &var, const string &blame);
+  void GenerateUnboundConstraint(const VarLiteral &var, const string &blame);
 
   /**
     Generate a constraint on "var" according to the the integer value of "integerExpression"
