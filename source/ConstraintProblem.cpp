@@ -113,6 +113,16 @@ inline void returnRowToLP(glp_prob* lp, int row, RowData data) {
   glp_del_rows(lp, data.nonZeros, ind);
 }
 
+inline int max(int a, int b) {
+  return (a > b) ? a : b;
+}
+
+inline void swap(glp_prob **a, glp_prob **b) {
+  glp_prob *tmp = *a;
+  *a = *b;
+  *b = tmp; 
+}
+
 /**
   Remove a minimal set of constraints that makes the lp inFeasable.
 
@@ -129,14 +139,42 @@ inline void removeInFeasable(glp_prob* lp, const glp_smcp &params, map<int, stri
   tmp = glp_create_prob();
   glp_copy_prob(tmp, lp, GLP_OFF);
 
-  for (int i = 1, rows = glp_get_num_rows(tmp); i <= rows; ++i) {
-    RowData data = removeRowFromLP(tmp, i, colToVar);
-    glp_simplex(tmp, &params);
-    if (IsFeasable(glp_get_status(tmp))) {
-      removeRowFromLP(lp, i, colToVar);
-      returnRowToLP(tmp, i, data);
-      LOG << " removing row " << i << endl;
+  int rows = glp_get_num_rows(tmp);
+  int i = 1;
+  while (i <= rows) {
+    int half = i + max((rows - i) / 2, 1);
+    vector<RowData> data;
+    
+    glp_prob *tmp2;
+    tmp2 = glp_create_prob();
+    glp_copy_prob(tmp2, tmp, GLP_OFF);
+
+   
+    while (half > i) {
+      for (int j = i; j < half; ++j) {
+        RowData tmpRow = removeRowFromLP(tmp, j, colToVar);
+        data.push_back(tmpRow);
+      }
+
+      glp_simplex(tmp, &params);
+      
+      if (IsFeasable(glp_get_status(tmp))) {
+        if (half == i + 1) {
+          removeRowFromLP(lp, i, colToVar);
+          returnRowToLP(tmp, i, data.back());
+          data.pop_back();
+          LOG << " removing row " << i << endl;
+          i = half;
+        } else { // proccess rows one by one
+          swap(&tmp, &tmp2);
+          half = i + 1;
+        }
+      } else {
+        i = half;
+      }
     }
+  
+    glp_delete_prob(tmp2);
   }
 
   glp_delete_prob(tmp);
@@ -206,11 +244,6 @@ vector<Buffer> ConstraintProblem::Solve(
 
   int status = glp_get_status(lp);
   while (status != GLP_OPT) {
-    while (!IsFeasable(status)) {
-      removeInFeasable(lp, params, colToVar);
-      glp_simplex(lp, &params);
-      status = glp_get_status(lp);
-    }
     while (status == GLP_UNBND) {
       for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
         setBufferCoef(lp, *b, 0.0, varToCol);
@@ -223,6 +256,11 @@ vector<Buffer> ConstraintProblem::Solve(
           setBufferCoef(lp, *b, 0.0, varToCol);
         }
       }
+      glp_simplex(lp, &params);
+      status = glp_get_status(lp);
+    }
+    while ((status == GLP_INFEAS) || (status == GLP_NOFEAS)) {
+      removeInFeasable(lp, params, colToVar);
       glp_simplex(lp, &params);
       status = glp_get_status(lp);
     }
