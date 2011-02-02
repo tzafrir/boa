@@ -454,7 +454,9 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "malloc") {
+  string functionName = f->getNameStr();
+
+  if (functionName == "malloc") {
     // malloc calls are of the form:
     //   %2 = call i8* @malloc(i64 4)
     //   ...
@@ -469,7 +471,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "strlen") {
+  if (functionName == "strlen") {
     Pointer p(makePointer(I->getArgOperand(0)));
     Integer var(I);
 
@@ -493,7 +495,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (f->getNameStr() == "strcpy") {
+  if (functionName == "strcpy") {
     Pointer from(makePointer(I->getArgOperand(1))), to(makePointer(I->getArgOperand(0)));
 
     Constraint cMax;
@@ -535,17 +537,17 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
   else {
     //has body, pass arguments
-//      if (funcDec->hasBody()) {
-//        VisitStmt(funcDec->getBody(), funcDec);
-//      }
-//      for (unsigned i = 0; i < funcDec->param_size(); ++i) {
-//        VarDecl *var = funcDec->getParamDecl(i);
-//        if (var->getType()->isIntegerType()) {
-//          Integer intLiteral(var);
-//          GenerateGenericConstraint(intLiteral, funcCall->getArg(i), "int parameter " + getStmtLoc(var));
-//        }
-//      }
-//    }
+    int i = 0;
+    for (Function::const_arg_iterator it = f->arg_begin(); it != f->arg_end(); ++it, ++i) {
+      if (it->getType()->isPointerTy()) {
+        Pointer from(I->getOperand(i)), to(it);
+        GenerateBufferAliasConstraint(from, to);
+      }
+      else {
+        Integer to(it);
+        GenerateGenericConstraint(to, I->getOperand(i), "pass integer parameter to a function");
+      }
+    }
   }
 }
 
