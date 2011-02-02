@@ -445,7 +445,9 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
 
   LOG << " Adding buffer to problem" << endl;
 
-  GenerateBufferAliasConstraint(b, I, I->getOperand(I->getNumOperands()-1));
+  Pointer ptr(I);
+
+  GenerateBufferAliasConstraint(b, ptr, I->getOperand(I->getNumOperands()-1));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
