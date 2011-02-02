@@ -58,22 +58,22 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 
   // Standard binary operators...
   case Instruction::Add:
+  case Instruction::FAdd:
     GenerateAddConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FAdd:
   case Instruction::Sub:
+  case Instruction::FSub:
     GenerateSubConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FSub:
   case Instruction::Mul:
+  case Instruction::FMul:
     GenerateMulConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FMul:
 //  case Instruction::UDiv:
   case Instruction::SDiv:
+  case Instruction::FDiv:
     GenerateDivConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FDiv:
 //  case Instruction::URem:
 //  case Instruction::SRem:
 //  case Instruction::FRem:
@@ -104,7 +104,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateSExtConstraint(dyn_cast<const SExtInst>(I));
     break;
 //  case Instruction::FPTrunc:
-//  case Instruction::FPExt:
+//  case Instruction::FPExt  :
 //  case Instruction::FPToUI:
 //  case Instruction::FPToSI:
 //  case Instruction::UIToFP:
@@ -648,6 +648,10 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 
   if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
     result.add(literal->getSExtValue());
+    return result;
+  }
+  if (const ConstantFP *fpLiteral = dyn_cast<const ConstantFP>(expr)) {
+    result.add(fpLiteral->getValueAPF().convertToDouble());
     return result;
   }
 
