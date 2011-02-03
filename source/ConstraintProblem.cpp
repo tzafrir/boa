@@ -152,8 +152,9 @@ inline void swap(LinearProblem *a, LinearProblem *b) {
   *b = tmp;
 }
 
-vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params, map<int, string>& colToVar) {
-  set<int> S; // suspected rows
+vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params) {
+  LOG << "running elastic filter" << endl;
+  set<int> S; // suspect rows
   LinearProblem tmp = lp.clone();
 
   int realCols = glp_get_num_cols(tmp.lp);
@@ -174,19 +175,18 @@ vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params, map<i
 
     glp_set_mat_row(tmp.lp, i, nonZeros, indices, values);
     glp_set_obj_coef(tmp.lp, realCols + i,  1);
-    glp_set_col_bnds(tmp.lp, realCols + i, GLP_LO, 0.0, 0.0);
+    glp_set_col_bnds(tmp.lp, realCols + i, GLP_UP, 0.0, 0.0);
   }
-
-  glp_set_obj_dir(tmp.lp, GLP_MIN);
 
   glp_std_basis(tmp.lp);
   glp_simplex(tmp.lp, &params);
   int status = glp_get_status(tmp.lp);
-  while ((status == GLP_INFEAS) || (status == GLP_NOFEAS)) {
+  while ((status != GLP_INFEAS) && (status != GLP_NOFEAS)) {
+
     for (int i = 1; i <= newCols; ++i) {
-      if (glp_get_col_prim(tmp.lp, realCols + i) > 0) {
+      if (glp_get_col_prim(tmp.lp, realCols + i) < 0) {
         S.insert(i);
-        glp_set_obj_coef(tmp.lp, realCols + i,  0);
+        glp_set_col_bnds(tmp.lp, realCols + i, GLP_FX, 0.0, 0.0);
       }
     }
     glp_simplex(tmp.lp, &params);
@@ -214,21 +214,33 @@ vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params, map<i
 */
 inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int, string>& colToVar) {
   LOG << "No Feasable solution, running taint analysis - " << endl;
+
+  vector<int> rows = ElasticFilter(lp, params);
+  int numRows = rows.size();
+
   LinearProblem tmp = lp.clone();
 
-  int rows = lp.realRows;
-  int i = 1;
+  map<int, bool> irrelevant;
+  for (int i = 0; i < numRows; ++i) {
+    irrelevant[rows[i]] = true;
+  }
+  for (int i = 1; i <= lp.realRows; ++i) {
+    if (!irrelevant[i]) {
+      removeRowFromLP(tmp, i, colToVar);
+    }
+  }
+
   vector<int> removedRows;
 
-  while (i <= rows) {
-    int half = i + max((rows - i) / 2, 1);
+  for (int i = 0; i < numRows; /* empty */) {
+    int half = i + max((numRows - i) / 2, 1);
 
     bool oneByOne = false;
 
     while ((half > i) || oneByOne) {
       LinearProblem tmp2 = tmp.clone();
       for (int j = i; j < half; ++j) {
-        removeRowFromLP(tmp, j, colToVar);
+        removeRowFromLP(tmp, rows[j], colToVar);
       }
 
       glp_simplex(tmp.lp, &params);
@@ -236,9 +248,9 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
       if (IsFeasable(glp_get_status(tmp.lp))) {
         swap(&tmp, &tmp2); // get the row(s) back to tmp
         if (half == i + 1) {
-          removeRowFromLP(lp, i, colToVar);
-          removedRows.push_back(i);
-          LOG << " removing row " << i << endl;
+          removeRowFromLP(lp, rows[i], colToVar);
+          removedRows.push_back(rows[i]);
+          LOG << " removing row " << rows[i] << endl;
           i = half;
           oneByOne = false;
         } else { // proccess rows one by one
@@ -254,12 +266,12 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
 
     if (removedRows.size() >= 3) {
       LinearProblem tmp2 = tmp.clone();
-      for (int j = i; j <= rows; ++j) {
-        removeRowFromLP(tmp2, j, colToVar);
+      for (int j = i; j < numRows; ++j) {
+        removeRowFromLP(tmp2, rows[j], colToVar);
       }
       glp_simplex(tmp2.lp, &params);
       if (!IsFeasable(glp_get_status(tmp2.lp))) {
-        i = rows + 1;
+        i = numRows + 1;
       }
       tmp2.free();
     }
