@@ -23,6 +23,7 @@ using namespace llvm;
 
 cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
 cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
+cl::opt<bool> Blame("blame", cl::desc("Calculate and show Blame information"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -139,18 +140,18 @@ class boa : public ModulePass {
       cerr << SEPARATOR << endl;
     } else {
       cerr << endl << "Possible buffer overruns on - " << endl;
-//      if (blameOverruns_) {
-//        map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
-//        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin();
-//             it != blames.end();
-//             ++it) {
-//          cerr << endl << it->first.getReadableName() << " " <<
-//              it->first.getSourceLocation() << endl;
-//          for (size_t i = 0; i < it->second.size(); ++i) {
-//            cerr << "  - " << it->second[i].Blame() << endl;
-//          }
-//        }
-//      }
+      if (Blame) {
+        map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
+        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin();
+             it != blames.end();
+             ++it) {
+          cerr << endl << it->first.getReadableName() << " " <<
+              it->first.getSourceLocation() << endl;
+          for (size_t i = 0; i < it->second.size(); ++i) {
+            cerr << "  - " << it->second[i].Blame() << endl;
+          }
+        }
+      }
       cerr << SEPARATOR << endl;
       for (vector<Buffer>::iterator buff = unsafeBuffers.begin();
            buff != unsafeBuffers.end();
