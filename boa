@@ -1,19 +1,30 @@
 #!/bin/bash
 
+BOADIR=`dirname $0`
+
 files=""
 args=""
+BOA_SO="$BOADIR/build/boa.so"
+CLANG="$BOADIR/../llvm/Debug+Asserts/bin/clang"
+OPT="$BOADIR/../llvm/Debug+Asserts/bin/opt"
+
+OUTPUT_GLPK=""
 
 for arg in $@
 do
   if [ "$arg" == "-log" ]; then
     args="$args -logfile /dev/stderr"
+  elif [ "$arg" == "-output_glpk" ]; then
+    OUTPUT_GLPK=$arg
   else
     files="$files $arg"
   fi
 done
 
+
+
 if [ "$files" != "" ]; then
-  ../llvm/Debug+Asserts/bin/clang -g -O0 -c -emit-llvm ${files} -o /dev/stdout | ../llvm/Debug+Asserts/bin/opt -load build/boa.so $args -boa > /dev/null
+  $CLANG -g -O0 -c -emit-llvm ${files} -o /dev/stdout | $OPT -load $BOA_SO $args -boa $OUTPUT_GLPK > /dev/null
 else
   echo -e " usage : \033[1m./boa [flags] <source files>\033[0m"
   echo ""
