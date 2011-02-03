@@ -1,5 +1,7 @@
 #include "ConstraintProblem.h"
 
+#include "LinearProblem.h"
+
 #include <iostream>
 #include <glpk.h>
 #include "log.h"
@@ -8,34 +10,6 @@ using std::endl;
 
 namespace boa {
 
-struct LinearProblem {
-  glp_prob *lp;
-  int realRows;
-  set<string> removedVars;
-
-  LinearProblem clone() const {
-    LinearProblem res;
-    res.lp = glp_create_prob();
-    glp_copy_prob(res.lp, this->lp, GLP_OFF);
-    res.realRows = this->realRows;
-    res.removedVars = this->removedVars;
-    return res;
-  }
-
-  void init() {
-    lp = glp_create_prob();
-    realRows = 0;
-    removedVars.clear();
-  }
-
-  LinearProblem() : lp(NULL), realRows(0) {}
-
-  void free() {
-    if (lp) {
-      glp_delete_prob(lp);
-    }
-  }
-};
 
 /**
  * A printing function for GLPK.
@@ -78,122 +52,48 @@ inline bool IsFeasable(int status) {
   return ((status != GLP_INFEAS) && (status != GLP_NOFEAS));
 }
 
-inline bool isMax(string s) {
-  return (s.substr(s.length() - 3) == "max");
-}
-
-
-/**
-  RowData store all the data of a single lp matrix row, so the row can be removed and returned later
-*/
-struct RowData {
-  // because of llvm command structure, each constraint affect 3(?) variables at the most
-  static const int MAX_VARS = 10;
-
-  int indices[MAX_VARS];
-  double values[MAX_VARS];
-  int nonZeros;
-  double bound;
-};
-
-/**
-  Remove a row from a linear problem matrix, create "unbound constraints" instead
-
-  The new constraints created at the end of the matrix, and all the data regarding the removed row
-  retured. Use returnRowToLP with the returned RowData in order to get the lp back to the original
-  state (note you must call "returnRowToLP" before removing any other rows from the LP, or else the
-  wrong "unbound" constraints will be removed.
-*/
-inline RowData removeRowFromLP(LinearProblem &lp, int row, map<int, string>& colToVar) {
-  RowData res;
-
-  res.nonZeros = glp_get_mat_row(lp.lp, row, res.indices, res.values);
-  res.bound = glp_get_row_ub(lp.lp, row);
-
-  glp_set_row_bnds(lp.lp, row, GLP_FR, 0.0, 0.0);
-
-  int ind[2];
-  double val[2];
-  for (int i = 1; i <= res.nonZeros; ++i) {
-    ind[1] = res.indices[i];
-    val[1] = (isMax(colToVar[res.indices[i]]) ? -1 : 1);
-    int r = glp_add_rows(lp.lp, 1);
-    glp_set_row_bnds(lp.lp, r, GLP_UP, 0.0, std::numeric_limits<int>::min());
-    glp_set_mat_row(lp.lp, r, 1, ind, val);
-  }
-  return res;
-}
-
-/**
-  Return a removed row back to the LP and remove the related "unbound constraints"
-
-  This function assumes that it is called right after "row" was removed using "removeRowFromLP",
-  if there was any other manipulation on the matrix rows between the two calls - the result may be
-  unexpected
-*/
-//inline void returnRowToLP(LinearProblem &lp, int row, RowData data) {
-//  glp_set_row_bnds(lp, row, GLP_UP, 0.0, data.bound);
-
-//  int ind[RowData::MAX_VARS]; // rows to be deleted from lp
-//  ind[0] = glp_get_num_rows(lp) - data.nonZeros; // last row to stay
-//  for (int i = 1; i <= data.nonZeros; ++i) {
-//    ind[i] = ind[0] + i;
-//  }
-//  glp_del_rows(lp, data.nonZeros, ind);
-//}
-
 inline int max(int a, int b) {
   return (a > b) ? a : b;
 }
 
-inline void swap(LinearProblem *a, LinearProblem *b) {
-  LinearProblem tmp = *a;
-  *a = *b;
-  *b = tmp;
-}
-
-vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params) {
+vector<int> ElasticFilter(const LinearProblem &lp) {
   LOG << "running elastic filter" << endl;
   set<int> S; // suspect rows
-  LinearProblem tmp = lp.clone();
+  LinearProblem tmp(lp);
 
-  int realCols = glp_get_num_cols(tmp.lp);
+  int realCols = glp_get_num_cols(tmp.lp_);
   for (int i = realCols; i > 0; --i) { // set old coefs to zero
-    glp_set_obj_coef(tmp.lp, i,  0);
+    glp_set_obj_coef(tmp.lp_, i,  0);
   }
 
-  int newCols = glp_get_num_rows(tmp.lp);
-  glp_add_cols(tmp.lp, newCols);
+  int newCols = glp_get_num_rows(tmp.lp_);
+  glp_add_cols(tmp.lp_, newCols);
   for (int i = 1; i <= newCols; ++i) {
     int indices[10];
     double values[10];
-    int nonZeros = glp_get_mat_row(tmp.lp, i, indices, values);
+    int nonZeros = glp_get_mat_row(tmp.lp_, i, indices, values);
 
     nonZeros++;
     indices[nonZeros] = realCols + i;
     values[nonZeros] = 1.0;
 
-    glp_set_mat_row(tmp.lp, i, nonZeros, indices, values);
-    glp_set_obj_coef(tmp.lp, realCols + i,  1);
-    glp_set_col_bnds(tmp.lp, realCols + i, GLP_UP, 0.0, 0.0);
+    glp_set_mat_row(tmp.lp_, i, nonZeros, indices, values);
+    glp_set_obj_coef(tmp.lp_, realCols + i,  1);
+    glp_set_col_bnds(tmp.lp_, realCols + i, GLP_UP, 0.0, 0.0);
   }
 
-  glp_std_basis(tmp.lp);
-  glp_simplex(tmp.lp, &params);
-  int status = glp_get_status(tmp.lp);
+  glp_std_basis(tmp.lp_);
+  int status = tmp.Solve();
   while ((status != GLP_INFEAS) && (status != GLP_NOFEAS)) {
 
     for (int i = 1; i <= newCols; ++i) {
-      if (glp_get_col_prim(tmp.lp, realCols + i) < 0) {
+      if (glp_get_col_prim(tmp.lp_, realCols + i) < 0) {
         S.insert(i);
-        glp_set_col_bnds(tmp.lp, realCols + i, GLP_FX, 0.0, 0.0);
+        glp_set_col_bnds(tmp.lp_, realCols + i, GLP_FX, 0.0, 0.0);
       }
     }
-    glp_simplex(tmp.lp, &params);
-    status = glp_get_status(tmp.lp);
+    status = tmp.Solve();
   }
-
-  tmp.free();
 
   vector<int> result;
   for (set<int>::iterator it = S.begin(); it != S.end(); ++it) {
@@ -212,21 +112,21 @@ vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params) {
   each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
   no such set which is smaller in size.
 */
-inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int, string>& colToVar) {
+inline void removeInFeasable(LinearProblem &lp, map<int, string>& colToVar) {
   LOG << "No Feasable solution, running taint analysis - " << endl;
 
-  vector<int> rows = ElasticFilter(lp, params);
+  vector<int> rows = ElasticFilter(lp);
   int numRows = rows.size();
 
-  LinearProblem tmp = lp.clone();
+  LinearProblem tmp(lp);
 
   map<int, bool> irrelevant;
   for (int i = 0; i < numRows; ++i) {
     irrelevant[rows[i]] = true;
   }
-  for (int i = 1; i <= lp.realRows; ++i) {
+  for (int i = 1; i <= lp.realRows_; ++i) {
     if (!irrelevant[i]) {
-      removeRowFromLP(tmp, i, colToVar);
+      tmp.RemoveRow(i, colToVar);
     }
   }
 
@@ -238,17 +138,17 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
     bool oneByOne = false;
 
     while ((half > i) || oneByOne) {
-      LinearProblem tmp2 = tmp.clone();
+      LinearProblem tmp2(tmp);
       for (int j = i; j < half; ++j) {
-        removeRowFromLP(tmp, rows[j], colToVar);
+        tmp.RemoveRow(rows[j], colToVar);
       }
 
-      glp_simplex(tmp.lp, &params);
+      int status = tmp.Solve();
 
-      if (IsFeasable(glp_get_status(tmp.lp))) {
-        swap(&tmp, &tmp2); // get the row(s) back to tmp
+      if (IsFeasable(status)) {
+        tmp = tmp2; // get the row(s) back to tmp
         if (half == i + 1) {
-          removeRowFromLP(lp, rows[i], colToVar);
+          lp.RemoveRow(rows[i], colToVar);
           removedRows.push_back(rows[i]);
           LOG << " removing row " << rows[i] << endl;
           i = half;
@@ -259,32 +159,31 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
         }
       } else {
         i = half;
-        if (oneByOne) {half++;}
+        if (oneByOne) {
+          half++;
+        }
       }
-    tmp2.free();
     }
 
     if (removedRows.size() >= 3) {
-      LinearProblem tmp2 = tmp.clone();
+      LinearProblem tmp2(tmp);
       for (int j = i; j < numRows; ++j) {
-        removeRowFromLP(tmp2, rows[j], colToVar);
+        tmp2.RemoveRow(rows[j], colToVar);
       }
-      glp_simplex(tmp2.lp, &params);
-      if (!IsFeasable(glp_get_status(tmp2.lp))) {
+      int status = tmp2.Solve();
+      if (!IsFeasable(status)) {
         i = numRows + 1;
       }
-      tmp2.free();
     }
   }
-  tmp.free();
 
-  int ind[101], removed = -max(-removedRows.size(), -100);
-  for (int i = 1; i <= removed; ++i) {
-    ind[i] = removedRows[i-1];
+  int ind[2], removed = removedRows.size();
+  for (int i = 0; i < removed; ++i) {
+    ind[1] = removedRows[i] - i;
+    glp_del_rows(lp.lp_, 1, ind);
   }
-  glp_del_rows(lp.lp, removed, ind);
-  glp_std_basis(lp.lp);
-  lp.realRows -= removed;
+  glp_std_basis(lp.lp_);
+  lp.realRows_ -= removed;
 }
 
 vector<Buffer> ConstraintProblem::Solve() const {
@@ -292,10 +191,10 @@ vector<Buffer> ConstraintProblem::Solve() const {
 }
 
 inline void setBufferCoef(LinearProblem &lp, const Buffer &b, double base, map<string, int> varToCol) {
-  glp_set_obj_coef(lp.lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
-  glp_set_obj_coef(lp.lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
-  glp_set_obj_coef(lp.lp, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
-  glp_set_obj_coef(lp.lp, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
+  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
+  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
+  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
+  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
 }
 
 vector<Buffer> ConstraintProblem::Solve(
@@ -316,23 +215,22 @@ vector<Buffer> ConstraintProblem::Solve(
   MapVarToCol(vars, varToCol, colToVar);
 
   LinearProblem lp;
-  lp.init();
-  glp_set_obj_dir(lp.lp, GLP_MAX);
-  glp_add_cols(lp.lp, vars.size());
-  glp_add_rows(lp.lp, inputConstraints.size());
-  lp.realRows = inputConstraints.size();
+  glp_set_obj_dir(lp.lp_, GLP_MAX);
+  glp_add_cols(lp.lp_, vars.size());
+  glp_add_rows(lp.lp_, inputConstraints.size());
+  lp.realRows_ = inputConstraints.size();
   {
     // Fill matrix
     int row = 1;
     for (vector<Constraint>::const_iterator constraint = inputConstraints.begin();
          constraint != inputConstraints.end();
          ++constraint, ++row) {
-      constraint->AddToLPP(lp.lp, row, varToCol);
+      constraint->AddToLPP(lp.lp_, row, varToCol);
     }
   }
 
   for (size_t i = 1; i <= vars.size(); ++i) {
-    glp_set_col_bnds(lp.lp, i, GLP_FR, 0.0, 0.0);
+    glp_set_col_bnds(lp.lp_, i, GLP_FR, 0.0, 0.0);
   }
 
   for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
@@ -348,9 +246,9 @@ vector<Buffer> ConstraintProblem::Solve(
   } else {
     params.msg_lev = GLP_MSG_ERR;
   }
-  glp_simplex(lp.lp, &params);
+  lp.SetParams(params);
 
-  int status = glp_get_status(lp.lp);
+  int status = lp.Solve();
   while (status != GLP_OPT) {
     while (status == GLP_UNBND) {
       for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
@@ -359,18 +257,16 @@ vector<Buffer> ConstraintProblem::Solve(
 
       for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
         setBufferCoef(lp, *b, 1.0, varToCol);
-        glp_simplex(lp.lp, &params);
-        if (glp_get_status(lp.lp) == GLP_UNBND) {
+        status = lp.Solve();
+        if (status == GLP_UNBND) {
           setBufferCoef(lp, *b, 0.0, varToCol);
         }
       }
-      glp_simplex(lp.lp, &params);
-      status = glp_get_status(lp.lp);
+      status = lp.Solve();
     }
     while ((status == GLP_INFEAS) || (status == GLP_NOFEAS)) {
-      removeInFeasable(lp, params, colToVar);
-      glp_simplex(lp.lp, &params);
-      status = glp_get_status(lp.lp);
+      removeInFeasable(lp, colToVar);
+      status = lp.Solve();
     }
   }
 
@@ -380,30 +276,28 @@ vector<Buffer> ConstraintProblem::Solve(
     // Print result
     LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED) <<
         "\t = " << glp_get_col_prim(
-        lp.lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
+        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
     LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED) <<
         "\t = " << glp_get_col_prim(
-        lp.lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
+        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
     LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) <<
         "\t = " << glp_get_col_prim(
-        lp.lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
     LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) <<
         "\t = " << glp_get_col_prim(
-        lp.lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
 
     LOG << endl;
     if ((glp_get_col_prim(
-         lp.lp, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
+         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
          glp_get_col_prim(
-         lp.lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
+         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
          (glp_get_col_prim(
-         lp.lp, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
+         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
       LOG << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
   }
-
-  lp.free();
 
   return unsafeBuffers;
 }
