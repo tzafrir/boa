@@ -13,7 +13,7 @@ struct LinearProblem {
   int realRows;
   set<string> removedVars;
 
-  LinearProblem clone() {
+  LinearProblem clone() const {
     LinearProblem res;
     res.lp = glp_create_prob();
     glp_copy_prob(res.lp, this->lp, GLP_OFF);
@@ -152,6 +152,56 @@ inline void swap(LinearProblem *a, LinearProblem *b) {
   *b = tmp;
 }
 
+vector<int> ElasticFilter(const LinearProblem &lp, const glp_smcp &params, map<int, string>& colToVar) {
+  set<int> S; // suspected rows
+  LinearProblem tmp = lp.clone();
+
+  int realCols = glp_get_num_cols(tmp.lp);
+  for (int i = realCols; i > 0; --i) { // set old coefs to zero
+    glp_set_obj_coef(tmp.lp, i,  0);
+  }
+
+  int newCols = glp_get_num_rows(tmp.lp);
+  glp_add_cols(tmp.lp, newCols);
+  for (int i = 1; i <= newCols; ++i) {
+    int indices[10];
+    double values[10];
+    int nonZeros = glp_get_mat_row(tmp.lp, i, indices, values);
+
+    nonZeros++;
+    indices[nonZeros] = realCols + i;
+    values[nonZeros] = 1.0;
+
+    glp_set_mat_row(tmp.lp, i, nonZeros, indices, values);
+    glp_set_obj_coef(tmp.lp, realCols + i,  1);
+    glp_set_col_bnds(tmp.lp, realCols + i, GLP_LO, 0.0, 0.0);
+  }
+
+  glp_set_obj_dir(tmp.lp, GLP_MIN);
+
+  glp_std_basis(tmp.lp);
+  glp_simplex(tmp.lp, &params);
+  int status = glp_get_status(tmp.lp);
+  while ((status == GLP_INFEAS) || (status == GLP_NOFEAS)) {
+    for (int i = 1; i <= newCols; ++i) {
+      if (glp_get_col_prim(tmp.lp, realCols + i) > 0) {
+        S.insert(i);
+        glp_set_obj_coef(tmp.lp, realCols + i,  0);
+      }
+    }
+    glp_simplex(tmp.lp, &params);
+    status = glp_get_status(tmp.lp);
+  }
+
+  tmp.free();
+
+  vector<int> result;
+  for (set<int>::iterator it = S.begin(); it != S.end(); ++it) {
+    result.push_back(*it);
+  }
+  return result;
+}
+
 /**
   Remove a minimal set of constraints that makes the lp inFeasable.
 
@@ -172,9 +222,9 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
 
   while (i <= rows) {
     int half = i + max((rows - i) / 2, 1);
-    
+
     bool oneByOne = false;
-    
+
     while ((half > i) || oneByOne) {
       LinearProblem tmp2 = tmp.clone();
       for (int j = i; j < half; ++j) {
@@ -201,13 +251,13 @@ inline void removeInFeasable(LinearProblem &lp, const glp_smcp &params, map<int,
       }
     tmp2.free();
     }
-    
+
     if (removedRows.size() >= 3) {
       LinearProblem tmp2 = tmp.clone();
       for (int j = i; j <= rows; ++j) {
         removeRowFromLP(tmp2, j, colToVar);
       }
-      glp_simplex(tmp2.lp, &params); 
+      glp_simplex(tmp2.lp, &params);
       if (!IsFeasable(glp_get_status(tmp2.lp))) {
         i = rows + 1;
       }
