@@ -1,0 +1,2 @@
+HAS ByLocation tests/testcases/pointer01.c:4
+NOT ByLocation tests/testcases/pointer01.c:5
