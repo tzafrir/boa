@@ -109,14 +109,14 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::Trunc:
   case Instruction::ZExt:
   case Instruction::SExt:
+  case Instruction::FPTrunc:
+  case Instruction::FPExt:
+  case Instruction::FPToUI:
+  case Instruction::FPToSI:
+  case Instruction::UIToFP:
+  case Instruction::SIToFP:
     GenerateCastConstraint(dyn_cast<const CastInst>(I));
     break;
-//  case Instruction::FPTrunc:
-//  case Instruction::FPExt:
-//  case Instruction::FPToUI:
-//  case Instruction::FPToSI:
-//  case Instruction::UIToFP:
-//  case Instruction::SIToFP:
 //  case Instruction::IntToPtr:
 //  case Instruction::PtrToInt:
 //  case Instruction::BitCast:
