@@ -106,10 +106,10 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     break;
 
   // Convert instructions...
-//  case Instruction::Trunc:
-//  case Instruction::ZExt:
+  case Instruction::Trunc:
+  case Instruction::ZExt:
   case Instruction::SExt:
-    GenerateSExtConstraint(dyn_cast<const SExtInst>(I));
+    GenerateCastConstraint(dyn_cast<const CastInst>(I));
     break;
 //  case Instruction::FPTrunc:
 //  case Instruction::FPExt:
@@ -335,7 +335,7 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
             << minOperand.toString() << endl;
 }
 
-void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
+void ConstraintGenerator::GenerateCastConstraint(const CastInst* I) {
   Integer intLiteral(I);
   GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction",
                             VarLiteral::USED);
