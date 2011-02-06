@@ -1,8 +1,12 @@
 #include "ConstraintGenerator.h"
+
 #include <vector>
 #include <map>
+
+#include "LinearProblem.h"
 #include "Integer.h"
 #include "Pointer.h"
+
 #include "llvm/Constants.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/User.h"
@@ -11,7 +15,6 @@ using std::pair;
 typedef boa::Constraint::Expression Expression;
 
 using namespace llvm;
-
 
 namespace boa {
 
