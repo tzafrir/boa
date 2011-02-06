@@ -152,7 +152,15 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
   if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
     // string literals are global arrays
     unsigned len = ar->getNumElements();
-    Buffer buf(G, "string literal", "", 0); // TODO - file? line?
+    string s;
+    if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
+      if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
+        if (CA->isCString()) {
+          s = CA->getAsString();
+        }
+      }
+    }
+    Buffer buf(G, "string literal \"" + s + "\"", "", 0); // TODO - file? line?
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
     GenerateAllocConstraint(G, ar);
@@ -555,7 +563,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     else {
       GenerateStringCopyConstraint(I);
     }
-    return;    
+    return;
   }
 
   // General function call
