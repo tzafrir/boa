@@ -82,7 +82,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 //  case Instruction::FRem:
 
   // Logical operators...
-//  case Instruction::And:
+  case Instruction::And:
+    GenerateAndConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
   case Instruction::Or :
     // fallthruogh to xor
   case Instruction::Xor:
@@ -192,6 +194,13 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
     }
   }
 }
+
+void ConstraintGenerator::GenerateAndConstraint(const BinaryOperator* I) {
+  Integer res(I);
+  GenerateGenericConstraint(res, I->getOperand(0), "bitwise and", VarLiteral::USED);
+  GenerateGenericConstraint(res, I->getOperand(1), "bitwise and", VarLiteral::USED);
+}
+
 
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   Expression maxResult, minResult;
@@ -558,7 +567,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     else {
       GenerateStringCopyConstraint(I);
     }
-    return;    
+    return;
   }
 
   // General function call
