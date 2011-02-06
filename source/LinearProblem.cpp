@@ -6,6 +6,12 @@
 using std::vector;
 using std::map;
 
+namespace {
+inline int max(int a, int b) {
+  return (a > b) ? a : b;
+}
+}
+
 namespace boa {
 vector<int> LinearProblem::ElasticFilter() const {
   LOG << "running elastic filter" << endl;

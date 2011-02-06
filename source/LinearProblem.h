@@ -13,12 +13,6 @@ using std::map;
 
 #define MINUS_INFTY (std::numeric_limits<int>::min())
 
-namespace {
-inline int max(int a, int b) {
-  return (a > b) ? a : b;
-}
-}
-
 namespace boa {
 
 class LinearProblem {
