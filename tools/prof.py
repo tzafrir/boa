@@ -10,9 +10,9 @@ for line in sys.stdin.readlines():
   comment = vals[3].split("\n")[0]
   timeDict = { "time":time, "comment":comment }
   try:
-    profInfoByMethod[vals[2]].append(timeDict)
+    profInfoByMethod[method].append(timeDict)
   except KeyError:
-    profInfoByMethod[vals[2]] = [ timeDict ]
+    profInfoByMethod[method] = [ timeDict ]
 
 for method in profInfoByMethod.keys():
   print method
