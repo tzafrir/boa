@@ -41,6 +41,9 @@ class LinearProblem {
     this->params_ = old.params_;
   }
 
+  /**
+    Efficiently identify a small group of infeasble constraints using elastic fileter algorithm
+  */
   vector<int> ElasticFilter() const;
  public:
   glp_prob *lp_;
