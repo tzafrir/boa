@@ -52,7 +52,8 @@ vector<Buffer> ConstraintProblem::Solve() const {
   return Solve(constraints_, buffers_);
 }
 
-inline void setBufferCoef(LinearProblem &lp, const Buffer &b, double base, map<string, int> varToCol) {
+inline void setBufferCoef(LinearProblem &lp,const Buffer &b, double base,
+                          map<string, int> varToCol) {
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
