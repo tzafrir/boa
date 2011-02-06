@@ -9,7 +9,6 @@ using std::map;
 namespace boa {
 vector<int> LinearProblem::ElasticFilter() const {
   LOG << "running elastic filter" << endl;
-  vector<int> S; // suspect rows
   LinearProblem tmp(*this);
 
   int realCols = glp_get_num_cols(tmp.lp_);
@@ -17,36 +16,35 @@ vector<int> LinearProblem::ElasticFilter() const {
     glp_set_obj_coef(tmp.lp_, i,  0);
   }
 
-  int newCols = glp_get_num_rows(tmp.lp_);
-  glp_add_cols(tmp.lp_, newCols);
-  for (int i = 1; i <= newCols; ++i) {
-    int indices[10];
-    double values[10];
+  int elasticCols = glp_get_num_rows(tmp.lp_);
+  glp_add_cols(tmp.lp_, elasticCols);
+  for (int i = 1; i <= elasticCols; ++i) {
+    int indices[MAX_VARS];
+    double values[MAX_VARS];
     int nonZeros = glp_get_mat_row(tmp.lp_, i, indices, values);
 
-    nonZeros++;
-    indices[nonZeros] = realCols + i;
-    values[nonZeros] = 1.0;
+    indices[nonZeros + 1] = realCols + i;
+    values[nonZeros + 1] = 1.0;
 
-    glp_set_mat_row(tmp.lp_, i, nonZeros, indices, values);
+    glp_set_mat_row(tmp.lp_, i, nonZeros + 1, indices, values);
     glp_set_obj_coef(tmp.lp_, realCols + i,  1);
     glp_set_col_bnds(tmp.lp_, realCols + i, GLP_UP, 0.0, 0.0);
   }
 
+  vector<int> suspects;
   glp_std_basis(tmp.lp_);
   int status = tmp.Solve();
   while ((status != GLP_INFEAS) && (status != GLP_NOFEAS)) {
-
-    for (int i = 1; i <= newCols; ++i) {
+    for (int i = 1; i <= elasticCols; ++i) {
       if (glp_get_col_prim(tmp.lp_, realCols + i) < 0) {
-        S.push_back(i);
+        suspects.push_back(i);
         glp_set_col_bnds(tmp.lp_, realCols + i, GLP_FX, 0.0, 0.0);
       }
     }
     status = tmp.Solve();
   }
 
-  return S;
+  return suspects;
 }
 
 void LinearProblem::RemoveRow(int row, map<int, string>& colToVar) {
@@ -56,6 +54,7 @@ void LinearProblem::RemoveRow(int row, map<int, string>& colToVar) {
   int nonZeros = glp_get_mat_row(lp_, row, indices, values);
   glp_set_row_bnds(lp_, row, GLP_FR, 0.0, 0.0);
 
+  // glpk ignores the 0's index of the array
   int ind[2];
   double val[2];
   for (int i = 1; i <= nonZeros; ++i) {
