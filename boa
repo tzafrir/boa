@@ -38,4 +38,5 @@ else
   echo "possible flags - "
   echo -e "  \033[1m-log\033[0m    - print log to stdout"
   echo -e "  \033[1m-blame\033[0m  - print minimal set of constraints that cause each overrun"
+  echo -e "  \033[1m-glpk\033[0m   - pring glpk to log"
 fi
