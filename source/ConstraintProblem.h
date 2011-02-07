@@ -12,9 +12,9 @@ namespace boa {
 class ConstraintProblem {
  private:
   const vector<Constraint> NO_CONSTRAINTS;
-  vector<Constraint> constraints;
-  set<Buffer> buffers;
-  bool outputGlpk;
+  vector<Constraint> constraints_;
+  set<Buffer> buffers_;
+  bool outputGlpk_;
 
   set<string> CollectVars() const;
 
@@ -23,19 +23,19 @@ class ConstraintProblem {
 
   vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
  public:
-  ConstraintProblem(bool output_glpk) : outputGlpk(output_glpk) {}
+  ConstraintProblem(bool output_glpk) : outputGlpk_(output_glpk) {}
 
   void AddBuffer(const Buffer& buffer) {
-    buffers.insert(buffer);
+    buffers_.insert(buffer);
   }
 
   void AddConstraint(const Constraint& c) {
-    constraints.push_back(c);
+    constraints_.push_back(c);
   }
 
   void Clear() {
-    buffers.clear();
-    constraints.clear();
+    buffers_.clear();
+    constraints_.clear();
   }
 
   /**
