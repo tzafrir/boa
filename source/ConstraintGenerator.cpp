@@ -6,6 +6,7 @@
 #include "LinearProblem.h"
 #include "Integer.h"
 #include "Pointer.h"
+#include "PointerAnalyzer.h"
 
 #include "llvm/Constants.h"
 #include "llvm/LLVMContext.h"
@@ -21,6 +22,7 @@ namespace boa {
 
 void ConstraintGenerator::AddBuffer(const Buffer& buf) {
   cp_.AddBuffer(buf);
+  buffers_.insert(buf);
 
   Constraint cReadMax, cWriteMax;
   cReadMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
@@ -385,6 +387,18 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   }
 }
 
+void ConstraintGenerator::AnalyzePointers() {
+  PointerAnalyzer analyzer;
+  analyzer.SetBuffers(buffers_);
+  for (set<Pointer>::iterator pi = unknownPointers_.begin(); pi != unknownPointers_.end(); ++pi) {
+    set<Buffer> buffers = analyzer.PointsTo(*pi);
+    for (set<Buffer>::iterator bi = buffers.begin(); bi != buffers.end(); ++bi) {
+      GenerateBufferAliasConstraint(*pi, *bi);
+      LOG << "Pointer Analyzer" << endl;
+    }
+  }
+}
+
 void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
@@ -396,6 +410,12 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
     } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
       GenerateBufferAliasConstraint(pFrom, pTo);
+  
+      if (const PointerType *ppType = dyn_cast<const PointerType>(pType->getElementType())) {
+        if (ppType->getElementType()->isPointerTy()) {
+          unknownPointers_.insert(pTo);
+        }
+      }
     }
   } else {
     LOG << "Error - Trying to load from a non pointer type" << endl;
@@ -484,12 +504,6 @@ void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
 
 void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
   Buffer b(I->getPointerOperand());
-  if (b.IsNull()) {
-    LOG << " ERROR - trying to add a buffer before buffer definition" << endl;
-    return;
-  }
-
-  LOG << " Adding buffer to problem" << endl;
 
   Pointer ptr(I);
   GenerateBufferAliasConstraint(b, ptr, I->getOperand(I->getNumOperands()-1));

@@ -31,6 +31,10 @@ class ConstraintGenerator {
     info is availble.
   */
   map<const Value*, bool> allocedBuffers;
+  set<Buffer> buffers_;
+  set<Pointer> unknownPointers_;
+
+  void AnalyzePointers();
 
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
