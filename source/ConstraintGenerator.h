@@ -118,6 +118,8 @@ class ConstraintGenerator {
   void GenerateCastConstraint(const CastInst* I, const string& blame);
 
   void GenerateAndConstraint(const BinaryOperator* I);
+  void GenerateOrXorConstraint(const Instruction* I);
+  void GenerateShiftConstraint(const BinaryOperator* I);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}

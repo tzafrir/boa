@@ -1,6 +1,6 @@
 int main() {
-  char buf1[10], buf2[20];
+  char buf1[10];
   int i = 4, j = 8;
   int k = i | j;
-  buf1[k] = buf2[k] = 'a';
+  buf1[k] = 'a';
 }
