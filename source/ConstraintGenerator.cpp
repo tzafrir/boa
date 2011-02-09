@@ -396,7 +396,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // load from a pointer - load int value
       Integer intLiteral(I);
-      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load in./bo  struction",
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(), "load instruction",
                                 VarLiteral::USED);
       GeneratePointerDerefConstraint(I->getPointerOperand());
     } else {
