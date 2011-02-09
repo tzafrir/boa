@@ -112,7 +112,10 @@ class ConstraintGenerator {
   void GenerateSubConstraint(const BinaryOperator* I);
   void GenerateMulConstraint(const BinaryOperator* I);
   void GenerateDivConstraint(const BinaryOperator* I);
-  void GenerateSExtConstraint(const SExtInst* I);
+
+  void GenerateCastConstraint(const CastInst* I, const string& blame);
+
+  void GenerateAndConstraint(const BinaryOperator* I);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}

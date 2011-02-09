@@ -16,6 +16,7 @@ typedef boa::Constraint::Expression Expression;
 
 using namespace llvm;
 
+
 namespace boa {
 
 void ConstraintGenerator::AddBuffer(const Buffer& buf) {
@@ -61,29 +62,32 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 
   // Standard binary operators...
   case Instruction::Add:
+  case Instruction::FAdd:
     GenerateAddConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FAdd:
   case Instruction::Sub:
+  case Instruction::FSub:
     GenerateSubConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FSub:
   case Instruction::Mul:
+  case Instruction::FMul:
     GenerateMulConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FMul:
 //  case Instruction::UDiv:
   case Instruction::SDiv:
+  case Instruction::FDiv:
     GenerateDivConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-//  case Instruction::FDiv:
 //  case Instruction::URem:
 //  case Instruction::SRem:
 //  case Instruction::FRem:
 
   // Logical operators...
-//  case Instruction::And:
-//  case Instruction::Or :
+  case Instruction::And:
+    GenerateAndConstraint(dyn_cast<const BinaryOperator>(I));
+    break;
+  case Instruction::Or :
+    // fallthruogh to xor
 //  case Instruction::Xor:
 
   // Memory instructions...
@@ -101,17 +105,23 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     break;
 
   // Convert instructions...
-//  case Instruction::Trunc:
-//  case Instruction::ZExt:
+  case Instruction::Trunc:
+  case Instruction::ZExt:
   case Instruction::SExt:
-    GenerateSExtConstraint(dyn_cast<const SExtInst>(I));
-    break;
-//  case Instruction::FPTrunc:
-//  case Instruction::FPExt:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int sign extend");
 //  case Instruction::FPToUI:
-//  case Instruction::FPToSI:
-//  case Instruction::UIToFP:
-//  case Instruction::SIToFP:
+  case Instruction::FPExt:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Float sign extend");
+    break;
+  case Instruction::FPToSI:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Float to int cast");
+    break;
+  case Instruction::UIToFP:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Uint to float cast");
+    break;
+  case Instruction::SIToFP:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int to float cast");
+    break;
 //  case Instruction::IntToPtr:
 //  case Instruction::PtrToInt:
 //  case Instruction::BitCast:
@@ -197,6 +207,13 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
     }
   }
 }
+
+void ConstraintGenerator::GenerateAndConstraint(const BinaryOperator* I) {
+  Integer res(I);
+  GenerateGenericConstraint(res, I->getOperand(0), "bitwise and", VarLiteral::USED);
+  GenerateGenericConstraint(res, I->getOperand(1), "bitwise and", VarLiteral::USED);
+}
+
 
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   Expression maxResult, minResult;
@@ -331,9 +348,9 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
             << minOperand.toString() << endl;
 }
 
-void ConstraintGenerator::GenerateSExtConstraint(const SExtInst* I) {
+void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string& blame) {
   Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getOperand(0), "sign extension instruction",
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), blame,
                             VarLiteral::USED);
 }
 
@@ -659,6 +676,14 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 
   if (const ConstantInt *literal = dyn_cast<const ConstantInt>(expr)) {
     result.add(literal->getSExtValue());
+    return result;
+  }
+  if (const ConstantFP *fpLiteral = dyn_cast<const ConstantFP>(expr)) {
+    APFloat apFloat(fpLiteral->getValueAPF());
+    bool ignore;
+    apFloat.convert(APFloat::IEEEdouble, APFloat::rmTowardPositive, &ignore);
+
+    result.add(apFloat.convertToDouble());
     return result;
   }
 
