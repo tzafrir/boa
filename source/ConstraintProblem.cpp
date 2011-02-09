@@ -23,15 +23,15 @@ static int printToLog(void *info, const char *s) {
 
 set<string> ConstraintProblem::CollectVars() const {
   set<string> vars;
-  for (set<Buffer>::const_iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer) {
+  for (set<Buffer>::const_iterator buffer = buffers_.begin(); buffer != buffers_.end(); ++buffer) {
     vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED));
     vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED));
     vars.insert(buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC));
     vars.insert(buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC));
   }
 
-  for (vector<Constraint>::const_iterator constraint = constraints.begin();
-       constraint != constraints.end();
+  for (vector<Constraint>::const_iterator constraint = constraints_.begin();
+       constraint != constraints_.end();
        ++constraint) {
     constraint->GetVars(vars);
   }
@@ -49,10 +49,11 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
 }
 
 vector<Buffer> ConstraintProblem::Solve() const {
-  return Solve(constraints, buffers);
+  return Solve(constraints_, buffers_);
 }
 
-inline void setBufferCoef(LinearProblem &lp, const Buffer &b, double base, map<string, int> varToCol) {
+inline void setBufferCoef(LinearProblem &lp,const Buffer &b, double base,
+                          map<string, int> varToCol) {
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
   glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
@@ -103,7 +104,7 @@ vector<Buffer> ConstraintProblem::Solve(
   glp_smcp params;
   glp_init_smcp(&params);
   glp_term_hook(&printToLog, NULL);
-  if (outputGlpk) {
+  if (outputGlpk_) {
     params.msg_lev = GLP_MSG_ALL;
   } else {
     params.msg_lev = GLP_MSG_ERR;
@@ -189,7 +190,7 @@ map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
   for (size_t i = 0; i < unsafe.size(); ++i) {
     set<Buffer> buf;
     buf.insert(unsafe[i]);
-    result[unsafe[i]] = Blame(constraints, buf);
+    result[unsafe[i]] = Blame(constraints_, buf);
   }
   return result;
 }

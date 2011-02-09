@@ -1,0 +1,5 @@
+#!/bin/bash
+DIR=`dirname $0`
+BOA=$DIR/boa
+PROFPY=$DIR/tools/prof.py
+$BOA $1 -log 2>&1 | grep PROF | $PROFPY
