@@ -34,8 +34,6 @@ class ConstraintGenerator {
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
 
-  void AnalyzePointers();
-
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
   */
@@ -123,6 +121,8 @@ class ConstraintGenerator {
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
+
+  void AnalyzePointers();
 
   /**
     Generate constraints out of a specific instruction
