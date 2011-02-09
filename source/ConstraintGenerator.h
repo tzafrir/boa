@@ -113,7 +113,7 @@ class ConstraintGenerator {
   void GenerateMulConstraint(const BinaryOperator* I);
   void GenerateDivConstraint(const BinaryOperator* I);
 
-  void GenerateCastConstraint(const CastInst* I);
+  void GenerateCastConstraint(const CastInst* I, const string& blame);
 
   void GenerateAndConstraint(const BinaryOperator* I);
 
