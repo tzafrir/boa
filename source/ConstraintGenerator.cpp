@@ -53,13 +53,13 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::Ret:
     GenerateReturnConstraint(dyn_cast<const ReturnInst>(I), F);
     break;
-//  case Instruction::Br:
-//  case Instruction::Switch:
-//  case Instruction::IndirectBr:
-//  case Instruction::Invoke:
-//  case Instruction::Unwind:
-//  case Instruction::Unreachable:
-
+  case Instruction::Br:
+  case Instruction::Switch:
+  case Instruction::IndirectBr:
+  case Instruction::Invoke:
+  case Instruction::Unwind:
+  case Instruction::Unreachable:
+    break;
   // Standard binary operators...
   case Instruction::Add:
   case Instruction::FAdd:
