@@ -109,13 +109,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::ZExt:
   case Instruction::SExt:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int sign extend");
-  case Instruction::FPExt:
-  case Instruction::FPToUI:
-  case Instruction::FPToSI:
-  case Instruction::UIToFP:
-  case Instruction::SIToFP:
-    GenerateCastConstraint(dyn_cast<const CastInst>(I));
-    break;
+//  case Instruction::FPToUI:
   case Instruction::FPExt:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Float sign extend");
     break;
