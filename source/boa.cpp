@@ -57,6 +57,8 @@ class boa : public ModulePass {
         constraintGenerator.VisitInstruction(&(*ii), F);
       }
     }
+    
+    constraintGenerator.AnalyzePointers();
     return false;
   }
 
