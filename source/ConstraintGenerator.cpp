@@ -86,10 +86,11 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::And:
     GenerateAndConstraint(dyn_cast<const BinaryOperator>(I));
     break;
-  case Instruction::Or :
-    // fallthruogh to xor
-//  case Instruction::Xor:
-
+  case Instruction::Or:    
+  case Instruction::Xor:
+    GenerateOrXorConstraint(I);
+    break;
+    
   // Memory instructions...
   case Instruction::Alloca:
     GenerateAllocaConstraint(dyn_cast<const AllocaInst>(I));
@@ -481,6 +482,11 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
   cp_.AddConstraint(minCons2);
   LOG << "Adding - " << intLiteral.NameExpression(VarLiteral::MIN) << " <= "
             << minOperand.toString() << endl;
+}
+
+void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
+    Integer intLiteral(I);
+    GenerateUnboundConstraint(intLiteral, "(X)OR operation");
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
