@@ -87,9 +87,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     break;
   case Instruction::Or :
     // fallthruogh to xor
-  case Instruction::Xor:
-    GenerateAddConstraint(dyn_cast<const BinaryOperator>(I));
-    break;
+//  case Instruction::Xor:
 
   // Memory instructions...
   case Instruction::Alloca:
