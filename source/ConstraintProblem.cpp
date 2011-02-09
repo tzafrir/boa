@@ -49,6 +49,7 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
 }
 
 vector<Buffer> ConstraintProblem::Solve() const {
+  LOG << "Solving constraint problem (" << constraints_.size() << " constraints)" << endl;
   return Solve(constraints_, buffers_);
 }
 
