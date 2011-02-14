@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <map>
+#include <algorithm>
 
 using std::vector;
 using std::map;
+using std::sort;
 
 namespace {
 inline int max(int a, int b) {
@@ -84,70 +86,17 @@ void LinearProblem::RemoveInfeasable(map<int, string>& colToVar) {
   LOG << "No Feasable solution, running taint analysis - " << endl;
 
   vector<int> rows = ElasticFilter();
-  int numRows = rows.size();
+  sort(rows.begin(), rows.end());
 
-  LinearProblem tmp(*this);
-
-  map<int, bool> irrelevant;
-  for (int i = 0; i < numRows; ++i) {
-    irrelevant[rows[i]] = true;
-  }
-  for (int i = 1; i <= realRows_; ++i) {
-    if (!irrelevant[i]) {
-      tmp.RemoveRow(i, colToVar);
-    }
-  }
-
-  vector<int> removedRows;
-
-  for (int i = 0; i < numRows; /* empty */) {
-    int half = i + max((numRows - i) / 2, 1);
-
-    bool oneByOne = false;
-
-    while ((half > i) || oneByOne) {
-      LinearProblem tmp2(tmp);
-      for (int j = i; j < half; ++j) {
-        tmp.RemoveRow(rows[j], colToVar);
-      }
-
-      int status = tmp.Solve();
-
-      if (IsFeasable(status)) {
-        tmp = tmp2; // get the row(s) back to tmp
-        if (half == i + 1) {
-          RemoveRow(rows[i], colToVar);
-          removedRows.push_back(rows[i]);
-          LOG << " removing row " << rows[i] << endl;
-          i = half;
-          oneByOne = false;
-        } else { // proccess rows one by one
-          oneByOne = true;
-          half = i + 1;
-        }
-      } else {
-        i = half;
-        if (oneByOne) {
-          half++;
-        }
-      }
-    }
-
-    if (removedRows.size() >= 3) {
-      LinearProblem tmp2(tmp);
-      for (int j = i; j < numRows; ++j) {
-        tmp2.RemoveRow(rows[j], colToVar);
-      }
-      int status = tmp2.Solve();
-      if (!IsFeasable(status)) {
-        i = numRows + 1;
-      }
-    }
-  }
-
-  int ind[2], removed = removedRows.size();
+  int ind[2], removed = rows.size();
   for (int i = 0; i < removed; ++i) {
-    ind[1] = removedRows[i] - i;
+  }
+  realRows_ -= removed;
+  for (int i = 0; i < removed; ++i) {
+    int cur = rows[i] - i;
+    LOG << "removing row " << rows[i] << endl;
+    RemoveRow(cur, colToVar);
+    ind[1] = cur;
     glp_del_rows(lp_, 1, ind);
   }
   glp_std_basis(lp_);
