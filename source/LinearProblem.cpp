@@ -89,8 +89,6 @@ void LinearProblem::RemoveInfeasable(map<int, string>& colToVar) {
   sort(rows.begin(), rows.end());
 
   int ind[2], removed = rows.size();
-  for (int i = 0; i < removed; ++i) {
-  }
   realRows_ -= removed;
   for (int i = 0; i < removed; ++i) {
     int cur = rows[i] - i;
