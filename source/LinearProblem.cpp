@@ -16,7 +16,6 @@ inline int max(int a, int b) {
 
 namespace boa {
 vector<int> LinearProblem::ElasticFilter() const {
-  LOG << "running elastic filter" << endl;
   LinearProblem tmp(*this);
 
   int realCols = glp_get_num_cols(tmp.lp_);
@@ -83,16 +82,16 @@ LinearProblem& LinearProblem::operator=(const LinearProblem &old) {
 }
 
 void LinearProblem::RemoveInfeasable(map<int, string>& colToVar) {
-  LOG << "No Feasable solution, running taint analysis - " << endl;
+  LOG << "No Feasable solution, running elastic filter - " << endl;
 
   vector<int> rows = ElasticFilter();
   sort(rows.begin(), rows.end());
 
   int ind[2], removed = rows.size();
   realRows_ -= removed;
+  LOG << "removing " << removed << " rows" << endl;  
   for (int i = 0; i < removed; ++i) {
     int cur = rows[i] - i;
-    LOG << "removing row " << rows[i] << endl;
     RemoveRow(cur, colToVar);
     ind[1] = cur;
     glp_del_rows(lp_, 1, ind);

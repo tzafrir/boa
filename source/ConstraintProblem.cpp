@@ -138,17 +138,14 @@ vector<Buffer> ConstraintProblem::Solve(
       buffer != inputBuffers.end();
       ++buffer) {
     // Print result
-    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED) <<
-        "\t = " << glp_get_col_prim(
+    LOG << buffer->getReadableName() << " " << buffer->getSourceLocation() << endl;
+    LOG << " Used  min\t = " << glp_get_col_prim(
         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
-    LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED) <<
-        "\t = " << glp_get_col_prim(
+    LOG << " Used  max\t = " << glp_get_col_prim(
         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
-    LOG << buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC) <<
-        "\t = " << glp_get_col_prim(
+    LOG << " Alloc min\t = " << glp_get_col_prim(
         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
-    LOG << buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC) <<
-        "\t = " << glp_get_col_prim(
+    LOG << " Alloc max\t = " << glp_get_col_prim(
         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
 
     LOG << endl;
@@ -159,7 +156,6 @@ vector<Buffer> ConstraintProblem::Solve(
          (glp_get_col_prim(
          lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
-      LOG << endl << "  !! POSSIBLE BUFFER OVERRUN ON " << buffer->getUniqueName() << endl << endl;
     }
   }
 
