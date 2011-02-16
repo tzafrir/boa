@@ -146,7 +146,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::PHI:
     GeneratePhiConstraint(dyn_cast<const PHINode>(I));
     break;
-//  case Instruction::Select:
+  case Instruction::Select:
+    GenerateSelectConstraint(dyn_cast<const SelectInst>(I));
+    break;
   case Instruction::Call:
     GenerateCallConstraint(dyn_cast<const CallInst>(I));
     break;
@@ -806,6 +808,14 @@ void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {
   for (unsigned i = 0; i < I->getNumIncomingValues(); i++) {
     GenerateGenericConstraint(phiNode, I->getIncomingValue(i), blame, VarLiteral::USED);
   }
+}
+
+void ConstraintGenerator::GenerateSelectConstraint(const SelectInst *I) {
+  Integer select(I);
+  string blame = "Ternary operator at " + GetInstructionFilename(I);
+  LOG << "Select Node at " << I << " (" << blame << ")" << endl;
+  GenerateGenericConstraint(select, I->getTrueValue(), blame, VarLiteral::USED);
+  GenerateGenericConstraint(select, I->getFalseValue(), blame, VarLiteral::USED);
 }
 
 // Static.
