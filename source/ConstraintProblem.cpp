@@ -50,7 +50,18 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
 
 vector<Buffer> ConstraintProblem::Solve() const {
   LOG << "Solving constraint problem (" << constraints_.size() << " constraints)" << endl;
-  return Solve(constraints_, buffers_);
+  
+ vector<Buffer> emptySet;
+ if (buffers_.empty()) {
+    LOG << "No buffers" << endl;
+    return emptySet;
+  }
+  if (constraints_.empty()) {
+    LOG << "No constraints" << endl;
+    return emptySet;
+  }
+
+  return SolveProblem(MakeFeasableProblem());
 }
 
 inline void setBufferCoef(LinearProblem &lp,const Buffer &b, double base,
@@ -124,24 +135,10 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
   return lp;
 }
 
-vector<Buffer> ConstraintProblem::Solve(
-    const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {  
+vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {  
   vector<Buffer> unsafeBuffers;
   
-  if (buffers_.empty()) {
-    LOG << "No buffers" << endl;
-    return unsafeBuffers;
-  }
-  if (constraints_.empty()) {
-    LOG << "No constraints" << endl;
-    return unsafeBuffers;
-  }
-
-  LinearProblem lp = MakeFeasableProblem();  
-
-  for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
-      buffer != inputBuffers.end();
-      ++buffer) {
+  for (set<Buffer>::const_iterator buffer = buffers_.begin(); buffer != buffers_.end(); ++buffer) {
     // Print result
     LOG << buffer->getReadableName() << " " << buffer->getSourceLocation() << endl;
     LOG << " Used  min\t = " << glp_get_col_prim(
@@ -170,19 +167,8 @@ vector<Buffer> ConstraintProblem::Solve(
 vector<Constraint> ConstraintProblem::Blame(
     const vector<Constraint> &input, const set<Buffer> &buffer) const {
   vector<Constraint> result(input);
-  // super naive algorithm
-  for (size_t i = 0; i < result.size(); ) {
-    Constraint tmp = result[i];
-    result[i] = result.back();
-    result.pop_back();
-    if (Solve(result, buffer).empty()) {
-      result.push_back(tmp);
-      tmp = result[i];
-      result[i] = result.back();
-      result.back() = tmp;
-      ++i;
-    }
-  }
+
+  // TODO
   return result;
 }
 
