@@ -794,9 +794,9 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Value *I) {
   Constraint minB, maxB;
   Integer boolean(I);
   maxB.addBig(boolean.NameExpression(VarLiteral::MAX));
-  maxB.addSmall(0.0);
+  maxB.addSmall(1.0);
   minB.addSmall(boolean.NameExpression(VarLiteral::MIN));
-  minB.addBig(1.0);
+  minB.addBig(0.0);
   maxB.SetBlame("Boolean operation");
   minB.SetBlame("Boolean operation");
   cp_.AddConstraint(minB);
