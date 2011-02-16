@@ -1,6 +1,8 @@
 #ifndef __BOA_HELPERS_H
 #define __BOA_HELPERS_H
 
+#include <sstream>
+
 namespace boa {
 
 /**
@@ -20,6 +22,12 @@ class Helpers {
       s.replace(n, num, replaceWith);
       n = s.find_first_of(chars, n+1);
     }
+  }
+
+  static string DoubleToString(double i) {
+    std::ostringstream buffer;
+    buffer << i;
+    return buffer.str();
   }
 };
 
