@@ -128,13 +128,21 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::SIToFP:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int to float cast");
     break;
-//  case Instruction::IntToPtr:
-//  case Instruction::PtrToInt:
-//  case Instruction::BitCast:
+
+  // Exploiting case fall-through.
+  case Instruction::IntToPtr:
+  case Instruction::PtrToInt:
+  case Instruction::BitCast:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Arbitrary cast");
+    break;
 
   // Other instructions...
-//  case Instruction::ICmp:
-//  case Instruction::FCmp:
+
+  // Fallthrough.
+  case Instruction::ICmp:
+  case Instruction::FCmp:
+    GenerateBooleanConstraint(I);
+    break;
 //  case Instruction::PHI:
 //  case Instruction::Select:
   case Instruction::Call:
@@ -782,6 +790,20 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   minV.addBig(std::numeric_limits<int>::min());
   minV.SetBlame(blame);
   cp_.AddConstraint(minV);
+}
+
+void ConstraintGenerator::GenerateBooleanConstraint(const Value *I) {
+  // Assuming result is of type i1, not [N x i1].
+  Constraint minB, maxB;
+  Integer boolean(I);
+  maxB.addBig(boolean.NameExpression(VarLiteral::MAX));
+  maxB.addSmall(1.0);
+  minB.addSmall(boolean.NameExpression(VarLiteral::MIN));
+  minB.addBig(0.0);
+  maxB.SetBlame("Boolean operation");
+  minB.SetBlame("Boolean operation");
+  cp_.AddConstraint(minB);
+  cp_.AddConstraint(maxB);
 }
 
 // Static.
