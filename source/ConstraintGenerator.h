@@ -126,6 +126,8 @@ class ConstraintGenerator {
   void GenerateOrXorConstraint(const Instruction* I);
   void GenerateShiftConstraint(const BinaryOperator* I);
 
+  void GeneratePhiConstraint(const PHINode* I);
+
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
 
