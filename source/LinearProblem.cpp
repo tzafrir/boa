@@ -8,12 +8,6 @@ using std::vector;
 using std::map;
 using std::sort;
 
-namespace {
-inline int max(int a, int b) {
-  return (a > b) ? a : b;
-}
-}
-
 namespace boa {
 vector<int> LinearProblem::ElasticFilter() const {
   LinearProblem tmp(*this);
