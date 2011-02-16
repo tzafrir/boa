@@ -143,14 +143,14 @@ class boa : public ModulePass {
     } else {
       cerr << endl << "Possible buffer overruns on - " << endl;
       if (Blame) {
-        map<Buffer, vector<Constraint> > blames = constraintProblem_.SolveAndBlame();
-        for (map<Buffer, vector<Constraint> >::iterator it = blames.begin();
+        map<Buffer, vector<string> > blames = constraintProblem_.SolveAndBlame();
+        for (map<Buffer, vector<string> >::iterator it = blames.begin();
              it != blames.end();
              ++it) {
           cerr << endl << it->first.getReadableName() << " " <<
               it->first.getSourceLocation() << endl;
           for (size_t i = 0; i < it->second.size(); ++i) {
-            cerr << "  - " << it->second[i].Blame() << endl;
+            cerr << "  - " << it->second[i] << endl;
           }
         }
       }

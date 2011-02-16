@@ -50,46 +50,43 @@ inline static void MapVarToCol(const set<string>& vars, map<string, int>& varToC
 
 vector<Buffer> ConstraintProblem::Solve() const {
   LOG << "Solving constraint problem (" << constraints_.size() << " constraints)" << endl;
-  return Solve(constraints_, buffers_);
-}
-
-inline void setBufferCoef(LinearProblem &lp,const Buffer &b, double base,
-                          map<string, int> varToCol) {
-  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
-  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
-  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
-  glp_set_obj_coef(lp.lp_, varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
-}
-
-vector<Buffer> ConstraintProblem::Solve(
-    const vector<Constraint> &inputConstraints, const set<Buffer> &inputBuffers) const {
-  vector<Buffer> unsafeBuffers;
-  if (inputBuffers.empty()) {
+  
+ vector<Buffer> emptySet;
+ if (buffers_.empty()) {
     LOG << "No buffers" << endl;
-    return unsafeBuffers;
+    return emptySet;
   }
-  if (inputConstraints.empty()) {
+  if (constraints_.empty()) {
     LOG << "No constraints" << endl;
-    return unsafeBuffers;
+    return emptySet;
   }
 
-  set<string> vars = CollectVars();
-  map<string, int> varToCol;
-  map<int, string> colToVar;
-  MapVarToCol(vars, varToCol, colToVar);
+  return SolveProblem(MakeFeasableProblem());
+}
 
+inline void setBufferCoef(LinearProblem &p, const Buffer &b, double base) {
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
+}
+
+LinearProblem ConstraintProblem::MakeFeasableProblem() const {
+  set<string> vars = CollectVars();
   LinearProblem lp;
+  MapVarToCol(vars, lp.varToCol_, lp.colToVar_);
+
   glp_set_obj_dir(lp.lp_, GLP_MAX);
   glp_add_cols(lp.lp_, vars.size());
-  glp_add_rows(lp.lp_, inputConstraints.size());
-  lp.realRows_ = inputConstraints.size();
+  glp_add_rows(lp.lp_, constraints_.size());
+  lp.realRows_ = constraints_.size();
   {
     // Fill matrix
     int row = 1;
-    for (vector<Constraint>::const_iterator constraint = inputConstraints.begin();
-         constraint != inputConstraints.end();
+    for (vector<Constraint>::const_iterator constraint = constraints_.begin();
+         constraint != constraints_.end();
          ++constraint, ++row) {
-      constraint->AddToLPP(lp.lp_, row, varToCol);
+      constraint->AddToLPP(lp.lp_, row, lp.varToCol_);
     }
   }
 
@@ -97,9 +94,9 @@ vector<Buffer> ConstraintProblem::Solve(
     glp_set_col_bnds(lp.lp_, i, GLP_FR, 0.0, 0.0);
   }
 
-  for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
+  for (set<Buffer>::const_iterator b = buffers_.begin(); b != buffers_.end(); ++b) {
     // Set objective coeficients
-    setBufferCoef(lp, *b, 1.0, varToCol);
+    setBufferCoef(lp, *b, 1.0);
   }
 
   glp_smcp params;
@@ -115,46 +112,50 @@ vector<Buffer> ConstraintProblem::Solve(
   int status = lp.Solve();
   while (status != GLP_OPT) {
     while (status == GLP_UNBND) {
-      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
-        setBufferCoef(lp, *b, 0.0, varToCol);
+      for (set<Buffer>::const_iterator b = buffers_.begin(); b != buffers_.end(); ++b) {
+        setBufferCoef(lp, *b, 0.0);
       }
 
-      for (set<Buffer>::const_iterator b = inputBuffers.begin(); b != inputBuffers.end(); ++b) {
-        setBufferCoef(lp, *b, 1.0, varToCol);
+      for (set<Buffer>::const_iterator b = buffers_.begin(); b != buffers_.end(); ++b) {
+        setBufferCoef(lp, *b, 1.0);
         status = lp.Solve();
         if (status == GLP_UNBND) {
-          setBufferCoef(lp, *b, 0.0, varToCol);
+          setBufferCoef(lp, *b, 0.0);
         }
       }
       status = lp.Solve();
     }
     while ((status == GLP_INFEAS) || (status == GLP_NOFEAS)) {
-      lp.RemoveInfeasable(colToVar);
+      lp.RemoveInfeasable();
       status = lp.Solve();
     }
   }
 
-  for (set<Buffer>::const_iterator buffer = inputBuffers.begin();
-      buffer != inputBuffers.end();
-      ++buffer) {
+  return lp;
+}
+
+vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {  
+  vector<Buffer> unsafeBuffers;
+  
+  for (set<Buffer>::const_iterator buffer = buffers_.begin(); buffer != buffers_.end(); ++buffer) {
     // Print result
     LOG << buffer->getReadableName() << " " << buffer->getSourceLocation() << endl;
     LOG << " Used  min\t = " << glp_get_col_prim(
-        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
     LOG << " Used  max\t = " << glp_get_col_prim(
-        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
     LOG << " Alloc min\t = " << glp_get_col_prim(
-        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
     LOG << " Alloc max\t = " << glp_get_col_prim(
-        lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
 
     LOG << endl;
     if ((glp_get_col_prim(
-         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
          glp_get_col_prim(
-         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
          (glp_get_col_prim(
-         lp.lp_, varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
     }
   }
@@ -162,32 +163,32 @@ vector<Buffer> ConstraintProblem::Solve(
   return unsafeBuffers;
 }
 
-vector<Constraint> ConstraintProblem::Blame(
-    const vector<Constraint> &input, const set<Buffer> &buffer) const {
-  vector<Constraint> result(input);
-  // super naive algorithm
-  for (size_t i = 0; i < result.size(); ) {
-    Constraint tmp = result[i];
-    result[i] = result.back();
-    result.pop_back();
-    if (Solve(result, buffer).empty()) {
-      result.push_back(tmp);
-      tmp = result[i];
-      result[i] = result.back();
-      result.back() = tmp;
-      ++i;
+vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const {
+  double minAlloc = glp_get_col_prim(lp.lp_, 
+                       lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) - 1;
+  glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MAX, VarLiteral::USED)],
+                   GLP_UP, minAlloc, minAlloc);
+  glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::USED)],
+                   GLP_LO, 0.0, 0.0);
+   
+  lp.Solve();
+  vector<int> rows = lp.ElasticFilter();
+  vector<string> result;
+  for (size_t i = 0; i < rows.size(); ++i) {
+    char const *row = glp_get_row_name(lp.lp_, rows[i]);
+    if (row) {
+      result.push_back(row);
     }
   }
   return result;
 }
 
-map<Buffer, vector<Constraint> > ConstraintProblem::SolveAndBlame() const {
-  vector<Buffer> unsafe = Solve();
-  map<Buffer, vector<Constraint> > result;
+map<Buffer, vector<string> > ConstraintProblem::SolveAndBlame() const {
+  LinearProblem lp = MakeFeasableProblem();
+  vector<Buffer> unsafe = SolveProblem(lp);
+  map<Buffer, vector<string> > result;
   for (size_t i = 0; i < unsafe.size(); ++i) {
-    set<Buffer> buf;
-    buf.insert(unsafe[i]);
-    result[unsafe[i]] = Blame(constraints_, buf);
+    result[unsafe[i]] = Blame(lp, unsafe[i]);
   }
   return result;
 }
