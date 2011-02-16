@@ -125,9 +125,13 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::SIToFP:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int to float cast");
     break;
-//  case Instruction::IntToPtr:
-//  case Instruction::PtrToInt:
-//  case Instruction::BitCast:
+
+  // Exploiting case fall-through.
+  case Instruction::IntToPtr:
+  case Instruction::PtrToInt:
+  case Instruction::BitCast:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Arbitrary cast");
+    break;
 
   // Other instructions...
 //  case Instruction::ICmp:
