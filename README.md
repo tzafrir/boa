@@ -12,8 +12,8 @@ In order to run
 
 Or -
     $ ./boa
-for a brief help
+for brief help
     
-You might also want to add -
+You may also want to add -
     complete -W "-blame -log -glpk" -c ./boa
 At the end of your ~/.bashrc to get tab completion of boa flags
