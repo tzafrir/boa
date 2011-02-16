@@ -1,10 +1,11 @@
 #include "ConstraintGenerator.h"
 
-#include <vector>
 #include <map>
+#include <vector>
+#include <sstream>
 
-#include "LinearProblem.h"
 #include "Integer.h"
+#include "LinearProblem.h"
 #include "Pointer.h"
 #include "PointerAnalyzer.h"
 
