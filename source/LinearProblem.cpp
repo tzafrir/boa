@@ -60,7 +60,7 @@ void LinearProblem::RemoveRow(int row) {
   double val[2];
   for (int i = 1; i <= nonZeros; ++i) {
     ind[1] = indices[i];
-    val[1] = (isMax(colToVar[indices[i]]) ? -1 : 1);
+    val[1] = (isMax(colToVar_[indices[i]]) ? -1 : 1);
     int r = glp_add_rows(lp_, 1);
     glp_set_row_bnds(lp_, r, GLP_UP, 0.0, MINUS_INFTY);
     glp_set_mat_row(lp_, r, 1, ind, val);

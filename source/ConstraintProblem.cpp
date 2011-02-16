@@ -64,17 +64,17 @@ vector<Buffer> ConstraintProblem::Solve() const {
   return SolveProblem(MakeFeasableProblem());
 }
 
-inline void setBufferCoef(LinearProblem &lp, const Buffer &b, double base) {
-  glp_set_obj_coef(lp.lp_, lp.varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
-  glp_set_obj_coef(lp.lp_, lp.varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
-  glp_set_obj_coef(lp.lp_, lp.varToCol[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
-  glp_set_obj_coef(lp.lp_, lp.varToCol[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
+inline void setBufferCoef(LinearProblem &p, const Buffer &b, double base) {
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MIN, VarLiteral::USED )],  base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MAX, VarLiteral::USED )], -base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)],  base);
+  glp_set_obj_coef(p.lp_, p.varToCol_[b.NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)], -base);
 }
 
 LinearProblem ConstraintProblem::MakeFeasableProblem() const {
   set<string> vars = CollectVars();
   LinearProblem lp;
-  MapVarToCol(vars, lp.varToCol, lp.colToVar);
+  MapVarToCol(vars, lp.varToCol_, lp.colToVar_);
 
   glp_set_obj_dir(lp.lp_, GLP_MAX);
   glp_add_cols(lp.lp_, vars.size());
@@ -86,7 +86,7 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
     for (vector<Constraint>::const_iterator constraint = constraints_.begin();
          constraint != constraints_.end();
          ++constraint, ++row) {
-      constraint->AddToLPP(lp.lp_, row, lp.varToCol);
+      constraint->AddToLPP(lp.lp_, row, lp.varToCol_);
     }
   }
 
@@ -141,21 +141,21 @@ vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {
     // Print result
     LOG << buffer->getReadableName() << " " << buffer->getSourceLocation() << endl;
     LOG << " Used  min\t = " << glp_get_col_prim(
-        lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) << endl;
     LOG << " Used  max\t = " << glp_get_col_prim(
-        lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) << endl;
     LOG << " Alloc min\t = " << glp_get_col_prim(
-        lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) << endl;
     LOG << " Alloc max\t = " << glp_get_col_prim(
-        lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
+        lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::ALLOC)]) << endl;
 
     LOG << endl;
     if ((glp_get_col_prim(
-         lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MAX, VarLiteral::USED)]) >=
          glp_get_col_prim(
-         lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)])) ||
          (glp_get_col_prim(
-         lp.lp_, lp.varToCol[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
+         lp.lp_, lp.varToCol_[buffer->NameExpression(VarLiteral::MIN, VarLiteral::USED)]) < 0)) {
       unsafeBuffers.push_back(*buffer);
     }
   }
@@ -165,10 +165,10 @@ vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {
 
 vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const {
   double minAlloc = glp_get_col_prim(lp.lp_, 
-                        lp.varToCol[buffer.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) - 1;
-  glp_set_col_bnds(lp.lp_, lp.varToCol[buffer.NameExpression(VarLiteral::MAX, VarLiteral::USED)],
+                       lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) - 1;
+  glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MAX, VarLiteral::USED)],
                    GLP_UP, minAlloc, minAlloc);
-  glp_set_col_bnds(lp.lp_, lp.varToCol[buffer.NameExpression(VarLiteral::MIN, VarLiteral::USED)],
+  glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::USED)],
                    GLP_LO, 0.0, 0.0);
    
   lp.Solve();

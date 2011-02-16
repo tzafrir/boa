@@ -33,15 +33,15 @@ class LinearProblem {
     this->lp_ = glp_create_prob();
     glp_copy_prob(this->lp_, old.lp_, GLP_ON);
     this->params_ = old.params_;
-    this->varToCol = old.varToCol;
-    this->colToVar = old.colToVar;
+    this->varToCol_ = old.varToCol_;
+    this->colToVar_ = old.colToVar_;
   }
 
  public:
   glp_prob *lp_;
   int realRows_;
-  map<string, int> varToCol;
-  map<int, string> colToVar;
+  map<string, int> varToCol_;
+  map<int, string> colToVar_;
 
 
   LinearProblem() {
