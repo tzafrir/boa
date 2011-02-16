@@ -14,6 +14,7 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${S
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
 ${BUILD}/Constraint.o: ${SOURCE}/Constraint.h ${SOURCE}/Buffer.h
+	touch ${BUILD}/Constraint.o
 
 ${BUILD}/ConstraintProblem.o: ${BUILD}/Constraint.o ${BUILD}/LinearProblem.o ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c ${SOURCE}/ConstraintProblem.cpp -o ${BUILD}/ConstraintProblem.o
