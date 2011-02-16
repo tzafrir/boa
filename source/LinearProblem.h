@@ -31,17 +31,18 @@ class LinearProblem {
 
   void copyFrom(const LinearProblem &old) {
     this->lp_ = glp_create_prob();
-    glp_copy_prob(this->lp_, old.lp_, GLP_OFF);
+    glp_copy_prob(this->lp_, old.lp_, GLP_ON);
     this->params_ = old.params_;
+    this->varToCol_ = old.varToCol_;
+    this->colToVar_ = old.colToVar_;
   }
 
-  /**
-    Efficiently identify a small group of infeasble constraints using elastic fileter algorithm
-  */
-  vector<int> ElasticFilter() const;
  public:
   glp_prob *lp_;
   int realRows_;
+  map<string, int> varToCol_;
+  map<int, string> colToVar_;
+
 
   LinearProblem() {
     lp_ = glp_create_prob();
@@ -56,6 +57,11 @@ class LinearProblem {
   ~LinearProblem() {
     glp_delete_prob(this->lp_);
   }
+
+  /**
+    Efficiently identify a small group of infeasble constraints using elastic fileter algorithm
+  */
+  vector<int> ElasticFilter() const;
 
   void SetParams(const glp_smcp& params) {
     params_ = params;
@@ -75,7 +81,7 @@ class LinearProblem {
 
     The new constraints created at the end of the matrix.
   */
-  void RemoveRow(int row, map<int, string>& colToVar);
+  void RemoveRow(int row);
 
   int NumCols() const {
     return glp_get_num_cols(lp_);
@@ -91,7 +97,7 @@ class LinearProblem {
     each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
     no such set which is smaller in size.
   */
-  void RemoveInfeasable(map<int, string>& colToVar);
+  void RemoveInfeasable();
 };
 
 } // namespace boa

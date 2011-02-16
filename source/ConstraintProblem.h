@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Constraint.h"
+#include "LinearProblem.h"
 
 using std::vector;
 
@@ -18,10 +19,11 @@ class ConstraintProblem {
 
   set<string> CollectVars() const;
 
-  vector<Buffer> Solve(const vector<Constraint> &inputConstraints,
-                       const set<Buffer> &inputBuffers) const;
+  vector<Buffer> SolveProblem(LinearProblem lp) const;
 
-  vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
+  vector<string> Blame(LinearProblem lp, Buffer &buffer) const;
+  
+  LinearProblem MakeFeasableProblem() const;
  public:
   ConstraintProblem(bool output_glpk) : outputGlpk_(output_glpk) {}
 
@@ -53,7 +55,7 @@ class ConstraintProblem {
     constraint will cause the specific buffer overrun, there might be other (smaller) set which will
     also cause the overrun.
   */
-  map<Buffer, vector<Constraint> > SolveAndBlame() const;
+  map<Buffer, vector<string> > SolveAndBlame() const;
 };
 
 }  // namespace boa
