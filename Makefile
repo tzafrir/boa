@@ -13,7 +13,9 @@ ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${S
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/boa.d.tmp" -MT "${BUILD}/boa.o" -MT "${BUILD}/boa.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
-${BUILD}/ConstraintProblem.o: ${SOURCE}/Constraint.h ${BUILD}/LinearProblem.o ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp ${BUILD}/log.o
+${BUILD}/Constraint.o: ${SOURCE}/Constraint.h ${SOURCE}/Buffer.h
+
+${BUILD}/ConstraintProblem.o: ${BUILD}/Constraint.o ${BUILD}/LinearProblem.o ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c ${SOURCE}/ConstraintProblem.cpp -o ${BUILD}/ConstraintProblem.o
 
 ${BUILD}/LinearProblem.o: ${SOURCE}/LinearProblem.h ${SOURCE}/LinearProblem.cpp ${BUILD}/log.o
