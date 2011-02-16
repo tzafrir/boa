@@ -96,6 +96,11 @@ class ConstraintGenerator {
   */
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
 
+  /**
+    Generate a constraint for the result of a boolean comparison.
+  */
+  void GenerateBooleanConstraint(const Value *I);
+
   /*
     Generate the constraints reflecting llvm memory access instructions
   */
