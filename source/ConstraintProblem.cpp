@@ -175,7 +175,10 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
   vector<int> rows = lp.ElasticFilter();
   vector<string> result;
   for (size_t i = 0; i < rows.size(); ++i) {
-    result[i] = glp_get_row_name(lp.lp_, rows[i]);
+    char const *row = glp_get_row_name(lp.lp_, rows[i]);
+    if (row) {
+      result.push_back(row);
+    }
   }
   return result;
 }

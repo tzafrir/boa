@@ -31,7 +31,7 @@ class LinearProblem {
 
   void copyFrom(const LinearProblem &old) {
     this->lp_ = glp_create_prob();
-    glp_copy_prob(this->lp_, old.lp_, GLP_OFF);
+    glp_copy_prob(this->lp_, old.lp_, GLP_ON);
     this->params_ = old.params_;
     this->varToCol = old.varToCol;
     this->colToVar = old.colToVar;
