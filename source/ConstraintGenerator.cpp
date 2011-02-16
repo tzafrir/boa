@@ -172,6 +172,18 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
           s = CA->getAsString();
+          // Escape \n characters.
+          size_t n = s.find_first_of("\n", 0);
+          while (n != string::npos) {
+            s.replace(n, 2, "\\n");
+            n = s.find_first_of("\n", n+1);
+          }
+          // Remove \r characters
+          n = s.find_first_of("\r", 0);
+          while (n != string::npos) {
+            s.replace(n, 1, "");
+            n = s.find_first_of("\r", n+1);
+          }
         }
       }
     }
