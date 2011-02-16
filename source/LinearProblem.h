@@ -33,11 +33,16 @@ class LinearProblem {
     this->lp_ = glp_create_prob();
     glp_copy_prob(this->lp_, old.lp_, GLP_OFF);
     this->params_ = old.params_;
+    this->varToCol = old.varToCol;
+    this->colToVar = old.colToVar;
   }
 
  public:
   glp_prob *lp_;
   int realRows_;
+  map<string, int> varToCol;
+  map<int, string> colToVar;
+
 
   LinearProblem() {
     lp_ = glp_create_prob();
@@ -76,7 +81,7 @@ class LinearProblem {
 
     The new constraints created at the end of the matrix.
   */
-  void RemoveRow(int row, map<int, string>& colToVar);
+  void RemoveRow(int row);
 
   int NumCols() const {
     return glp_get_num_cols(lp_);
@@ -92,7 +97,7 @@ class LinearProblem {
     each subset of them does not. It is not nessecerily *THE* minimal set in the sense that there is
     no such set which is smaller in size.
   */
-  void RemoveInfeasable(map<int, string>& colToVar);
+  void RemoveInfeasable();
 };
 
 } // namespace boa

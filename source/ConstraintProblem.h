@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Constraint.h"
+#include "LinearProblem.h"
 
 using std::vector;
 
@@ -22,6 +23,8 @@ class ConstraintProblem {
                        const set<Buffer> &inputBuffers) const;
 
   vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
+  
+  LinearProblem MakeFeasableProblem() const;
  public:
   ConstraintProblem(bool output_glpk) : outputGlpk_(output_glpk) {}
 

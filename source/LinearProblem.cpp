@@ -54,7 +54,7 @@ vector<int> LinearProblem::ElasticFilter() const {
   return suspects;
 }
 
-void LinearProblem::RemoveRow(int row, map<int, string>& colToVar) {
+void LinearProblem::RemoveRow(int row) {
   static int indices[MAX_VARS];
   static double values[MAX_VARS];
 
@@ -81,7 +81,7 @@ LinearProblem& LinearProblem::operator=(const LinearProblem &old) {
   return *this;
 }
 
-void LinearProblem::RemoveInfeasable(map<int, string>& colToVar) {
+void LinearProblem::RemoveInfeasable() {
   LOG << "No Feasable solution, running elastic filter - " << endl;
 
   vector<int> rows = ElasticFilter();
@@ -92,7 +92,7 @@ void LinearProblem::RemoveInfeasable(map<int, string>& colToVar) {
   LOG << "removing " << removed << " rows" << endl;  
   for (int i = 0; i < removed; ++i) {
     int cur = rows[i] - i;
-    RemoveRow(cur, colToVar);
+    RemoveRow(cur);
     ind[1] = cur;
     glp_del_rows(lp_, 1, ind);
   }
