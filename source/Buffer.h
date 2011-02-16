@@ -17,14 +17,13 @@ namespace boa {
   class Buffer : public VarLiteral {
    private:
     string readableName_, filename_;
-    int line_;
 
    public:
     // Default constructor, so we can create a map of Buffers
     Buffer() : VarLiteral(NULL) {}
     
-    Buffer(const Value* ValueNode, const string& readableName, const string& filename, int line) :
-      VarLiteral(ValueNode), readableName_(readableName), filename_(filename), line_(line) {}
+    Buffer(const Value* ValueNode, const string& readableName, const string& filename) :
+      VarLiteral(ValueNode), readableName_(readableName), filename_(filename) {}
 
     Buffer(const Value* ValueNode) : VarLiteral(ValueNode) {}
 
@@ -38,7 +37,7 @@ namespace boa {
 
     string getSourceLocation() const {
       stringstream ss;
-      ss << filename_ << ":" << line_;
+      ss << filename_;
       return ss.str();
     }
     

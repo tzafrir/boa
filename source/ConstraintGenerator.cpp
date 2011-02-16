@@ -14,10 +14,11 @@
 #include "llvm/User.h"
 
 using std::pair;
+using std::stringstream;
+
 typedef boa::Constraint::Expression Expression;
 
 using namespace llvm;
-
 
 namespace boa {
 
@@ -176,7 +177,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
         }
       }
     }
-    Buffer buf(G, "string literal \"" + s + "\"", "", 0); // TODO - file? line?
+    Buffer buf(G, "string literal \"" + s + "\"", ""); // TODO - file? line?
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
     GenerateAllocConstraint(G, ar);
@@ -518,8 +519,9 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         LOG << (void*)D->getAddress() << " name = " << S->getString().str() << " Source location - "
             << file->getString().str() << ":" << D->getDebugLoc().getLine() << endl;
 
-        Buffer b(D->getAddress(), S->getString().str(), file->getString().str(),
-                 D->getDebugLoc().getLine());
+        stringstream ss;
+        ss << file->getString().str() << ":" << D->getDebugLoc().getLine();
+        Buffer b(D->getAddress(), S->getString().str(), ss.str());
 
         if (allocedBuffers[D->getAddress()]) {
           AddBuffer(b);
@@ -584,7 +586,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // This method generates an Alloc expression for the malloc call, and the store instruction will
     // generate a BufferAlias.
     LOG << I << " malloc call" << endl;
-    Buffer buf(I, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
+    Buffer buf(I, "malloc", GetInstructionFilename(I));
     GenerateGenericConstraint(buf, I->getArgOperand(0), "malloc call", VarLiteral::ALLOC);
     AddBuffer(buf);
     return;
@@ -657,20 +659,21 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 
   // General function call
   if (f->isDeclaration()) {
-    // has no body, assuming ovverrun in each buffer, and unbound return value
-    const unsigned params = I->getNumOperands() - 1; // the last operand is the called function
+    // Has no body, assuming overrun in each buffer, and unbound return value.
+    const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
+    string blame("unknown function call " + functionName + " at " + GetInstructionFilename(I));
     for (unsigned i = 0; i< params; ++i) {
       if (I->getOperand(i)->getType()->isPointerTy()) {
         Pointer p(makePointer(I->getOperand(i)));
-        GenerateUnboundConstraint(p, "unknown function call");
+        GenerateUnboundConstraint(p, blame);
       }
     }
     if (I->getType()->isPointerTy()) {
-      GenerateUnboundConstraint(makePointer(I), "unknown function call");
+      GenerateUnboundConstraint(makePointer(I), blame);
     }
     else {
       Integer intLiteral(I);
-      GenerateUnboundConstraint(intLiteral, "unknown function call");
+      GenerateUnboundConstraint(intLiteral, blame);
     }
   }
   else {
@@ -788,7 +791,9 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
         if (const MDNode* filenamenode = dyn_cast<const MDNode>(n3->getOperand(3))) {
           if (const MDString* filename =
               dyn_cast<const MDString>(filenamenode->getOperand(3))) {
-            return filename->getString().str();
+            stringstream ss;
+            ss << filename->getString().str() << ":" << I->getDebugLoc().getLine();
+            return ss.str();
           }
         }
       }
