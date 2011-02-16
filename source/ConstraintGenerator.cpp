@@ -1,10 +1,12 @@
 #include "ConstraintGenerator.h"
 
-#include <vector>
 #include <map>
+#include <vector>
+#include <sstream>
 
-#include "LinearProblem.h"
+#include "Helpers.h"
 #include "Integer.h"
+#include "LinearProblem.h"
 #include "Pointer.h"
 #include "PointerAnalyzer.h"
 
@@ -13,10 +15,11 @@
 #include "llvm/User.h"
 
 using std::pair;
+using std::stringstream;
+
 typedef boa::Constraint::Expression Expression;
 
 using namespace llvm;
-
 
 namespace boa {
 
@@ -125,13 +128,21 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::SIToFP:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Int to float cast");
     break;
-//  case Instruction::IntToPtr:
-//  case Instruction::PtrToInt:
-//  case Instruction::BitCast:
+
+  // Exploiting case fall-through.
+  case Instruction::IntToPtr:
+  case Instruction::PtrToInt:
+  case Instruction::BitCast:
+    GenerateCastConstraint(dyn_cast<const CastInst>(I), "Arbitrary cast");
+    break;
 
   // Other instructions...
-//  case Instruction::ICmp:
-//  case Instruction::FCmp:
+
+  // Fallthrough.
+  case Instruction::ICmp:
+  case Instruction::FCmp:
+    GenerateBooleanConstraint(I);
+    break;
 //  case Instruction::PHI:
 //  case Instruction::Select:
   case Instruction::Call:
@@ -172,10 +183,12 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
           s = CA->getAsString();
+          Helpers::ReplaceInString(s, "\n", "\\n", 2);
+          Helpers::ReplaceInString(s, "\r", "", 1);
         }
       }
     }
-    Buffer buf(G, "string literal \"" + s + "\"", "", 0); // TODO - file? line?
+    Buffer buf(G, "string literal \"" + s + "\"", ""); // TODO - file? line?
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
     GenerateAllocConstraint(G, ar);
@@ -517,8 +530,9 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         LOG << (void*)D->getAddress() << " name = " << S->getString().str() << " Source location - "
             << file->getString().str() << ":" << D->getDebugLoc().getLine() << endl;
 
-        Buffer b(D->getAddress(), S->getString().str(), file->getString().str(),
-                 D->getDebugLoc().getLine());
+        stringstream ss;
+        ss << file->getString().str() << ":" << D->getDebugLoc().getLine();
+        Buffer b(D->getAddress(), S->getString().str(), ss.str());
 
         if (allocedBuffers[D->getAddress()]) {
           AddBuffer(b);
@@ -583,7 +597,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // This method generates an Alloc expression for the malloc call, and the store instruction will
     // generate a BufferAlias.
     LOG << I << " malloc call" << endl;
-    Buffer buf(I, "malloc", GetInstructionFilename(I), I->getDebugLoc().getLine());
+    Buffer buf(I, "malloc", GetInstructionFilename(I));
     GenerateGenericConstraint(buf, I->getArgOperand(0), "malloc call", VarLiteral::ALLOC);
     AddBuffer(buf);
     return;
@@ -656,20 +670,21 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 
   // General function call
   if (f->isDeclaration()) {
-    // has no body, assuming ovverrun in each buffer, and unbound return value
-    const unsigned params = I->getNumOperands() - 1; // the last operand is the called function
+    // Has no body, assuming overrun in each buffer, and unbound return value.
+    const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
+    string blame("unknown function call " + functionName);
     for (unsigned i = 0; i< params; ++i) {
       if (I->getOperand(i)->getType()->isPointerTy()) {
         Pointer p(makePointer(I->getOperand(i)));
-        GenerateUnboundConstraint(p, "unknown function call");
+        GenerateUnboundConstraint(p, blame);
       }
     }
     if (I->getType()->isPointerTy()) {
-      GenerateUnboundConstraint(makePointer(I), "unknown function call");
+      GenerateUnboundConstraint(makePointer(I), blame);
     }
     else {
       Integer intLiteral(I);
-      GenerateUnboundConstraint(intLiteral, "unknown function call");
+      GenerateUnboundConstraint(intLiteral, blame);
     }
   }
   else {
@@ -777,6 +792,20 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   cp_.AddConstraint(minV);
 }
 
+void ConstraintGenerator::GenerateBooleanConstraint(const Value *I) {
+  // Assuming result is of type i1, not [N x i1].
+  Constraint minB, maxB;
+  Integer boolean(I);
+  maxB.addBig(boolean.NameExpression(VarLiteral::MAX));
+  maxB.addSmall(1.0);
+  minB.addSmall(boolean.NameExpression(VarLiteral::MIN));
+  minB.addBig(0.0);
+  maxB.SetBlame("Boolean operation");
+  minB.SetBlame("Boolean operation");
+  cp_.AddConstraint(minB);
+  cp_.AddConstraint(maxB);
+}
+
 // Static.
 string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
   // Magic numbers that lead us through the various debug nodes to where the filename is.
@@ -787,7 +816,9 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
         if (const MDNode* filenamenode = dyn_cast<const MDNode>(n3->getOperand(3))) {
           if (const MDString* filename =
               dyn_cast<const MDString>(filenamenode->getOperand(3))) {
-            return filename->getString().str();
+            stringstream ss;
+            ss << filename->getString().str() << ":" << I->getDebugLoc().getLine();
+            return ss.str();
           }
         }
       }
