@@ -199,6 +199,7 @@ class Constraint {
     }
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
     glp_set_mat_row(lp, row, literals_.size(), indices, values);
+    glp_set_row_name(lp, row, blame_.c_str());
   }
 
 };

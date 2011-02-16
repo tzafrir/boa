@@ -21,7 +21,7 @@ class ConstraintProblem {
 
   vector<Buffer> SolveProblem(LinearProblem lp) const;
 
-  vector<Constraint> Blame(const vector<Constraint> &input, const set<Buffer> &buffer) const;
+  vector<string> Blame(LinearProblem lp, Buffer &buffer) const;
   
   LinearProblem MakeFeasableProblem() const;
  public:
@@ -55,7 +55,7 @@ class ConstraintProblem {
     constraint will cause the specific buffer overrun, there might be other (smaller) set which will
     also cause the overrun.
   */
-  map<Buffer, vector<Constraint> > SolveAndBlame() const;
+  map<Buffer, vector<string> > SolveAndBlame() const;
 };
 
 }  // namespace boa
