@@ -13,10 +13,10 @@ namespace boa {
  */
 namespace Helpers {
   /**
-   * Replaces each occurence of each character in chars with num characters from replaceWith.
+   * Replaces each occurence of the character c with the string replaceWith.
    * Note - this mutates the string s.
    */
-  void ReplaceInString(string &s, const char* chars, const char* replaceWith, int num);
+  void ReplaceInString(string &s, char c, const string& replaceWith);
 
   /**
    * Returns a string representation of the input.
