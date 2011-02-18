@@ -1,14 +1,15 @@
 #ifndef __BOA_CONSTRAINT_H
 #define __BOA_CONSTRAINT_H /* */
 
-#include <string>
-#include <set>
-
-#include <map>
-#include <glpk.h>
 #include <limits>
+#include <map>
+#include <set>
+#include <string>
+
+#include <glpk.h>
 
 #include "Buffer.h"
+#include "Helpers.h"
 
 using std::string;
 using std::set;
@@ -54,13 +55,6 @@ class Constraint {
   class Expression {
     double val_;
     map<string, double> vars_;
-
-    // TODO(tzafrir): Create a class for all helper functions and move this method there.
-    static string DoubleToString(double i) {
-      std::ostringstream buffer;
-      buffer << i;
-      return buffer.str();
-    }
 
    public:
     friend class Constraint;
@@ -119,11 +113,11 @@ class Constraint {
       string s;
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if ((!s.empty()) && (it->second >= 0)) s += "+ ";
-        s += DoubleToString(it->second) + "*" + it->first + " ";
+        s += Helpers::DoubleToString(it->second) + "*" + it->first + " ";
       }
       if (s.empty() || (val_ != 0)) {
         if ((!s.empty()) && (val_ >= 0)) s += "+ ";
-        s += DoubleToString(val_);
+        s += Helpers::DoubleToString(val_);
       }
       return s;
     }
