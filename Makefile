@@ -60,7 +60,7 @@ tests/testcases/build/%.out : tests/testcases/%.c
 
 FORCE:
 
-${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${SOURCE}/VarLiteral.h ${SOURCE}/Helpers.o ${SOURCE}/Buffer.h
+${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${SOURCE}/VarLiteral.h ${BUILD}/Helpers.o ${SOURCE}/Buffer.h
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${SOURCE}/ConstraintGenerator.cpp ${CFLAGS} -c -o ${BUILD}/ConstraintGenerator.o
 
 ${BUILD}/log.o : ${SOURCE}/log.cpp ${SOURCE}/log.h
