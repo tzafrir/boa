@@ -56,14 +56,14 @@ class Constraint {
     double val_;
     map<string, double> vars_;
 
-    static Expression NegInfinity;
-    static Expression PosInfinity;
-
    public:
     friend class Constraint;
     Expression() : val_(0.0) {}
     Expression(double value) : val_(value) {}
     Expression(const string& var) : val_(0.0) { vars_[var] = 1.0; }
+
+    static const Expression NegInfinity;
+    static const Expression PosInfinity;
 
     void add(const Expression& expr) {
       for (map<string, double>::const_iterator it = expr.vars_.begin();
@@ -126,16 +126,6 @@ class Constraint {
         s += Helpers::DoubleToString(val_);
       }
       return s;
-    }
-
-    static const Expression& Infinity(bool isPositive) {
-//    	if (NegInfinity.val_ == 0.0) {
-//    		NegInfinity.add(std::numeric_limits<int>::min());
-//    	}
-//    	if (PosInfinity.val_ == 0.0) {
-//    		PosInfinity.add(std::numeric_limits<int>::max());
-//    	}
-    	return (isPositive ? PosInfinity : NegInfinity);
     }
   };
 
