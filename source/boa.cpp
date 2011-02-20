@@ -149,7 +149,7 @@ class boa : public ModulePass {
         for (map<Buffer, vector<string> >::iterator it = blames.begin();
              it != blames.end();
              ++it) {
-          cerr << endl << it->first.getReadableName() << " " <<
+          cerr << it->first.getReadableName() << " " <<
               it->first.getSourceLocation() << endl;
           for (size_t i = 0; i < it->second.size(); ++i) {
             cerr << "  - " << it->second[i] << endl;
