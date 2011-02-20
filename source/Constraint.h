@@ -123,7 +123,8 @@ class Constraint {
     }
   };
 
-  Constraint(const string &blame = "") : left_(0), blame_(blame) {}
+  Constraint() : left_(0), blame_("") {}
+  Constraint(const string &blame, const string &location = "") : left_(0), blame_(blame) {}
 
   void SetBlame(const string &blame) {
     blame_ = blame;
