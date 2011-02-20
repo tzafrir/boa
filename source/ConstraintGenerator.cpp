@@ -388,7 +388,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
       bigExp.add(offsets[dir]);
       smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-	  GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias");
+      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias");
     }
   }
 }
@@ -582,7 +582,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       else {
         Integer to(it);
         GenerateGenericConstraint(to, I->getOperand(i), VarLiteral::LEN_WRITE,
-        						  "pass integer parameter to a function");
+        						              "pass integer parameter to a function");
       }
     }
     // get return value
@@ -601,11 +601,11 @@ void ConstraintGenerator::GenerateStringCopyConstraint(const CallInst* I) {
     Pointer to(makePointer(I->getArgOperand(0)));
 
     GenerateConstraint(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
-    				   from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
-    				   VarLiteral::MAX, "strcpy call");
+    				           from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
+                       VarLiteral::MAX, "strcpy call");
     GenerateConstraint(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE),
-    				   from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
-    				   VarLiteral::MIN, "strcpy call");
+                       from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
+                       VarLiteral::MIN, "strcpy call");
 }
 
 void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,
@@ -643,27 +643,27 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 }
 
 void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame,
-												    const string& location) {
+												                            const string& location) {
   GenerateConstraint(var, Expression::PosInfinity, VarLiteral::LEN_WRITE,
-		  	  	  	 VarLiteral::MAX, blame, location);
+		  	  	  	     VarLiteral::MAX, blame, location);
   GenerateConstraint(var, Expression::NegInfinity, VarLiteral::LEN_WRITE,
-		  	  	  	 VarLiteral::MIN, blame, location);
+		  	  	  	     VarLiteral::MIN, blame, location);
 }
 
 
 void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
-											 const Expression &integerExpression,
-											 VarLiteral::ExpressionType type,
-											 VarLiteral::ExpressionDir direction,
-											 const string &blame, const string &location) {
-	GenerateConstraint(var.NameExpression(direction, type), integerExpression, direction, blame, location);
-
-
+                                             const Expression &integerExpression,
+                                             VarLiteral::ExpressionType type,
+                                             VarLiteral::ExpressionDir direction,
+                                             const string &blame,
+                                             const string &location) {
+	GenerateConstraint(var.NameExpression(direction, type), integerExpression,
+	  direction, blame, location);
 }
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
-		  	  	  	  	  VarLiteral::ExpressionDir direction,
-		  	  	  	  	  const string &blame, const string &location) {
+                                             VarLiteral::ExpressionDir direction,
+                                             const string &blame, const string &location) {
 	Constraint constraint(lhs, rhs, direction);
 	constraint.SetBlame(blame, location);
 	cp_.AddConstraint(constraint);
@@ -675,9 +675,9 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Value *I) {
   // Assuming result is of type i1, not [N x i1].
   Integer boolean(I);
   GenerateConstraint(boolean, 1.0, VarLiteral::USED,
-		  	  	  	 VarLiteral::MAX, "Boolean Operation");
+		  	  	  	     VarLiteral::MAX, "Boolean Operation");
   GenerateConstraint(boolean, 0.0, VarLiteral::USED,
-		  	  	  	 VarLiteral::MIN, "Boolean Operation");
+		  	  	  	     VarLiteral::MIN, "Boolean Operation");
 }
 
 void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {

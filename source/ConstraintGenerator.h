@@ -44,15 +44,16 @@ class ConstraintGenerator {
     Generate a constraint on "var" according to the the integer value of "integerExpression"
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
-                                 VarLiteral::ExpressionType type, const string &blame, const string &location = "");
+                                 VarLiteral::ExpressionType type, const string &blame,
+                                 const string &location = "");
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
-		  	  	  	  	  VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
-		  	  	  	  	  const string &blame, const string &location = "");
+                          VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
+                          const string &blame, const string &location = "");
 
   void GenerateConstraint(const Expression &lhs, const Expression &rhs,
-		  	  	  	  	  VarLiteral::ExpressionDir direction,
-		  	  	  	  	  const string &blame, const string &location = "");
+                          VarLiteral::ExpressionDir direction,
+                          const string &blame, const string &location = "");
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
