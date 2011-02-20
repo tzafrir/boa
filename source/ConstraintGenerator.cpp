@@ -223,6 +223,7 @@ void ConstraintGenerator::GenerateAndConstraint(const BinaryOperator* I) {
 
 
 void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
+  string blame = "Addition";
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
@@ -230,13 +231,13 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   minResult.add(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MIN));
 
   Integer intLiteral(I);
-  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, "Addition");
-  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, "Addition");
+  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame);
 }
 
 
 void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
-
+  string blame = "Subtraction";
   Expression maxResult, minResult;
   maxResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX));
   minResult.add(GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN));
@@ -244,11 +245,12 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   minResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
 
   Integer intLiteral(I);
-  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, "Subtraction");
-  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, "Subtraction");
+  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame);
 }
 
 void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
+  string blame = "Multiplication";
   Integer intLiteral(I);
   Expression operand0Max = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);
   Expression operand1Max = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
@@ -274,13 +276,14 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
   minOperand->mul(constOperand);
   maxOperand->mul(constOperand);
 
-  GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MAX, "Multiplication");
-  GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MAX, "Multiplication");
-  GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MIN, "Multiplication");
-  GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MIN, "Multiplication");
+  GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MIN, blame);
+  GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MIN, blame);
 }
 
 void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
+  string blame = "Division";
   Integer intLiteral(I);
   Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   if (!operand1.IsConst()) {
@@ -294,10 +297,10 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
   minOperand.div(constOperand);
   maxOperand.div(constOperand);
 
-  GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MAX, "Multiplication");
-  GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MAX, "Multiplication");
-  GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MIN, "Multiplication");
-  GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MIN, "Multiplication");
+  GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MAX, blame);
+  GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MIN, blame);
+  GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MIN, blame);
 }
 
 void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string& blame) {
