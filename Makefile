@@ -14,13 +14,14 @@ UNITTESTS=tests/unittests
 all: ${BUILD}/boa.so
 
 ${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/ConstraintProblem.o ${BUILD}/LinearProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/Helpers.o
-	${CC} ${CFLAGS} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/LinearProblem.o ${BUILD}/Helpers.o ${LINKFLAGS}
+	${CC} ${CFLAGS} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/Constraint.o ${BUILD}/LinearProblem.o ${BUILD}/Helpers.o ${LINKFLAGS}
 
 ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${SOURCE}/Integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c -MMD -MP -MF "${BUILD}/boa.d.tmp" -MT "${BUILD}/boa.o" -MT "${BUILD}/boa.d" ${SOURCE}/boa.cpp -o ${BUILD}/boa.o
 	mv -f ${BUILD}/boa.d.tmp ${BUILD}/boa.d
 
 ${BUILD}/Constraint.o: ${SOURCE}/Constraint.h ${SOURCE}/Buffer.h ${BUILD}/Helpers.o
+	${CC} ${DFLAGS} -I${LLVM_DIR}/include ${CFLAGS} -c ${SOURCE}/Constraint.cpp -o ${BUILD}/Constraint.o
 
 ${BUILD}/ConstraintProblem.o: ${BUILD}/Constraint.o ${BUILD}/LinearProblem.o ${SOURCE}/ConstraintProblem.h ${SOURCE}/ConstraintProblem.cpp ${BUILD}/log.o
 	${CC} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include ${CFLAGS} -c ${SOURCE}/ConstraintProblem.cpp -o ${BUILD}/ConstraintProblem.o

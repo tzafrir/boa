@@ -38,18 +38,21 @@ class ConstraintGenerator {
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
   */
-  void GenerateUnboundConstraint(const VarLiteral &var, const string &blame);
+  void GenerateUnboundConstraint(const VarLiteral &var, const string &blame, const string &location = "");
 
   /**
     Generate a constraint on "var" according to the the integer value of "integerExpression"
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
-                                 const string &blame,
-                                 VarLiteral::ExpressionType type);
+                                 VarLiteral::ExpressionType type, const string &blame, const string &location = "");
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
 		  	  	  	  	  VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
-		  	  	  	  	  const string &blame, const string &location);
+		  	  	  	  	  const string &blame, const string &location = "");
+
+  void GenerateConstraint(const Expression &lhs, const Expression &rhs,
+		  	  	  	  	  VarLiteral::ExpressionDir direction,
+		  	  	  	  	  const string &blame, const string &location = "");
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
