@@ -36,15 +36,15 @@ Runs BOA over testName.c, returns a list of tuples in the form
 """
   results = list()
   p = Popen([boaExecutable, testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
-  separatorFound = False
+  separatorCount = 0
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
-    if (not separatorFound) and (line != separator):
+    if (separatorCount < 2) and (line != separator):
       continue
-    if (separatorFound and line == separator):
+    if (separatorCount == 3 and line == separator):
       break
     if (line == separator):
-      separatorFound = True
+      separatorCount += 1
       continue
     # We're in the relevant part of stderr
     values = line.split(" ")

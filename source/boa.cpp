@@ -140,8 +140,10 @@ class boa : public ModulePass {
       cerr << endl << "No overruns detected" << endl;
       cerr << SEPARATOR << endl;
       cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
     } else {
       cerr << endl << "Possible buffer overruns on - " << endl;
+      cerr << SEPARATOR << endl;
       if (Blame) {
         map<Buffer, vector<string> > blames = constraintProblem_.SolveAndBlame();
         for (map<Buffer, vector<string> >::iterator it = blames.begin();
