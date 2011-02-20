@@ -25,24 +25,19 @@ void ConstraintGenerator::AddBuffer(const Buffer& buf) {
   cp_.AddBuffer(buf);
   buffers_.insert(buf);
 
-  Constraint cReadMax, cWriteMax;
-  cReadMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-  cReadMax.addSmall(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
-  cp_.AddConstraint(cReadMax);
+  GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
+                     buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
+                     VarLiteral::MAX, "Buffer Addition");
+  GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
+                     buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
+                     VarLiteral::MAX, "Buffer Addition");
 
-  cWriteMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED));
-  cWriteMax.addSmall(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
-  cp_.AddConstraint(cWriteMax);
-
-  Constraint cReadMin, cWriteMin;
-  cReadMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-  cReadMin.addBig(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
-  cp_.AddConstraint(cReadMin);
-
-  cWriteMin.addSmall(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED));
-  cWriteMin.addBig(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE));
-  cp_.AddConstraint(cWriteMin);
-  // TODO - LOG
+  GenerateConstraint(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
+                     buf.NameExpression(VarLiteral::MIN, VarLiteral::USED),
+                     VarLiteral::MAX, "Buffer Addition");
+  GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
+                     buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
+                     VarLiteral::MAX, "Buffer Addition");
 }
 
 void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function *F) {
