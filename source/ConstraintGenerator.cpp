@@ -34,10 +34,10 @@ void ConstraintGenerator::AddBuffer(const Buffer& buf) {
 
   GenerateConstraint(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
                      buf.NameExpression(VarLiteral::MIN, VarLiteral::USED),
-                     VarLiteral::MAX, "Buffer Addition");
-  GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
-                     buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
-                     VarLiteral::MAX, "Buffer Addition");
+                     VarLiteral::MIN, "Buffer Addition");
+  GenerateConstraint(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED),
+                     buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE),
+                     VarLiteral::MIN, "Buffer Addition");
 }
 
 void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function *F) {
