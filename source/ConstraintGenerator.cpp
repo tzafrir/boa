@@ -17,8 +17,6 @@
 using std::pair;
 using std::stringstream;
 
-typedef boa::Constraint::Expression Expression;
-
 using namespace llvm;
 
 namespace boa {
@@ -787,6 +785,22 @@ void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const
   minV.addBig(std::numeric_limits<int>::min());
   cp_.AddConstraint(minV);
 }
+
+
+void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
+											 const Expression &integerExpression,
+											 VarLiteral::ExpressionType type,
+											 VarLiteral::ExpressionDir direction,
+											 const string &blame, const string &location) {
+	string varExpr = var.NameExpression(direction, type);
+	string valueExpr = integerExpression.toString();
+	Constraint constraint(varExpr, integerExpression, direction);
+	constraint.SetBlame(blame, location);
+	cp_.AddConstraint(constraint);
+    LOG << "Adding - " << varExpr << (direction == VarLiteral::MAX ? " <= " : " >= ") << valueExpr << endl;
+
+}
+
 
 void ConstraintGenerator::GenerateBooleanConstraint(const Value *I) {
   // Assuming result is of type i1, not [N x i1].

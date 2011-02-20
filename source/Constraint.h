@@ -109,7 +109,7 @@ class Constraint {
       return val_;
     }
 
-    string toString() {
+    string toString() const {
       string s;
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if ((!s.empty()) && (it->second >= 0)) s += "+ ";
@@ -126,7 +126,20 @@ class Constraint {
   Constraint() : left_(0), blame_("") {}
   Constraint(const string &blame, const string &location = "") : left_(0), blame_(blame) {}
 
-  void SetBlame(const string &blame) {
+  Constraint(const string &varExpr, const Expression &value, VarLiteral::ExpressionDir direction) {
+	switch (direction) {
+	  case VarLiteral::MAX:
+		  addSmall(varExpr);
+		  addBig(value);
+		  break;
+	  case VarLiteral::MIN:
+		  addBig(value);
+		  addSmall(varExpr);
+		  break;
+	}
+  }
+
+  void SetBlame(const string &blame, const string &location = "") {
     blame_ = blame;
   }
 

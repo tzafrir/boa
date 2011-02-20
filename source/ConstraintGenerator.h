@@ -21,6 +21,7 @@ using std::map;
 #include "log.h"
 
 using namespace llvm;
+typedef boa::Constraint::Expression Expression;
 
 namespace boa {
 
@@ -45,6 +46,10 @@ class ConstraintGenerator {
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  const string &blame,
                                  VarLiteral::ExpressionType type);
+
+  void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
+		  	  	  	  	  VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
+		  	  	  	  	  const string &blame, const string &location);
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
