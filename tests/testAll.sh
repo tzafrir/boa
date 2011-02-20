@@ -7,13 +7,17 @@ NO_COLOR="\033[0m"
 tested=0
 passed=0
 
-if [ "$1" == "-v" ]; then
-  verbose=true
-fi
+for arg in $@; do
+  if [ "$arg" == "-v" ]; then
+    verbose=true
+  elif [ "$arg" == "-blame" ]; then
+    blame="-blame"
+  fi
+done
 
 function run_testcase {
   (( tested++ ))
-  tests/testRunner.py $1
+  tests/testRunner.py $blame $1
   return $?
 }
 

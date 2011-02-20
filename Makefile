@@ -47,6 +47,9 @@ TESTCASES=$(patsubst tests/testcases/%.c,tests/testcases/build/%.out,$(wildcard 
 boatests: ${BUILD}/boa.so ${TESTCASES} FORCE
 	tests/testAll.sh
 
+boatestsblame: ${BUILD}/boa.so ${TESTCASES} FORCE
+	tests/testAll.sh -blame
+
 ALLTESTS=$(subst tests/unittests,build,$(subst cpp,o,$(wildcard tests/unittests/*Test.cpp)))
 ALLOFILES=$(subst Test,,${ALLTESTS})
 
@@ -56,7 +59,7 @@ tests/rununittests: ${BUILD} ${ALLTESTS} ${ALLOFILES}
 unittests: tests/rununittests FORCE
 	tests/rununittests
 
-tests: boatests unittests FORCE
+tests: boatestsblame unittests FORCE
 
 tests/testcases/build/%.out : tests/testcases/%.c
 	mkdir -p tests/testcases/build
