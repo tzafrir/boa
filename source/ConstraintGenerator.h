@@ -137,6 +137,8 @@ class ConstraintGenerator {
 
   void GeneratePhiConstraint(const PHINode* I);
   void GenerateSelectConstraint(const SelectInst* I);
+  
+  static bool IsSafeFunction(const string& name);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}

@@ -557,10 +557,12 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // Has no body, assuming overrun in each buffer, and unbound return value.
     const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
     string blame("unknown function call " + functionName);
-    for (unsigned i = 0; i< params; ++i) {
-      if (I->getOperand(i)->getType()->isPointerTy()) {
-        Pointer p(makePointer(I->getOperand(i)));
-        GenerateUnboundConstraint(p, blame);
+    if (!IsSafeFunction(functionName)) {
+      for (unsigned i = 0; i< params; ++i) {
+        if (I->getOperand(i)->getType()->isPointerTy()) {
+          Pointer p(makePointer(I->getOperand(i)));
+          GenerateUnboundConstraint(p, blame);
+        }
       }
     }
     if (I->getType()->isPointerTy()) {
@@ -594,6 +596,16 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       GenerateGenericConstraint(intLiteral, f, VarLiteral::USED, "user function call");
     }
   }
+}
+
+bool ConstraintGenerator::IsSafeFunction(const string& name) {
+  static string safeFunctions[] = {"puts", "setenv"};
+  for (size_t i = 0; i < (sizeof(safeFunctions) / sizeof(string)); ++i) {
+    if (name == safeFunctions[i]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void ConstraintGenerator::GenerateStringCopyConstraint(const CallInst* I) {
