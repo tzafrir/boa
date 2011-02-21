@@ -59,6 +59,12 @@ class Constraint {
    public:
     friend class Constraint;
     Expression() : val_(0.0) {}
+    Expression(double value) : val_(value) {}
+    Expression(const string& var) : val_(0.0) { vars_[var] = 1.0; }
+
+    static const Expression NegInfinity;
+    static const Expression PosInfinity;
+
     void add(const Expression& expr) {
       for (map<string, double>::const_iterator it = expr.vars_.begin();
            it != expr.vars_.end();
@@ -67,7 +73,7 @@ class Constraint {
       }
       add(expr.val_);
     }
-    void add(const string& var, double num = 1.0) {vars_[var] += num;}
+    void add(const string& var, double num = 1.0) { vars_[var] += num; }
     void add(double num) {val_ += num;}
 
     void sub(const Expression& expr) {
@@ -109,7 +115,7 @@ class Constraint {
       return val_;
     }
 
-    string toString() {
+    string toString() const {
       string s;
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if ((!s.empty()) && (it->second >= 0)) s += "+ ";
@@ -123,9 +129,24 @@ class Constraint {
     }
   };
 
-  Constraint(const string &blame = "") : left_(0), blame_(blame) {}
+  Constraint() : left_(0.0), blame_("") {}
+  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame) {}
 
-  void SetBlame(const string &blame) {
+  Constraint(const Expression &varExpr, const Expression &valueExpr,
+             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
+	switch (direction) {
+	  case VarLiteral::MAX:
+		  addBig(varExpr);
+		  addSmall(valueExpr);
+		  break;
+	  case VarLiteral::MIN:
+		  addBig(valueExpr);
+		  addSmall(varExpr);
+		  break;
+	}
+  }
+
+  void SetBlame(const string &blame, const string &location = "") {
     blame_ = blame;
   }
 
