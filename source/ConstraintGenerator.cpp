@@ -541,6 +541,16 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  if (functionName == "pipe") {
+    Expression one(1.0);
+    Pointer arr(makePointer(I->getArgOperand(0)));
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MAX, "pipe call", 
+                       GetInstructionFilename(I));
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MIN, "pipe call", 
+                       GetInstructionFilename(I));
+    return;
+  }
+  
   if (functionName == "sprintf") {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
