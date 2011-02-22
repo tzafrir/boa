@@ -201,7 +201,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
   if (I->getReturnValue()) { // non void
     if (F->getReturnType()->isPointerTy()) {
       Pointer from(makePointer(I->getReturnValue())), to(F);
-      GenerateBufferAliasConstraint(from, to);
+      GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
     }
     else {
       Integer intLiteral(F);
@@ -325,7 +325,7 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
       GeneratePointerDerefConstraint(I->getPointerOperand());
     } else {
       Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
-      GenerateBufferAliasConstraint(pFrom, pTo);
+      GenerateBufferAliasConstraint(pFrom, pTo, GetInstructionFilename(I));
 //      GeneratePointerDerefConstraint(I->getPointerOperand());
     }
   } else {
@@ -339,7 +339,7 @@ void ConstraintGenerator::AnalyzePointers() {
   for (set<Pointer>::iterator pi = unknownPointers_.begin(); pi != unknownPointers_.end(); ++pi) {
     set<Buffer> buffers = analyzer.PointsTo(*pi);
     for (set<Buffer>::iterator bi = buffers.begin(); bi != buffers.end(); ++bi) {
-      GenerateBufferAliasConstraint(*pi, *bi);
+      GenerateBufferAliasConstraint(*pi, *bi, "(boa pointer analyzer)");
       LOG << "Pointer Analyzer" << endl;
     }
   }
@@ -354,7 +354,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
       GeneratePointerDerefConstraint(I->getPointerOperand());
     } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
-      GenerateBufferAliasConstraint(pFrom, pTo);
+      GenerateBufferAliasConstraint(pFrom, pTo, GetInstructionFilename(I));
   
       if (const PointerType *ppType = dyn_cast<const PointerType>(pType->getElementType())) {
         if (ppType->getElementType()->isPointerTy()) {
@@ -368,6 +368,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 }
 
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
+                                                        const string& locataion, 
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {1, -1};
@@ -476,7 +477,7 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   Buffer b(I->getPointerOperand());
 
   Pointer ptr(I);
-  GenerateBufferAliasConstraint(b, ptr, I->getOperand(I->getNumOperands()-1));
+  GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I), I->getOperand(I->getNumOperands()-1));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
@@ -577,7 +578,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     for (Function::const_arg_iterator it = f->arg_begin(); it != f->arg_end(); ++it, ++i) {
       if (it->getType()->isPointerTy()) {
         Pointer from(I->getOperand(i)), to(it);
-        GenerateBufferAliasConstraint(from, to);
+        GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
       }
       else {
         Integer to(it);
@@ -587,7 +588,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
     // get return value
     if (I->getType()->isPointerTy()) {
-      GenerateBufferAliasConstraint(makePointer(f), makePointer(I));
+      GenerateBufferAliasConstraint(makePointer(f), makePointer(I), GetInstructionFilename(I));
     }
     else {
       Integer intLiteral(I);
