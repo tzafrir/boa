@@ -64,6 +64,7 @@ void LinearProblem::RemoveRow(int row) {
     int r = glp_add_rows(lp_, 1);
     glp_set_row_bnds(lp_, r, GLP_UP, 0.0, MINUS_INFTY);
     glp_set_mat_row(lp_, r, 1, ind, val);
+    glp_set_row_name(lp_, r, glp_get_row_name(lp_, row));    
   }
 }
 
@@ -81,6 +82,7 @@ void LinearProblem::RemoveInfeasable() {
   vector<int> rows = ElasticFilter();
   sort(rows.begin(), rows.end());
 
+  // glpk ignores the 0's index of the array
   int ind[2], removed = rows.size();
   realRows_ -= removed;
   LOG << "removing " << removed << " rows" << endl;  
