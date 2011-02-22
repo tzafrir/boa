@@ -147,7 +147,7 @@ class Constraint {
   }
 
   void SetBlame(const string &blame, const string &location = "") {
-    blame_ = blame;
+    blame_ = blame + " " + location;
   }
 
   string Blame() {
