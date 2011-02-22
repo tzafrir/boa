@@ -485,7 +485,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  string functionName = f->getNameStr();
+  string functionName = f->getNameStr(), loc = GetInstructionFilename(I);
 
   if (functionName == "malloc") {
     // malloc calls are of the form:
@@ -549,6 +549,18 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     else {
       GenerateStringCopyConstraint(I);
     }
+    return;
+  }
+  
+  if (functionName == "write") {
+    Pointer to(makePointer(I->getArgOperand(0)));
+    Expression minExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MIN);
+    minExp.add(-1.0);
+    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MAX);
+    maxExp.add(-1.0);
+
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call", loc);
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call", loc);
     return;
   }
 
