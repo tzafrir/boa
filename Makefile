@@ -13,7 +13,7 @@ UNITTESTS=tests/unittests
 
 all: ${BUILD}/boa.so
 
-${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/ConstraintProblem.o ${BUILD}/LinearProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/Helpers.o
+${BUILD}/boa.so: ${BUILD} ${BUILD}/boa.o ${BUILD}/ConstraintProblem.o ${BUILD}/LinearProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/Helpers.o ${BUILD}/Constraint.o
 	${CC} ${CFLAGS} ${DFLAGS} -I${LLVM_DIR}/include -I${LLVM_DIR}/tools/clang/include  -Wl,-R -Wl,'$ORIGIN' -shared -o ${BUILD}/boa.so ${BUILD}/boa.o  ${BUILD}/ConstraintProblem.o ${BUILD}/log.o ${BUILD}/ConstraintGenerator.o ${BUILD}/Constraint.o ${BUILD}/LinearProblem.o ${BUILD}/Helpers.o ${LINKFLAGS}
 
 ${BUILD}/boa.o: ${SOURCE}/boa.cpp ${SOURCE}/VarLiteral.h ${SOURCE}/Pointer.h ${SOURCE}/Integer.h ${SOURCE}/Buffer.h ${SOURCE}/PointerAnalyzer.h ${SOURCE}/ConstraintGenerator.h ${BUILD}/ConstraintProblem.o ${BUILD}/log.o
