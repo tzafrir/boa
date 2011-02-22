@@ -701,16 +701,18 @@ void ConstraintGenerator::GenerateSelectConstraint(const SelectInst *I) {
 // Static.
 string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
   // Magic numbers that lead us through the various debug nodes to where the filename is.
-  if (const MDNode* n1 =
-      dyn_cast<const MDNode>(I->getMetadata(LLVMContext::MD_dbg)->getOperand(2))) {
-    if (const MDNode* n2 = dyn_cast<const MDNode>(n1->getOperand(1))) {
-      if (const MDNode* n3 = dyn_cast<const MDNode>(n2->getOperand(2))) {
-        if (const MDNode* filenamenode = dyn_cast<const MDNode>(n3->getOperand(3))) {
-          if (const MDString* filename =
-              dyn_cast<const MDString>(filenamenode->getOperand(3))) {
-            stringstream ss;
-            ss << filename->getString().str() << ":" << I->getDebugLoc().getLine();
-            return ss.str();
+  if (I->getMetadata(LLVMContext::MD_dbg)) {
+    if (const MDNode* n1 =
+        dyn_cast<const MDNode>(I->getMetadata(LLVMContext::MD_dbg)->getOperand(2))) {
+      if (const MDNode* n2 = dyn_cast<const MDNode>(n1->getOperand(1))) {
+        if (const MDNode* n3 = dyn_cast<const MDNode>(n2->getOperand(2))) {
+          if (const MDNode* filenamenode = dyn_cast<const MDNode>(n3->getOperand(3))) {
+            if (const MDString* filename =
+                dyn_cast<const MDString>(filenamenode->getOperand(3))) {
+              stringstream ss;
+              ss << filename->getString().str() << ":" << I->getDebugLoc().getLine();
+              return ss.str();
+            }
           }
         }
       }
