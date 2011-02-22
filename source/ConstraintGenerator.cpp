@@ -592,8 +592,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call");
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call");
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call", loc);
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call", loc);
     return;
   }
 
