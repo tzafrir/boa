@@ -368,7 +368,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 }
 
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
-                                                        const string& locataion, 
+                                                        const string& location, 
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {1, -1};
@@ -389,7 +389,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
       bigExp.add(offsets[dir]);
       smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias");
+      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location);
     }
   }
 }
