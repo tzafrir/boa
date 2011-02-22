@@ -45,20 +45,21 @@ class ConstraintGenerator {
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  VarLiteral::ExpressionType type, const string &blame,
-                                 const string &location = "");
+                                 const string &location);
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
                           VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
-                          const string &blame, const string &location = "");
+                          const string &blame, const string &location);
 
   void GenerateConstraint(const Expression &lhs, const Expression &rhs,
                           VarLiteral::ExpressionDir direction,
-                          const string &blame, const string &location = "");
+                          const string &blame, const string &location);
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
   */
-  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const Value *offset = NULL);
+  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location, 
+                                     const Value *offset = NULL);
 
   /**
     Make a boa::Pointer instance out of an instruction parameter. This function should be used in
@@ -81,7 +82,7 @@ class ConstraintGenerator {
     Add a buffer to the constraint problem, together with the nessesary constraints. This method
     shouldbe used instead of adding buffer directly to the constraintProblem.
   */
-  void AddBuffer(const Buffer& buf);
+  void AddBuffer(const Buffer& buf, const string& location = "");
 
   /**
     Generate the Constraint::Expression reflected by "expr". The result will be a number in a case
@@ -98,17 +99,17 @@ class ConstraintGenerator {
     Generate the constraints reflecting defreference of a pointer (usually accesing a buffer through
     alias)
   */
-  void GeneratePointerDerefConstraint(const Value* I);
+  void GeneratePointerDerefConstraint(const Value* I, const string& location);
 
   /**
     Generate buffer allocation constraints and register the buffer as allocated
   */
-  void GenerateAllocConstraint(const Value *I, const ArrayType *aType);
+  void GenerateAllocConstraint(const Value *I, const ArrayType *aType, const string& location);
 
   /**
     Generate a constraint for the result of a boolean comparison.
   */
-  void GenerateBooleanConstraint(const Value *I);
+  void GenerateBooleanConstraint(const Instruction *I);
 
   /*
     Generate the constraints reflecting llvm memory access instructions

@@ -146,8 +146,12 @@ class Constraint {
 	}
   }
 
-  void SetBlame(const string &blame, const string &location = "") {
+  void SetBlame(const string &blame) {
     blame_ = blame;
+  }
+
+  void SetBlame(const string &blame, const string &location) {
+    blame_ = blame + " [" + location + "]";
   }
 
   string Blame() {
