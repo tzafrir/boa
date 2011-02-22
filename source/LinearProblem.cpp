@@ -81,6 +81,7 @@ void LinearProblem::RemoveInfeasable() {
   vector<int> rows = ElasticFilter();
   sort(rows.begin(), rows.end());
 
+  // glpk ignores the 0's index of the array
   int ind[2], removed = rows.size();
   realRows_ -= removed;
   LOG << "removing " << removed << " rows" << endl;  
