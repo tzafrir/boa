@@ -551,6 +551,18 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
     return;
   }
+  
+  if (functionName == "write") {
+    Pointer to(makePointer(I->getArgOperand(0)));
+    Expression minExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MIN);
+    minExp.add(-1.0);
+    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MAX);
+    maxExp.add(-1.0);
+
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call");
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call");
+    return;
+  }
 
   // General function call
   if (f->isDeclaration()) {
