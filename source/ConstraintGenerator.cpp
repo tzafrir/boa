@@ -574,16 +574,30 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strncpy") {
-    Pointer to(makePointer(I->getArgOperand(0)));
+    GenerateStrNCpyConstraint(I, "strncpy call");
+    return;
+  }
+
+  if (functionName == "strxfrm") {
+    GenerateStrNCpyConstraint(I, "strxfrm call");  
+    return;
+  }
+
+  string memcpyStr("llvm.memcpy.");
+  if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
+    Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
+    Pointer to(makePointer(I));
+    
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
     minExp.add(-1.0);
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MAX, "strncpy call", location);
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MIN, "strncpy call", location);
+    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateBufferAliasConstraint(dest, to, location);
     return;
   }
 
@@ -678,6 +692,19 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
   }
 }
+
+void ConstraintGenerator::GenerateStrNCpyConstraint(const CallInst* I, const string &blame) {
+  Pointer to(makePointer(I->getArgOperand(0)));
+  Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
+  minExp.add(-1.0);
+  Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
+  maxExp.add(-1.0);
+  string location = GetInstructionFilename(I);
+
+  GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
+  GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
+}
+
 
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
   static string safeFunctions[] = { "execv",

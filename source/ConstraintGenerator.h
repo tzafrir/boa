@@ -128,6 +128,8 @@ class ConstraintGenerator {
   void GenerateReturnConstraint(const ReturnInst* I, const Function *F);
 
   void GenerateStringCopyConstraint(const CallInst* I);
+  void GenerateStrNCpyConstraint(const CallInst* I, const string &blame);
+  
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
   */
