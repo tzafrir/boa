@@ -39,6 +39,10 @@ class ConstraintProblem {
     buffers_.clear();
     constraints_.clear();
   }
+  
+  int BuffersCount() const {
+    return buffers_.size();
+  }
 
   /**
     Solve the constriant problem defined by the constraints.
