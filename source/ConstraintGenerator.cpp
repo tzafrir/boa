@@ -202,8 +202,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
     if (F->getReturnType()->isPointerTy()) {
       Pointer from(makePointer(I->getReturnValue())), to(F);
       GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
-    }
-    else {
+    } else {
       Integer intLiteral(F);
       GenerateGenericConstraint(intLiteral, I->getReturnValue(), VarLiteral::USED, "return value", 
                                 GetInstructionFilename(I));
@@ -597,8 +596,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
       GenerateUnboundConstraint(to, "sprintf with unknown length format string");
-    }
-    else {
+    } else {
       GenerateStringCopyConstraint(I);
     }
     return;
@@ -637,21 +635,18 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
     if (I->getType()->isPointerTy()) {
       GenerateUnboundConstraint(makePointer(I), blame, location);
-    }
-    else {
+    } else {
       Integer intLiteral(I);
       GenerateUnboundConstraint(intLiteral, blame, location);
     }
-  }
-  else {
+  } else {
     //has body, pass arguments
     int i = 0;
     for (Function::const_arg_iterator it = f->arg_begin(); it != f->arg_end(); ++it, ++i) {
       if (it->getType()->isPointerTy()) {
         Pointer from(I->getOperand(i)), to(it);
         GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
-      }
-      else {
+      } else {
         Integer to(it);
         GenerateGenericConstraint(to, I->getOperand(i), VarLiteral::LEN_WRITE,
                                   "pass integer parameter to a function", loc);
@@ -660,8 +655,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // get return value
     if (I->getType()->isPointerTy()) {
       GenerateBufferAliasConstraint(makePointer(f), makePointer(I), GetInstructionFilename(I));
-    }
-    else {
+    } else {
       Integer intLiteral(I);
       GenerateGenericConstraint(intLiteral, f, VarLiteral::USED, "user function call", loc);
     }
