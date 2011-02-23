@@ -629,7 +629,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       else {
         Integer to(it);
         GenerateGenericConstraint(to, I->getOperand(i), VarLiteral::LEN_WRITE,
-        						              "pass integer parameter to a function", loc);
+                                  "pass integer parameter to a function", loc);
       }
     }
     // get return value
@@ -660,7 +660,7 @@ void ConstraintGenerator::GenerateStringCopyConstraint(const CallInst* I) {
     string loc = GetInstructionFilename(I);
 
     GenerateConstraint(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
-    				           from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
+                       from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
                        VarLiteral::MAX, "strcpy call", loc);
     GenerateConstraint(to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE),
                        from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
@@ -702,11 +702,11 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 }
 
 void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame,
-												                            const string& location) {
+                                                    const string& location) {
   GenerateConstraint(var, Expression::PosInfinity, VarLiteral::LEN_WRITE,
-		  	  	  	     VarLiteral::MAX, blame, location);
+                     VarLiteral::MAX, blame, location);
   GenerateConstraint(var, Expression::NegInfinity, VarLiteral::LEN_WRITE,
-		  	  	  	     VarLiteral::MIN, blame, location);
+                     VarLiteral::MIN, blame, location);
 }
 
 
@@ -717,19 +717,19 @@ void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
                                              const string &blame,
                                              const string &location,
                                              Constraint::Type prio) {
-	GenerateConstraint(var.NameExpression(direction, type), integerExpression,
-	  direction, blame, location, prio);
+  GenerateConstraint(var.NameExpression(direction, type), integerExpression,
+    direction, blame, location, prio);
 }
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
                                              VarLiteral::ExpressionDir direction,
                                              const string &blame, const string &location, 
                                              Constraint::Type prio) {
-	Constraint constraint(lhs, rhs, direction);
-	constraint.SetBlame(blame, location, prio);
-	cp_.AddConstraint(constraint);
-	LOG << "Adding - " << lhs.toString() << (direction == VarLiteral::MAX ? " >= " : " <= ") <<
-			rhs.toString() << " - " + blame << endl;
+  Constraint constraint(lhs, rhs, direction);
+  constraint.SetBlame(blame, location, prio);
+  cp_.AddConstraint(constraint);
+  LOG << "Adding - " << lhs.toString() << (direction == VarLiteral::MAX ? " >= " : " <= ") <<
+      rhs.toString() << " - " + blame << endl;
 }
 
 void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
@@ -738,9 +738,9 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
   string loc = GetInstructionFilename(I);
   
   GenerateConstraint(boolean, 1.0, VarLiteral::USED,
-		  	  	  	     VarLiteral::MAX, "Boolean Operation", loc);
+                     VarLiteral::MAX, "Boolean Operation", loc);
   GenerateConstraint(boolean, 0.0, VarLiteral::USED,
-		  	  	  	     VarLiteral::MIN, "Boolean Operation", loc);
+                     VarLiteral::MIN, "Boolean Operation", loc);
 }
 
 void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {

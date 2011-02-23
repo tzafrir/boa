@@ -153,16 +153,16 @@ class Constraint {
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
              VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
-	switch (direction) {
-	  case VarLiteral::MAX:
-		  addBig(varExpr);
-		  addSmall(valueExpr);
-		  break;
-	  case VarLiteral::MIN:
-		  addBig(valueExpr);
-		  addSmall(varExpr);
-		  break;
-	  }
+  switch (direction) {
+    case VarLiteral::MAX:
+      addBig(varExpr);
+      addSmall(valueExpr);
+      break;
+    case VarLiteral::MIN:
+      addBig(valueExpr);
+      addSmall(varExpr);
+      break;
+    }
   }
 
   void SetBlame(const string &blame) {
