@@ -1,20 +1,21 @@
 digraph G {
+  rankdir = LR;
  node [shape = note]; 
  	source 			[label="C Source code"];
+ 	bytecode 			[label="llvm bytecode"];
  node [shape = box]; 
  	buffers 		[label="Buffers\nset<buffer>"];
- 	pointerDict [label=<<u>dictionary</u><br/>Pointer =&gt; set&lt;buffer&gt;>];
+// 	pointerDict [label=<<u>dictionary</u><br/>Pointer =&gt; set&lt;buffer&gt;> rank = 4];
  	constraints [label="Constraints"];
  	unsafe 			[label="Unsafe Buffers\nset<buffer>"];
  	
  	
- node [shape = ellipse]; 
- 	pointer 	[label="Pointer analysis" penwidth = 3] 
- 	generator [label="Constraint generator" penwidth = 3] 
- 	solver 		[label="Linear solver" penwidth = 3];
+ node [shape = ellipse rank = 4];
+// 	pointer 	[label="Pointer analysis" penwidth = 3] 
+ 	generator [label="Constraint\ngenerator" penwidth = 3 ] 
+ 	solver 		[label="Linear\nsolver" penwidth = 3];
  
- source->pointer;
- pointer->buffers->solver->unsafe;
- pointer->pointerDict->generator;
- source->generator->constraints->solver;
+ source->clang->bytecode //->pointer->pointerDict->generator;
+ bytecode->generator->buffers->solver->unsafe;
+ generator->constraints->solver;
 }
