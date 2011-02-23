@@ -3,7 +3,7 @@ C=gcc -Werror
 DFLAGS=-D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 CFLAGS=-Wall -g -fno-exceptions -fno-rtti -fPIC -Woverloaded-virtual -Wcast-qual -fno-strict-aliasing  -pedantic -Wno-long-long -Wall -W -Wno-unused-parameter -Wwrite-strings
 GTEST_DIR=../gtest-1.5.0
-TFLAGS=-I ${GTEST_DIR}/include -I source -c
+TFLAGS=-I ${GTEST_DIR}/include -I source -c ${DFLAGS}
 TMAINFLAGS=${GTEST_DIR}/lib/.libs/libgtest.a ../gtest-1.5.0/lib/.libs/libgtest_main.a
 LINKFLAGS=-lpthread -lglpk -ldl -lm -L${LLVM_DIR}/Debug+Asserts/lib
 LLVM_DIR=../llvm
@@ -36,6 +36,9 @@ ${BUILD}/Helpers.o: ${SOURCE}/Helpers.h ${SOURCE}/Helpers.cpp
 ${BUILD}/HelpersTest.o: ${UNITTESTS}/HelpersTest.cpp ${BUILD}/Helpers.o
 	g++ ${TFLAGS} -o ${BUILD}/HelpersTest.o ${UNITTESTS}/HelpersTest.cpp
 
+${BUILD}/ConstraintGeneratorTest.o: ${UNITTESTS}/ConstraintGeneratorTest.cpp ${BUILD}/ConstraintGenerator.o
+	g++ ${TFLAGS} -o ${BUILD}/ConstraintGeneratorTest.o ${UNITTESTS}/ConstraintGeneratorTest.cpp
+
 ${BUILD}:
 	mkdir -p ${BUILD}
 
@@ -53,10 +56,10 @@ boatestsblame: ${BUILD}/boa.so ${TESTCASES} FORCE
 	tests/testAll.sh -blame
 
 ALLTESTS=$(subst tests/unittests,build,$(subst cpp,o,$(wildcard tests/unittests/*Test.cpp)))
-ALLOFILES=$(subst Test,,${ALLTESTS})
+ALLOFILES=$(subst Test,,${ALLTESTS}) ${BUILD}/log.o ${BUILD}/Constraint.o
 
 tests/rununittests: ${BUILD} ${ALLTESTS} ${ALLOFILES}
-	g++ ${ALLOFILES} ${ALLTESTS} ${TMAINFLAGS} ${LINKFLAGS} -o tests/rununittests
+	g++ ${ALLOFILES} ${ALLTESTS} ${TMAINFLAGS} ${LINKFLAGS} -L ../llvm/Release+Asserts/lib/ -lLLVMCore -lLLVMSupport -o tests/rununittests
 
 unittests: tests/rununittests FORCE
 	tests/rununittests

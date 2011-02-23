@@ -20,6 +20,8 @@ using std::map;
 #include "Pointer.h"
 #include "log.h"
 
+#include "gtest_prod.h"
+
 using namespace llvm;
 typedef boa::Constraint::Expression Expression;
 
@@ -157,6 +159,8 @@ class ConstraintGenerator {
     Generate constraints out of global variable declerations/definitions
   */
   void VisitGlobal(const GlobalValue *G);
+
+  FRIEND_TEST(ConstraintGeneratorTest, SafeFunctionTest);
 };
 
 }  // namespace boa
