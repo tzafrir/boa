@@ -270,7 +270,7 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
     minOperand = &operand0Min;
     maxOperand = &operand0Max;
   } else {
-    GenerateUnboundConstraint(intLiteral, "Unconst multiplication.");
+    GenerateUnboundConstraint(intLiteral, "Unconst multiplication.", GetInstructionFilename(I));
     return;
   }
 
@@ -290,7 +290,7 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   if (!operand1.IsConst()) {
-    GenerateUnboundConstraint(intLiteral, "Non-const denominator.");
+    GenerateUnboundConstraint(intLiteral, "Non-const denominator.", GetInstructionFilename(I));
     return;
   }
   double constOperand = operand1.GetConst();
@@ -415,7 +415,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   if (!operand1.IsConst()) {
-    GenerateUnboundConstraint(intLiteral, "Non-const shift factor.");
+    GenerateUnboundConstraint(intLiteral, "Non-const shift factor.", GetInstructionFilename(I));
     return;
   }
   double shiftFactor = 1 << (int)operand1.GetConst();
@@ -432,7 +432,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
       maxOperand.div(shiftFactor);
       break;
     default:
-      GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.");
+      GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.", GetInstructionFilename(I));
       return;
   }
   
@@ -446,7 +446,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
 
 void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
     Integer intLiteral(I);
-    GenerateUnboundConstraint(intLiteral, "(X)OR operation");
+    GenerateUnboundConstraint(intLiteral, "(X)OR operation", GetInstructionFilename(I));
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
@@ -571,7 +571,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (functionName == "sprintf") {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
-      GenerateUnboundConstraint(to, "sprintf with unknown length format string");
+      GenerateUnboundConstraint(to, "sprintf with unknown length format string",
+          GetInstructionFilename(I));
     } else {
       GenerateStringCopyConstraint(I);
     }
