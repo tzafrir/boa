@@ -172,6 +172,13 @@ class Constraint {
   void SetBlame(const string &blame) {
     blame_ = blame;
   }
+  
+  static string StripPrefix(const string& blame) {
+    if (blame.empty()) {
+      return blame;
+    }
+    return blame.substr(1);
+  } 
 
   void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
     blame_ = TypeToChar(T);

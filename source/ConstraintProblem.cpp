@@ -89,6 +89,7 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
       }     
     }
     lp.structuralRows_ = row - 1;
+    LOG << " !!! " << lp.structuralRows_ << endl;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
       if (c->GetType() != Constraint::STRUCTURAL) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
@@ -186,7 +187,7 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
   for (size_t i = 0; i < rows.size(); ++i) {
     char const *row = glp_get_row_name(lp.lp_, rows[i]);
     if (row) {
-      result.push_back(row);
+      result.push_back(Constraint::StripPrefix(row));
     }
   }
   return result;
