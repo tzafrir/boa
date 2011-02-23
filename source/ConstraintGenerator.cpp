@@ -574,12 +574,12 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strncpy") {
-    GenerateStrNCpyConstraint(I, "strncpy call");
+    GenerateStrNCopyConstraint(I, "strncpy call");
     return;
   }
 
   if (functionName == "strxfrm") {
-    GenerateStrNCpyConstraint(I, "strxfrm call");  
+    GenerateStrNCopyConstraint(I, "strxfrm call");  
     return;
   }
 
@@ -693,7 +693,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 }
 
-void ConstraintGenerator::GenerateStrNCpyConstraint(const CallInst* I, const string &blame) {
+void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const string &blame) {
   Pointer to(makePointer(I->getArgOperand(0)));
   Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
   minExp.add(-1.0);
