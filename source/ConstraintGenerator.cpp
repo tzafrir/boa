@@ -524,7 +524,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     GenerateStrlenConstraint(I, location);
     return;
   }
-  
+
   if (functionName == "strcpy") {
     GenerateStringCopyConstraint(I);
     return;
@@ -836,24 +836,16 @@ void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const stri
 }
 
 void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const string &location) {
+  static const string blame = "strlen call";
   Pointer p(makePointer(I->getArgOperand(0)));
   Integer var(I);
 
-  Constraint cMax("strlen call");
-  cMax.addBig(var.NameExpression(VarLiteral::MAX));
-  cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-  cMax.addSmall(1);
-  cp_.AddConstraint(cMax);
-  LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
-            << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " + 1" << endl;
+  Expression pMax(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
 
-  Constraint cMin("strlen call");
-  cMin.addSmall(var.NameExpression(VarLiteral::MIN));
-  cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-  cMax.addBig(1);
-  cp_.AddConstraint(cMin);
-  LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
-            << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
+  Expression pMin(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+
+  GenerateConstraint(var, pMax, VarLiteral::LEN_READ, VarLiteral::MAX, blame, location);
+  GenerateConstraint(var, pMin, VarLiteral::LEN_READ, VarLiteral::MIN, blame, location);
 }
 
 // Static.
