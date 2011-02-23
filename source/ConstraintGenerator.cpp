@@ -564,12 +564,12 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strncpy") {
-    GenerateStrNCopyConstraint(I, "strncpy call");
+    GenerateStrNCopyConstraint(I, "strncpy call", location);
     return;
   }
 
   if (functionName == "strxfrm") {
-    GenerateStrNCopyConstraint(I, "strxfrm call");  
+    GenerateStrNCopyConstraint(I, "strxfrm call", location);
     return;
   }
 
@@ -683,13 +683,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 }
 
-void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const string &blame) {
+void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const string &blame,
+                                                     const string &location) {
   Pointer to(makePointer(I->getArgOperand(0)));
   Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
   minExp.add(-1.0);
   Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
   maxExp.add(-1.0);
-  string location = GetInstructionFilename(I);
 
   GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
   GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);

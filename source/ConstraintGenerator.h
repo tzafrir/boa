@@ -128,7 +128,7 @@ class ConstraintGenerator {
   void GenerateReturnConstraint(const ReturnInst* I, const Function *F);
 
   void GenerateStringCopyConstraint(const CallInst* I);
-  void GenerateStrNCopyConstraint(const CallInst* I, const string &blame);
+  void GenerateStrNCopyConstraint(const CallInst* I, const string &blame, const string &location);
   void GenerateMallocConstraint(const CallInst* I, const string &location);
   
   /*
