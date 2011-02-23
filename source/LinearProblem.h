@@ -39,7 +39,7 @@ class LinearProblem {
 
  public:
   glp_prob *lp_;
-  int realRows_;
+  int realRows_, structuralRows_;
   map<string, int> varToCol_;
   map<int, string> colToVar_;
 

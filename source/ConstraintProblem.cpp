@@ -79,15 +79,23 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
   glp_set_obj_dir(lp.lp_, GLP_MAX);
   glp_add_cols(lp.lp_, vars.size());
   glp_add_rows(lp.lp_, constraints_.size());
-  lp.realRows_ = constraints_.size();
   {
     // Fill matrix
     int row = 1;
-    for (vector<Constraint>::const_iterator constraint = constraints_.begin();
-         constraint != constraints_.end();
-         ++constraint, ++row) {
-      constraint->AddToLPP(lp.lp_, row, lp.varToCol_);
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() == Constraint::STRUCTURAL) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
     }
+    lp.structuralRows_ = row - 1;
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() != Constraint::STRUCTURAL) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
+    }    
+    lp.realRows_ = row - lp.structuralRows_ - 1;
   }
 
   for (size_t i = 1; i <= vars.size(); ++i) {
