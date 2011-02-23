@@ -729,7 +729,8 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
 bool ConstraintGenerator::IsUnsafeFunction(const string& name) {
   static string unsafeFunctions[] = { "gets",
                                       "scanf",
-                                      "strcat" };
+                                      "strcat",
+                                      "strncat" };
   for (size_t i = 0; i < (sizeof(unsafeFunctions) / sizeof(string)); ++i) {
     if (name == unsafeFunctions[i]) {
       return true;
