@@ -197,7 +197,7 @@ class Constraint {
   Type GetType() const {
     return type_;
   }
-
+  
   string Blame() {
     return blame_;
   }

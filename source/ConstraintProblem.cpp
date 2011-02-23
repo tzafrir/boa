@@ -178,6 +178,8 @@ vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {
 }
 
 vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const {
+  vector<string> result;
+
   double minAlloc = glp_get_col_prim(lp.lp_, 
                        lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) - 1;
   glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MAX, VarLiteral::USED)],
@@ -186,9 +188,36 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
                    GLP_LO, 0.0, 0.0);
    
   lp.Solve();
+
+  int interestStrat = lp.structuralRows_, structuralRows = lp.structuralRows_, 
+      rowsCount = glp_get_num_rows(lp.lp_);
+  for (Constraint::Type t = Constraint::STRUCTURAL; 
+       (t != Constraint::INTERESTING) && (interestStrat < rowsCount); 
+       /* empty */) {
+    ++interestStrat;
+    const char* row = glp_get_row_name(lp.lp_, interestStrat);
+    if (row) {
+      t = Constraint::CharToType(row[0]);
+    }
+  }
+
+  // blame the interesting rows first
+  lp.realRows_ = lp.realRows_ - (interestStrat - structuralRows - 1);
+  lp.structuralRows_ = interestStrat - 1;
+  if (lp.realRows_ > 0 ) {
+    vector<int> rows = lp.ElasticFilter();
+    for (size_t i = 0; i < rows.size(); ++i) {
+      char const *row = glp_get_row_name(lp.lp_, rows[i]);
+      if (row) {
+        result.push_back(Constraint::StripPrefix(row));
+      }
+    }
+  }
+  
+  // than normal rows too
+  lp.structuralRows_ = structuralRows;
   lp.realRows_ = glp_get_num_rows(lp.lp_) - lp.structuralRows_;
   vector<int> rows = lp.ElasticFilter();
-  vector<string> result;
   for (size_t i = 0; i < rows.size(); ++i) {
     char const *row = glp_get_row_name(lp.lp_, rows[i]);
     if (row) {
