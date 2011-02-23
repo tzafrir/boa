@@ -589,16 +589,19 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 
   string memcpyStr("llvm.memcpy.");
   if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
-    Pointer to(makePointer(I->getArgOperand(0))), from(makePointer(I->getArgOperand(1)));
+    Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
+    Pointer to(makePointer(I));
+    
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
     minExp.add(-1.0);
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
-    GenerateConstraint(from, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
-    GenerateConstraint(from, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateBufferAliasConstraint(dest, to, location);
     return;
   }
 
