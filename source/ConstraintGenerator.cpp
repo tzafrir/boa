@@ -587,6 +587,21 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  string memcpyStr("llvm.memcpy.");
+  if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
+    Pointer to(makePointer(I->getArgOperand(0))), from(makePointer(I->getArgOperand(1)));
+    Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
+    minExp.add(-1.0);
+    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
+    maxExp.add(-1.0);
+
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateConstraint(from, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
+    GenerateConstraint(from, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    return;
+  }
+
   if (functionName == "pipe") {
     Expression one(1.0);
     Pointer arr(makePointer(I->getArgOperand(0)));

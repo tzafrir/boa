@@ -1,0 +1,6 @@
+HAS ByName unsafe1
+HAS ByName unsafe2
+HAS ByName unsafe3
+NOT ByName safe1
+NOT ByName safe2
+
