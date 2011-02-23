@@ -52,6 +52,25 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
+  enum Type {STRUCTURAL, NORMAL, INTERESTING};
+  static char TypeToChar(Type t) {
+    switch (t) {
+    case STRUCTURAL : return '0';
+    case NORMAL     : return '1';
+    case INTERESTING: return '2';
+    default         : return '1';
+    }
+  }
+  
+  static Type CharToType(char c) {
+    switch (c) {
+    case '0' : return STRUCTURAL;
+    case '1' : return NORMAL;
+    case '2' : return INTERESTING;
+    default  : return NORMAL; 
+    }
+  }
+  
   class Expression {
     double val_;
     map<string, double> vars_;
@@ -143,15 +162,16 @@ class Constraint {
 		  addBig(valueExpr);
 		  addSmall(varExpr);
 		  break;
-	}
+	  }
   }
 
   void SetBlame(const string &blame) {
     blame_ = blame;
   }
 
-  void SetBlame(const string &blame, const string &location) {
-    blame_ = blame + " [" + location + "]";
+  void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
+    blame_ = TypeToChar(T);
+    blame_ += blame + " [" + location + "]";
   }
 
   string Blame() {
