@@ -38,8 +38,10 @@ class Constraint {
  public:
   /**
    * STRUCTURAL - Created as part of boa's internal operation and not because of user code.
+   *
    * INTERESTING - An <i>intersting</i> constraint has a high probability of being the cause for
    *               a buffer overrun.
+   *
    * NORMAL - A constraint that doesn't fit in the above categories.
    */
   enum Type {STRUCTURAL, NORMAL, INTERESTING};
