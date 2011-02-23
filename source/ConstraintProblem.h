@@ -31,6 +31,7 @@ class ConstraintProblem {
     buffers_.insert(buffer);
   }
 
+  // Virtual because this method is overridden by the test class MockConstraintProblem.
   virtual void AddConstraint(const Constraint& c) {
     constraints_.push_back(c);
   }
