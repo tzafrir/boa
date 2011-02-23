@@ -86,9 +86,9 @@ class ConstraintGenerator {
 
   /**
     Add a buffer to the constraint problem, together with the nessesary constraints. This method
-    shouldbe used instead of adding buffer directly to the constraintProblem.
+    should be used instead of adding buffer directly to the constraintProblem.
   */
-  void AddBuffer(const Buffer& buf, const string& location = "");
+  void AddBuffer(const Buffer& buf, const string& location);
 
   /**
     Generate the Constraint::Expression reflected by "expr". The result will be a number in a case
