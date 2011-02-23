@@ -89,9 +89,14 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
       }     
     }
     lp.structuralRows_ = row - 1;
-    LOG << " !!! " << lp.structuralRows_ << endl;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
-      if (c->GetType() != Constraint::STRUCTURAL) {
+      if (c->GetType() == Constraint::NORMAL) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
+    }    
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() == Constraint::INTERESTING) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
         ++row;
       }     
