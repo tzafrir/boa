@@ -516,7 +516,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strdup") {
-    GenerateStrdupConstraint(I, "strdup call", location);
+    GenerateStrdupConstraint(I, location);
     return;
   }
 
@@ -833,8 +833,8 @@ void ConstraintGenerator::GenerateMallocConstraint(const CallInst* I, const stri
   AddBuffer(buf, location);
 }
 
-void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const string &blame,
-                                                   const string &location) {
+void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const string &location) {
+  static const string blame = "strdup call";
   Buffer buf(I, "strdup", GetInstructionFilename(I));
   AddBuffer(buf, location);
   Pointer from(I->getArgOperand(0));
