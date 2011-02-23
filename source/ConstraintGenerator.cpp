@@ -593,10 +593,10 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
-    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
-    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy call", location);
-    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy call", location);
+    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
+    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
+    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
+    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
     GenerateBufferAliasConstraint(dest, to, location);
     return;
   }
