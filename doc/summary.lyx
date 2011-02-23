@@ -199,12 +199,7 @@ status open
 Source code -
 \end_layout
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -213,6 +208,11 @@ status open
 
 \backslash
 lstinputlisting[firstline=1,lastline=5]{../tests/testcases/simple2.c}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
