@@ -511,17 +511,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   string functionName = f->getNameStr(), location = GetInstructionFilename(I);
 
   if (functionName == "malloc") {
-    // malloc calls are of the form:
-    //   %2 = call i8* @malloc(i64 4)
-    //   ...
-    //   store i8* %2, i8** %buf1, align 8
-    //
-    // This method generates an Alloc expression for the malloc call, and the store instruction will
-    // generate a BufferAlias.
-    LOG << I << " malloc call" << endl;
-    Buffer buf(I, "malloc", GetInstructionFilename(I));
-    GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
-    AddBuffer(buf, location);
+    GenerateMallocConstraint(I, location);
     return;
   }
 
@@ -843,6 +833,20 @@ void ConstraintGenerator::GenerateSelectConstraint(const SelectInst *I) {
   LOG << "Select Node at " << I << " (" << blame << ")" << endl;
   GenerateGenericConstraint(select, I->getTrueValue(), VarLiteral::USED, blame, loc);
   GenerateGenericConstraint(select, I->getFalseValue(), VarLiteral::USED, blame, loc);
+}
+
+void ConstraintGenerator::GenerateMallocConstraint(const CallInst* I, const string& location) {
+  // malloc calls are of the form:
+  //   %2 = call i8* @malloc(i64 4)
+  //   ...
+  //   store i8* %2, i8** %buf1, align 8
+  //
+  // This method generates an Alloc expression for the malloc call, and the store instruction will
+  // generate a BufferAlias.
+  LOG << I << " malloc call" << endl;
+  Buffer buf(I, "malloc", location);
+  GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
+  AddBuffer(buf, location);
 }
 
 // Static.

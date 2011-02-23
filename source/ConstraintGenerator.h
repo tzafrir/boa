@@ -129,6 +129,7 @@ class ConstraintGenerator {
 
   void GenerateStringCopyConstraint(const CallInst* I);
   void GenerateStrNCopyConstraint(const CallInst* I, const string &blame);
+  void GenerateMallocConstraint(const CallInst* I, const string &location);
   
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
