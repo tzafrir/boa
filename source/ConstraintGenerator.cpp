@@ -193,7 +193,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     GenerateAllocConstraint(G, ar, "(literal)");
     GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
     GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
-    AddBuffer(buf);
+    AddBuffer(buf, "(literal)");
   }
 }
 
@@ -463,7 +463,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         Buffer b(D->getAddress(), S->getString().str(), ss.str());
 
         if (allocedBuffers[D->getAddress()]) {
-          AddBuffer(b);
+          AddBuffer(b, ss.str());
         }
 
         return;
