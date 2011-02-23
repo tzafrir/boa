@@ -180,7 +180,7 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
                    GLP_LO, 0.0, 0.0);
    
   lp.Solve();
-  lp.realRows_ = glp_get_num_rows(lp.lp_);
+  lp.realRows_ = glp_get_num_rows(lp.lp_) - lp.structuralRows_;
   vector<int> rows = lp.ElasticFilter();
   vector<string> result;
   for (size_t i = 0; i < rows.size(); ++i) {

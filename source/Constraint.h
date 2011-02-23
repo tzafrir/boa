@@ -152,11 +152,11 @@ class Constraint {
     }
   };
 
-  Constraint() : left_(0.0), blame_("") {}
-  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame) {}
+  Constraint() : left_(0.0), blame_(""), type_(NORMAL) {}
+  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame), type_(NORMAL) {}
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
-             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
+             VarLiteral::ExpressionDir direction) : left_(0.0), blame_(""), type_(NORMAL) {
 	switch (direction) {
 	  case VarLiteral::MAX:
 		  addBig(varExpr);
