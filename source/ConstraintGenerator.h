@@ -163,8 +163,11 @@ class ConstraintGenerator {
   */
   void VisitGlobal(const GlobalValue *G);
 
+  // Friendships for testing.
   FRIEND_TEST(ConstraintGeneratorTest, SafeFunctionTest);
   FRIEND_TEST(ConstraintGeneratorTest, UnsafeFunctionTest);
+  FRIEND_TEST(ConstraintGeneratorTest, GenerateConstraintMax);
+  FRIEND_TEST(ConstraintGeneratorTest, GenerateConstraintMin);
 };
 
 }  // namespace boa

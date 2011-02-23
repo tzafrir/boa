@@ -31,7 +31,7 @@ class ConstraintProblem {
     buffers_.insert(buffer);
   }
 
-  void AddConstraint(const Constraint& c) {
+  virtual void AddConstraint(const Constraint& c) {
     constraints_.push_back(c);
   }
 
