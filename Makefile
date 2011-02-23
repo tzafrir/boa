@@ -78,3 +78,6 @@ ${BUILD}/ConstraintGenerator.o : ${SOURCE}/ConstraintGenerator.cpp ${SOURCE}/Con
 ${BUILD}/log.o : ${SOURCE}/log.cpp ${SOURCE}/log.h
 	${CC} ${SOURCE}/log.cpp ${CFLAGS} -c -o ${BUILD}/log.o
 
+doc: FORCE
+	doxygen doc/doxygen.config
+

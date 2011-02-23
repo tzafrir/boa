@@ -1,0 +1,271 @@
+#LyX 2.0.0beta4 created this file. For more info see http://www.lyx.org/
+\lyxformat 412
+\begin_document
+\begin_header
+\textclass extreport
+\begin_preamble
+\usepackage{fullpage}
+\usepackage{listings}
+\lstset{language=C, numbers=left, frame=single}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+
+\series bold
+\size giant
+boa
+\series default
+\size default
+ 
+\lang english
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename /home/gai/boa/boa.png
+	lyxscale 33
+	height 40pt
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+Buffer Overrun Analyzer
+\end_layout
+
+\begin_layout Author
+Edo Cohen
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+ 039374814 
+\backslash
+
+\backslash
+ sedoc@t2 
+\backslash
+and 
+\end_layout
+
+\end_inset
+
+Tzafrir Rehan
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+ 039811880 
+\backslash
+
+\backslash
+ tzafrir@cs 
+\backslash
+and 
+\end_layout
+
+\end_inset
+
+Gai Shaked
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+ 036567055 
+\backslash
+
+\backslash
+ gai@tx
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Chapter
+Requirements
+\end_layout
+
+\begin_layout Chapter
+boa
+\end_layout
+
+\begin_layout Section
+Overview
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Source code -
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=1,lastline=5]{../tests/testcases/simple2.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Algorithms
+\end_layout
+
+\begin_layout Section
+Implementation
+\end_layout
+
+\begin_layout Chapter
+-To be named-
+\end_layout
+
+\begin_layout Section
+Test system
+\end_layout
+
+\begin_layout Section
+Version control
+\end_layout
+
+\begin_layout Subsection
+Code reviews
+\end_layout
+
+\begin_layout --Separator--
+
+\end_layout
+
+\begin_layout Bibliography
+\labelwidthstring References
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "הודים"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "Buffer Overrun Detection using Linear Programming and Static Analysis"
+target "www.cs.wisc.edu/wisa/papers/ccs03/p351-ganapathy.pdf "
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
