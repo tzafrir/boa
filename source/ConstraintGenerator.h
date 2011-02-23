@@ -142,8 +142,9 @@ class ConstraintGenerator {
 
   void GeneratePhiConstraint(const PHINode* I);
   void GenerateSelectConstraint(const SelectInst* I);
-  
+
   static bool IsSafeFunction(const string& name);
+  static bool IsUnsafeFunction(const string& name);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
@@ -161,6 +162,7 @@ class ConstraintGenerator {
   void VisitGlobal(const GlobalValue *G);
 
   FRIEND_TEST(ConstraintGeneratorTest, SafeFunctionTest);
+  FRIEND_TEST(ConstraintGeneratorTest, UnsafeFunctionTest);
 };
 
 }  // namespace boa

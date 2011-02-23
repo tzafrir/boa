@@ -663,10 +663,29 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 }
 
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
-  static string safeFunctions[] = {"puts", "setenv", "syslog", "vsyslog", "strtok", "openlog",
-                                   "fdopen", "getopt", "execv"};
+  static string safeFunctions[] = { "execv",
+                                    "fdopen",
+                                    "getopt",
+                                    "openlog",
+                                    "puts",
+                                    "setenv",
+                                    "strtok",
+                                    "syslog",
+                                    "vsyslog" };
   for (size_t i = 0; i < (sizeof(safeFunctions) / sizeof(string)); ++i) {
     if (name == safeFunctions[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ConstraintGenerator::IsUnsafeFunction(const string& name) {
+  static string unsafeFunctions[] = { "gets",
+                                      "scanf",
+                                      "strcat" };
+  for (size_t i = 0; i < (sizeof(unsafeFunctions) / sizeof(string)); ++i) {
+    if (name == unsafeFunctions[i]) {
       return true;
     }
   }
