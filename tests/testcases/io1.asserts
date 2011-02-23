@@ -1,3 +1,4 @@
 HAS ByName unsafe1
 HAS ByName unsafe2
 NOT ByName safe
+BLAME unsafe1 unsafe function call scanf

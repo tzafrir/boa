@@ -620,21 +620,27 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (f->isDeclaration()) {
     // Has no body, assuming overrun in each buffer, and unbound return value.
     const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
-    string blame("unknown function call " + functionName);
+    string location = GetInstructionFilename(I);
+    string blame;
+    if (IsUnsafeFunction(functionName)) {
+      blame = "unsafe function call " + functionName;
+    } else {
+      blame = "unknown function call " + functionName;
+    }
     if (!IsSafeFunction(functionName)) {
       for (unsigned i = 0; i< params; ++i) {
         if (I->getOperand(i)->getType()->isPointerTy()) {
           Pointer p(makePointer(I->getOperand(i)));
-          GenerateUnboundConstraint(p, blame);
+          GenerateUnboundConstraint(p, blame, location);
         }
       }
     }
     if (I->getType()->isPointerTy()) {
-      GenerateUnboundConstraint(makePointer(I), blame);
+      GenerateUnboundConstraint(makePointer(I), blame, location);
     }
     else {
       Integer intLiteral(I);
-      GenerateUnboundConstraint(intLiteral, blame);
+      GenerateUnboundConstraint(intLiteral, blame, location);
     }
   }
   else {
