@@ -620,22 +620,35 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
     string location = GetInstructionFilename(I);
     string blame;
+
+    Constraint::Type priority = Constraint::NORMAL;
+
+    // Set blame and priority according to the function's level of safety.
+    // A function can be either safe, not safe, or unsafe.
     if (IsUnsafeFunction(functionName)) {
       blame = "unsafe function call " + functionName;
+      priority = Constraint::INTERESTING;
+    } else if (IsSafeFunction(functionName)) {
+      blame = "safe function call " + functionName;
     } else {
       blame = "unknown function call " + functionName;
     }
+
+    // Not safe and unsafe functions.
     if (!IsSafeFunction(functionName)) {
       for (unsigned i = 0; i< params; ++i) {
         if (I->getOperand(i)->getType()->isPointerTy()) {
           Pointer p(makePointer(I->getOperand(i)));
-          GenerateUnboundConstraint(p, blame, location);
+          GenerateUnboundConstraint(p, blame, location, priority);
         }
       }
     }
+
+    // Safe function, return by pointer.
     if (I->getType()->isPointerTy()) {
       GenerateUnboundConstraint(makePointer(I), blame, location);
     } else {
+      // Return by value.
       Integer intLiteral(I);
       GenerateUnboundConstraint(intLiteral, blame, location);
     }
@@ -740,11 +753,12 @@ Constraint::Expression ConstraintGenerator::GenerateIntegerExpression(const Valu
 }
 
 void ConstraintGenerator::GenerateUnboundConstraint(const VarLiteral &var, const string &blame,
-                                                    const string& location) {
+                                                    const string& location /* = "" */,
+                                                    Constraint::Type prio /* = NORMAL */) {
   GenerateConstraint(var, Expression::PosInfinity, VarLiteral::LEN_WRITE,
-                     VarLiteral::MAX, blame, location);
+                     VarLiteral::MAX, blame, location, prio);
   GenerateConstraint(var, Expression::NegInfinity, VarLiteral::LEN_WRITE,
-                     VarLiteral::MIN, blame, location);
+                     VarLiteral::MIN, blame, location, prio);
 }
 
 
