@@ -79,15 +79,24 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
   glp_set_obj_dir(lp.lp_, GLP_MAX);
   glp_add_cols(lp.lp_, vars.size());
   glp_add_rows(lp.lp_, constraints_.size());
-  lp.realRows_ = constraints_.size();
   {
     // Fill matrix
     int row = 1;
-    for (vector<Constraint>::const_iterator constraint = constraints_.begin();
-         constraint != constraints_.end();
-         ++constraint, ++row) {
-      constraint->AddToLPP(lp.lp_, row, lp.varToCol_);
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() == Constraint::STRUCTURAL) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
     }
+    lp.structuralRows_ = row - 1;
+    LOG << " !!! " << lp.structuralRows_ << endl;
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() != Constraint::STRUCTURAL) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
+    }    
+    lp.realRows_ = row - lp.structuralRows_ - 1;
   }
 
   for (size_t i = 1; i <= vars.size(); ++i) {
@@ -172,13 +181,13 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
                    GLP_LO, 0.0, 0.0);
    
   lp.Solve();
-  lp.realRows_ = glp_get_num_rows(lp.lp_);
+  lp.realRows_ = glp_get_num_rows(lp.lp_) - lp.structuralRows_;
   vector<int> rows = lp.ElasticFilter();
   vector<string> result;
   for (size_t i = 0; i < rows.size(); ++i) {
     char const *row = glp_get_row_name(lp.lp_, rows[i]);
     if (row) {
-      result.push_back(row);
+      result.push_back(Constraint::StripPrefix(row));
     }
   }
   return result;

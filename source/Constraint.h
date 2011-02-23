@@ -35,11 +35,16 @@ namespace boa {
   integer value ("num") and a capital letter (X, Y...) is a string name of variable.
 */
 class Constraint {
+ public:
+  enum Type {STRUCTURAL, NORMAL, INTERESTING};
+
  private:
   const static int MAX_SIZE = 100;
   double left_;
   map<string, double> literals_;
   string blame_;
+  Type type_;
+
 
   void addLiteral(double num, string var) {
     literals_[var] += num;
@@ -52,7 +57,6 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  enum Type {STRUCTURAL, NORMAL, INTERESTING};
   static char TypeToChar(Type t) {
     switch (t) {
     case STRUCTURAL : return '0';
@@ -61,16 +65,16 @@ class Constraint {
     default         : return '1';
     }
   }
-  
+
   static Type CharToType(char c) {
     switch (c) {
     case '0' : return STRUCTURAL;
     case '1' : return NORMAL;
     case '2' : return INTERESTING;
-    default  : return NORMAL; 
+    default  : return NORMAL;
     }
   }
-  
+
   class Expression {
     double val_;
     map<string, double> vars_;
@@ -148,8 +152,8 @@ class Constraint {
     }
   };
 
-  Constraint() : left_(0.0), blame_("") {}
-  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame) {}
+  Constraint() : left_(0.0), blame_(""), type_(NORMAL) {}
+  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame), type_(NORMAL) {}
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
              VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
@@ -169,9 +173,21 @@ class Constraint {
     blame_ = blame;
   }
 
+  static string StripPrefix(const string& blame) {
+    if (blame.empty()) {
+      return blame;
+    }
+    return blame.substr(1);
+  }
+
   void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
     blame_ = TypeToChar(T);
     blame_ += blame + " [" + location + "]";
+    type_ = T;
+  }
+
+  Type GetType() const {
+    return type_;
   }
 
   string Blame() {

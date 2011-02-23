@@ -17,17 +17,19 @@ vector<int> LinearProblem::ElasticFilter() const {
     glp_set_obj_coef(tmp.lp_, i,  0);
   }
 
-  int elasticCols = glp_get_num_rows(tmp.lp_);
+  int elasticCols = realRows_;
   glp_add_cols(tmp.lp_, elasticCols);
   for (int i = 1; i <= elasticCols; ++i) {
     int indices[MAX_VARS];
     double values[MAX_VARS];
-    int nonZeros = glp_get_mat_row(tmp.lp_, i, indices, values);
+    
+    int row = i + structuralRows_;
+    int nonZeros = glp_get_mat_row(tmp.lp_, row, indices, values);
 
     indices[nonZeros + 1] = realCols + i;
     values[nonZeros + 1] = 1.0;
 
-    glp_set_mat_row(tmp.lp_, i, nonZeros + 1, indices, values);
+    glp_set_mat_row(tmp.lp_, row, nonZeros + 1, indices, values);
     glp_set_obj_coef(tmp.lp_, realCols + i,  1);
     glp_set_col_bnds(tmp.lp_, realCols + i, GLP_UP, 0.0, 0.0);
   }
@@ -38,7 +40,7 @@ vector<int> LinearProblem::ElasticFilter() const {
   while ((status != GLP_INFEAS) && (status != GLP_NOFEAS)) {
     for (int i = 1; i <= elasticCols; ++i) {
       if (glp_get_col_prim(tmp.lp_, realCols + i) < 0) {
-        suspects.push_back(i);
+        suspects.push_back(structuralRows_ + i);
         glp_set_col_bnds(tmp.lp_, realCols + i, GLP_FX, 0.0, 0.0);
       }
     }
@@ -93,7 +95,6 @@ void LinearProblem::RemoveInfeasable() {
     glp_del_rows(lp_, 1, ind);
   }
   glp_std_basis(lp_);
-  realRows_ -= removed;
 }
 
 } // namespace boa
