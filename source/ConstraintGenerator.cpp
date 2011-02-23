@@ -88,7 +88,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::Xor:
     GenerateOrXorConstraint(I);
     break;
-    
+
   // Memory instructions...
   case Instruction::Alloca:
     GenerateAllocaConstraint(dyn_cast<const AllocaInst>(I));
@@ -204,7 +204,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
       GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
     } else {
       Integer intLiteral(F);
-      GenerateGenericConstraint(intLiteral, I->getReturnValue(), VarLiteral::USED, "return value", 
+      GenerateGenericConstraint(intLiteral, I->getReturnValue(), VarLiteral::USED, "return value",
                                 GetInstructionFilename(I));
     }
   }
@@ -212,7 +212,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
 
 void ConstraintGenerator::GenerateAndConstraint(const BinaryOperator* I) {
   Integer res(I);
-  GenerateGenericConstraint(res, I->getOperand(0), VarLiteral::USED, "bitwise and", 
+  GenerateGenericConstraint(res, I->getOperand(0), VarLiteral::USED, "bitwise and",
                             GetInstructionFilename(I));
   GenerateGenericConstraint(res, I->getOperand(1), VarLiteral::USED, "bitwise and",
                             GetInstructionFilename(I));
@@ -230,7 +230,7 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame,
                      GetInstructionFilename(I));
-  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame, 
+  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame,
                      GetInstructionFilename(I));
 }
 
@@ -244,7 +244,7 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   minResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
 
   Integer intLiteral(I);
-  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame, 
+  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame,
                      GetInstructionFilename(I));
   GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame,
                      GetInstructionFilename(I));
@@ -310,7 +310,7 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
 
 void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string& blame) {
   Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getOperand(0), VarLiteral::USED, blame, 
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), VarLiteral::USED, blame,
                             GetInstructionFilename(I));
 }
 
@@ -334,7 +334,7 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
       Integer intLiteral(I->getPointerOperand());
-      GenerateGenericConstraint(intLiteral, I->getValueOperand(), VarLiteral::USED, 
+      GenerateGenericConstraint(intLiteral, I->getValueOperand(), VarLiteral::USED,
                                 "store instruction", loc);
       GeneratePointerDerefConstraint(I->getPointerOperand(), loc);
     } else {
@@ -365,13 +365,13 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // load from a pointer - load int value
       Integer intLiteral(I);
-      GenerateGenericConstraint(intLiteral, I->getPointerOperand(),VarLiteral::USED, 
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(),VarLiteral::USED,
                                 "load instruction", loc);
       GeneratePointerDerefConstraint(I->getPointerOperand(), loc);
     } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
       GenerateBufferAliasConstraint(pFrom, pTo, loc);
-  
+
       if (const PointerType *ppType = dyn_cast<const PointerType>(pType->getElementType())) {
         if (ppType->getElementType()->isPointerTy()) {
           unknownPointers_.insert(pTo);
@@ -384,7 +384,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 }
 
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
-                                                        const string& location, 
+                                                        const string& location,
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
   static const int dirCoef[2] = {1, -1};
@@ -421,7 +421,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
   double shiftFactor = 1 << (int)operand1.GetConst();
   Expression maxOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);
   Expression minOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
-  
+
   switch (I->getOpcode()) {
     case Instruction::Shl:
       minOperand.mul(shiftFactor);
@@ -435,9 +435,9 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
       GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.");
       return;
   }
-  
+
   string blame = "Shift operation", loc = GetInstructionFilename(I);
-  
+
   GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
   GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
   GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
@@ -473,7 +473,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   LOG << "Can't extract debug info\n";
 }
 
-void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType, 
+void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType,
                                                   const string& location) {
   Buffer buf(I);
   double allocSize = aType->getNumElements();
@@ -525,7 +525,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (functionName == "strdup") { 
+  if (functionName == "strdup") {
     Buffer buf(I, "strdup", GetInstructionFilename(I));
     AddBuffer(buf, location);
     Pointer from(I->getArgOperand(0));
@@ -538,12 +538,12 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 
     GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", location);
     GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", location);
-    
+
     GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE,
                        VarLiteral::MAX, "strdup call", location);
     GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE,
                        VarLiteral::MIN, "strdup call", location);
-    return;    
+    return;
   }
 
   if (functionName == "strlen") {
@@ -567,7 +567,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
               << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
     return;
   }
-  
+
   if (functionName == "strcpy") {
     GenerateStringCopyConstraint(I);
     return;
@@ -579,7 +579,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strxfrm") {
-    GenerateStrNCopyConstraint(I, "strxfrm call");  
+    GenerateStrNCopyConstraint(I, "strxfrm call");
     return;
   }
 
@@ -587,7 +587,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
     Pointer to(makePointer(I));
-    
+
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
     minExp.add(-1.0);
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
@@ -604,13 +604,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (functionName == "pipe") {
     Expression one(1.0);
     Pointer arr(makePointer(I->getArgOperand(0)));
-    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MAX, "pipe call", 
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MAX, "pipe call",
                        GetInstructionFilename(I));
-    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MIN, "pipe call", 
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MIN, "pipe call",
                        GetInstructionFilename(I));
     return;
   }
-  
+
   if (functionName == "sprintf") {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
@@ -620,7 +620,18 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
     return;
   }
-  
+
+  if (functionName == "strerror") {
+    Buffer buf(I, "strerror", GetInstructionFilename(I));
+    AddBuffer(buf, location);
+
+    Expression one(1.0);
+    GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MAX, "strerror call", location);
+    GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MIN, "strerror call", location);
+
+    return;
+  }
+
   if (functionName == "write") {
     Pointer to(makePointer(I->getArgOperand(0)));
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MIN);
@@ -812,7 +823,7 @@ void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
                                              VarLiteral::ExpressionDir direction,
-                                             const string &blame, const string &location, 
+                                             const string &blame, const string &location,
                                              Constraint::Type prio) {
   Constraint constraint(lhs, rhs, direction);
   constraint.SetBlame(blame, location, prio);
@@ -825,7 +836,7 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
   // Assuming result is of type i1, not [N x i1].
   Integer boolean(I);
   string loc = GetInstructionFilename(I);
-  
+
   GenerateConstraint(boolean, 1.0, VarLiteral::USED,
                      VarLiteral::MAX, "Boolean Operation", loc);
   GenerateConstraint(boolean, 0.0, VarLiteral::USED,
