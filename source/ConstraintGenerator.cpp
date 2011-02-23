@@ -27,17 +27,17 @@ void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location) {
 
   GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
                      buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
-                     VarLiteral::MAX, "Buffer Addition", location);
+                     VarLiteral::MAX, "Buffer Addition", location, Constraint::STRUCTURAL);
   GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
                      buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE),
-                     VarLiteral::MAX, "Buffer Addition", location);
+                     VarLiteral::MAX, "Buffer Addition", location, Constraint::STRUCTURAL);
 
   GenerateConstraint(buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ),
                      buf.NameExpression(VarLiteral::MIN, VarLiteral::USED),
-                     VarLiteral::MIN, "Buffer Addition", location);
+                     VarLiteral::MIN, "Buffer Addition", location, Constraint::STRUCTURAL);
   GenerateConstraint(buf.NameExpression(VarLiteral::MIN, VarLiteral::USED),
                      buf.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE),
-                     VarLiteral::MIN, "Buffer Addition", location);
+                     VarLiteral::MIN, "Buffer Addition", location, Constraint::STRUCTURAL);
 }
 
 void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function *F) {
@@ -715,16 +715,18 @@ void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
                                              VarLiteral::ExpressionType type,
                                              VarLiteral::ExpressionDir direction,
                                              const string &blame,
-                                             const string &location) {
+                                             const string &location,
+                                             Constraint::Type prio) {
 	GenerateConstraint(var.NameExpression(direction, type), integerExpression,
-	  direction, blame, location);
+	  direction, blame, location, prio);
 }
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
                                              VarLiteral::ExpressionDir direction,
-                                             const string &blame, const string &location) {
+                                             const string &blame, const string &location, 
+                                             Constraint::Type prio) {
 	Constraint constraint(lhs, rhs, direction);
-	constraint.SetBlame(blame, location);
+	constraint.SetBlame(blame, location, prio);
 	cp_.AddConstraint(constraint);
 	LOG << "Adding - " << lhs.toString() << (direction == VarLiteral::MAX ? " >= " : " <= ") <<
 			rhs.toString() << " - " + blame << endl;

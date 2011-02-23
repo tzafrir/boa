@@ -49,11 +49,13 @@ class ConstraintGenerator {
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
                           VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
-                          const string &blame, const string &location);
+                          const string &blame, const string &location, 
+                          Constraint::Type prio = Constraint::NORMAL);
 
   void GenerateConstraint(const Expression &lhs, const Expression &rhs,
                           VarLiteral::ExpressionDir direction,
-                          const string &blame, const string &location);
+                          const string &blame, const string &location, 
+                          Constraint::Type prio = Constraint::NORMAL);
 
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
