@@ -574,16 +574,12 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strncpy") {
-    Pointer to(makePointer(I->getArgOperand(0)));
-    Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
-    minExp.add(-1.0);
-    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
-    maxExp.add(-1.0);
+    GenerateStrNCpyConstraint(I, "strncpy call");
+    return;
+  }
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MAX, "strncpy call", location);
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MIN, "strncpy call", location);
+  if (functionName == "strxfrm") {
+    GenerateStrNCpyConstraint(I, "strxfrm call");  
     return;
   }
 
@@ -696,6 +692,19 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
   }
 }
+
+void ConstraintGenerator::GenerateStrNCpyConstraint(const CallInst* I, const string &blame) {
+  Pointer to(makePointer(I->getArgOperand(0)));
+  Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
+  minExp.add(-1.0);
+  Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
+  maxExp.add(-1.0);
+  string location = GetInstructionFilename(I);
+
+  GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
+  GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
+}
+
 
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
   static string safeFunctions[] = { "execv",
