@@ -65,6 +65,7 @@ class boa : public ModulePass {
   virtual ~boa() {
     LOG << "Constraint solver output - " << endl;
     vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
+    cerr << constraintProblem_.BuffersCount() << " buffers found" << endl;
     if (unsafeBuffers.empty()) {
       cerr << endl << "No overruns detected" << endl;
       cerr << SEPARATOR << endl;
