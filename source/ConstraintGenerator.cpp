@@ -573,7 +573,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  string memcpyStr("llvm.memcpy.");
+  const static string memcpyStr("llvm.memcpy.");
   if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
     Pointer to(makePointer(I));
