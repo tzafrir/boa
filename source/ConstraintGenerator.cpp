@@ -498,7 +498,8 @@ void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrIn
   Buffer b(I->getPointerOperand());
 
   Pointer ptr(I);
-  GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I), I->getOperand(I->getNumOperands()-1));
+  GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I),
+      I->getOperand(I->getNumOperands()-1));
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
@@ -507,7 +508,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  string functionName = f->getNameStr(), loc = GetInstructionFilename(I);
+  string functionName = f->getNameStr(), location = GetInstructionFilename(I);
 
   if (functionName == "malloc") {
     // malloc calls are of the form:
@@ -519,14 +520,14 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // generate a BufferAlias.
     LOG << I << " malloc call" << endl;
     Buffer buf(I, "malloc", GetInstructionFilename(I));
-    GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", loc);
-    AddBuffer(buf, loc);
+    GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
+    AddBuffer(buf, location);
     return;
   }
 
   if (functionName == "strdup") { 
     Buffer buf(I, "strdup", GetInstructionFilename(I));
-    AddBuffer(buf, loc);
+    AddBuffer(buf, location);
     Pointer from(I->getArgOperand(0));
 
     Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
@@ -535,11 +536,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     allocMax.add(1.0);
     allocMin.add(1.0);
 
-    GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", loc);
-    GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", loc);
+    GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", location);
+    GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", location);
     
-    GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "strdup call", loc);
-    GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "strdup call", loc);
+    GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE,
+                       VarLiteral::MAX, "strdup call", location);
+    GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE,
+                       VarLiteral::MIN, "strdup call", location);
     return;    
   }
 
@@ -577,8 +580,10 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "strncpy call", loc);
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "strncpy call", loc);
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE,
+                       VarLiteral::MAX, "strncpy call", location);
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE,
+                       VarLiteral::MIN, "strncpy call", location);
     return;
   }
 
@@ -609,8 +614,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call", loc);
-    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call", loc);
+    GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "write call", location);
+    GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "write call", location);
     return;
   }
 
@@ -618,7 +623,6 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (f->isDeclaration()) {
     // Has no body, assuming overrun in each buffer, and unbound return value.
     const unsigned params = I->getNumOperands() - 1; // The last operand is the called function.
-    string location = GetInstructionFilename(I);
     string blame;
 
     Constraint::Type priority = Constraint::NORMAL;
@@ -662,7 +666,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       } else {
         Integer to(it);
         GenerateGenericConstraint(to, I->getOperand(i), VarLiteral::LEN_WRITE,
-                                  "pass integer parameter to a function", loc);
+                                  "pass integer parameter to a function", location);
       }
     }
     // get return value
@@ -670,7 +674,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
       GenerateBufferAliasConstraint(makePointer(f), makePointer(I), GetInstructionFilename(I));
     } else {
       Integer intLiteral(I);
-      GenerateGenericConstraint(intLiteral, f, VarLiteral::USED, "user function call", loc);
+      GenerateGenericConstraint(intLiteral, f, VarLiteral::USED, "user function call", location);
     }
   }
 }
