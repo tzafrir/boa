@@ -713,6 +713,7 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "openlog",
                                     "puts",
                                     "setenv",
+                                    "strcmp",
                                     "strtok",
                                     "syslog",
                                     "vsyslog",
