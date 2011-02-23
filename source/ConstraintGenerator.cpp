@@ -525,6 +525,25 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  if (functionName == "strdup") { 
+    Buffer buf(I, "strdup", GetInstructionFilename(I));
+    AddBuffer(buf, loc);
+    Pointer from(I->getArgOperand(0));
+
+    Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    Expression minExp(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+    Expression allocMax(maxExp), allocMin(minExp);
+    allocMax.add(1.0);
+    allocMin.add(1.0);
+
+    GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", loc);
+    GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", loc);
+    
+    GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "strdup call", loc);
+    GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "strdup call", loc);
+    return;    
+  }
+
   if (functionName == "strlen") {
     Pointer p(makePointer(I->getArgOperand(0)));
     Integer var(I);
@@ -546,7 +565,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
               << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
     return;
   }
-
+  
   if (functionName == "strcpy") {
     GenerateStringCopyConstraint(I);
     return;

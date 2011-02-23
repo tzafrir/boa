@@ -1,0 +1,3 @@
+HAS ByLocation tests/testcases/strdup.c:5
+NOT ByLocation tests/testcases/strdup.c:6
+NOT ByName source
