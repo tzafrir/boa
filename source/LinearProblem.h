@@ -35,6 +35,7 @@ class LinearProblem {
     this->params_ = old.params_;
     this->varToCol_ = old.varToCol_;
     this->colToVar_ = old.colToVar_;
+    this->structuralRows_ = old.structuralRows_;
   }
 
  public:
