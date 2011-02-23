@@ -265,6 +265,8 @@ class Constraint {
     glp_set_row_name(lp, row, blame_.c_str());
   }
 
+  // Enable white-box inspection by the unit tests.
+  friend class MockConstraintProblem;
 };
 
 } //namespace boa
