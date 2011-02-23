@@ -521,24 +521,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strlen") {
-    Pointer p(makePointer(I->getArgOperand(0)));
-    Integer var(I);
-
-    Constraint cMax("strlen call");
-    cMax.addBig(var.NameExpression(VarLiteral::MAX));
-    cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    cMax.addSmall(1);
-    cp_.AddConstraint(cMax);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
-              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " + 1" << endl;
-
-    Constraint cMin("strlen call");
-    cMin.addSmall(var.NameExpression(VarLiteral::MIN));
-    cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    cMax.addBig(1);
-    cp_.AddConstraint(cMin);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
-              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
+    GenerateStrlenConstraint(I, location);
     return;
   }
   
@@ -850,6 +833,27 @@ void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const stri
 
   GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
   GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
+}
+
+void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const string &location) {
+  Pointer p(makePointer(I->getArgOperand(0)));
+  Integer var(I);
+
+  Constraint cMax("strlen call");
+  cMax.addBig(var.NameExpression(VarLiteral::MAX));
+  cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+  cMax.addSmall(1);
+  cp_.AddConstraint(cMax);
+  LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
+            << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " + 1" << endl;
+
+  Constraint cMin("strlen call");
+  cMin.addSmall(var.NameExpression(VarLiteral::MIN));
+  cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+  cMax.addBig(1);
+  cp_.AddConstraint(cMin);
+  LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
+            << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
 }
 
 // Static.
