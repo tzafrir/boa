@@ -515,25 +515,9 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  if (functionName == "strdup") { 
-    Buffer buf(I, "strdup", GetInstructionFilename(I));
-    AddBuffer(buf, location);
-    Pointer from(I->getArgOperand(0));
-
-    Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    Expression minExp(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    Expression allocMax(maxExp), allocMin(minExp);
-    allocMax.add(1.0);
-    allocMin.add(1.0);
-
-    GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", location);
-    GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", location);
-    
-    GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MAX, "strdup call", location);
-    GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MIN, "strdup call", location);
-    return;    
+  if (functionName == "strdup") {
+    GenerateStrdupConstraint(I, "strdup call", location);
+    return;
   }
 
   if (functionName == "strlen") {
@@ -847,6 +831,25 @@ void ConstraintGenerator::GenerateMallocConstraint(const CallInst* I, const stri
   Buffer buf(I, "malloc", location);
   GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
   AddBuffer(buf, location);
+}
+
+void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const string &blame,
+                                                   const string &location) {
+  Buffer buf(I, "strdup", GetInstructionFilename(I));
+  AddBuffer(buf, location);
+  Pointer from(I->getArgOperand(0));
+
+  Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+  Expression minExp(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+  Expression allocMax(maxExp), allocMin(minExp);
+  allocMax.add(1.0);
+  allocMin.add(1.0);
+
+  GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, blame, location);
+  GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, blame, location);
+
+  GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
+  GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
 }
 
 // Static.
