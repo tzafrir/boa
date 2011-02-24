@@ -93,8 +93,9 @@ blamesDict is a dictionary in the form:
   except IOError:
     errs.write(redColor + "ERROR" + noColor + ": Unable to open " + assertFilename + "\n")
     return False
-  # enum
+  # enums
   BYNAME, BYLOCATION, BYBOTH = range(3)
+  HAS, NOT, BLAME = range(10, 13)
   lineNumber = 0
   result = True
   for lineWithBreak in a.readlines():
@@ -104,21 +105,22 @@ blamesDict is a dictionary in the form:
     values = line.split(" ")
     firstWord = values[0]
     if firstWord == "HAS":
-      isHasAssertion = True
+      assertionKind = HAS
     elif firstWord == "NOT":
-      isHasAssertion = False
+      assertionKind = NOT
     elif firstWord == "BLAME":
+      assertionKind = BLAME
       bufName = values[1]
       # Remove first three words. Rebuild a string for the rest of the line.
       for i in range(3):
         values.pop(0)
-      str = string.join(values, " ")
+      blameString = string.join(values, " ")
 
       # Assert that the output contains the line.
       foundMatch = False
       try:
         for output in blamesDict[bufName]:
-          if output.__contains__(str):
+          if output.__contains__(blameString):
             foundMatch |= True
         if not foundMatch:
           printFailure(line, lineNumber)
@@ -126,6 +128,7 @@ blamesDict is a dictionary in the form:
       except KeyError:
         errs.write("Blamed buffer missing in output: " + bufName)
       continue
+
     elif firstWord == "" or firstWord[0] == '#':
       # Comment line.
       continue
@@ -139,6 +142,7 @@ blamesDict is a dictionary in the form:
       assertionType = BYLOCATION
     elif assertionTypeValue == "ByBoth":
       assertionType = BYBOTH
+
     else:
       errs.write("Invalid assertion type \"" + assertionTypeValue + "\" in line " +
           str(lineNumber) + "\n")
@@ -149,7 +153,7 @@ blamesDict is a dictionary in the form:
       contains = listContains(dismantleListOfTuples(testOutput, 1), values[2])
     else:
       contains = listContains(testOutput, (values[2], values[3]))
-    if isHasAssertion:
+    if assertionKind == HAS:
       if not contains:
         printFailure(line, lineNumber)
         result &= False
