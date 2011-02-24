@@ -62,7 +62,7 @@ Runs BOA over testName.c, returns a list of tuples in the form
     results.append(t)
   return results, blames
 
-def applyAssertions(testName, testOutput, blamesDict):
+def applyAssertions(testName, testOutput, blamesDict, testForBlame):
   """\
 testOutput is a list of tuples in the form (bufferName, bufferLocation).
 
@@ -196,14 +196,15 @@ def main():
     errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
     exit(1)
+  testForBlame = False
   for arg in sys.argv:
     if (arg == '-blame'):
-      testForBlame = True
+      testForBlame |= True
     else:
       testName = arg
   testOutput, blames = runTest(testName, testForBlame)
   blamesDict = parseBlames(blames)
-  val = applyAssertions(testName, testOutput, blamesDict)
+  val = applyAssertions(testName, testOutput, blamesDict, testForBlame)
   return val
     
 
