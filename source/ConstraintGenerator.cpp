@@ -315,8 +315,10 @@ void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string
 }
 
 void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I, const string &location) {
+  // TODO(tzafrir): Use GenerateConstraint here.
   Buffer buf(I);
-  Constraint cMax("Pointer Dereference", location), cMin("Pointer Dereference", location);
+  string blame("Pointer Dereference [" + location + "]");
+  Constraint cMax(blame, location), cMin(blame, location);
 
   cMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
   cp_.AddConstraint(cMax);

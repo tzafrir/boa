@@ -1,6 +1,8 @@
 #ifndef __BOA_CONSTRAINT_H
 #define __BOA_CONSTRAINT_H /* */
 
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <set>
@@ -11,12 +13,11 @@
 #include "Buffer.h"
 #include "Helpers.h"
 
+using std::cerr;
+using std::endl;
+using std::map;
 using std::string;
 using std::set;
-using std::map;
-
-// DEBUG
-#include <sstream>
 
 namespace boa {
 /**
@@ -160,11 +161,13 @@ class Constraint {
     }
   };
 
-  Constraint() : left_(0.0), blame_(""), type_(NORMAL) {}
-  Constraint(const string &blame, const string &location) : left_(0.0), blame_(blame), type_(NORMAL) {}
+  Constraint() : left_(0.0), blame_("[]"), type_(NORMAL) {}
+  Constraint(const string &blame, const string &location) : left_(0.0), blame_(blame), type_(NORMAL) {
+    EnforceBlameLocation(blame);
+  }
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
-             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
+             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("[]") {
   switch (direction) {
     case VarLiteral::MAX:
       addBig(varExpr);
@@ -178,6 +181,7 @@ class Constraint {
   }
 
   void SetBlame(const string &blame) {
+    EnforceBlameLocation(blame);
     blame_ = blame;
   }
 
@@ -263,6 +267,15 @@ class Constraint {
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
     glp_set_mat_row(lp, row, literals_.size(), indices, values);
     glp_set_row_name(lp, row, blame_.c_str());
+  }
+
+ private:
+
+  static void EnforceBlameLocation(const string& blame) {
+    if (blame.find('[') == string::npos) {
+      cerr << "Invalid blame string " << blame << endl;
+      exit(1);
+    }
   }
 
   // Enable white-box inspection by the unit tests.
