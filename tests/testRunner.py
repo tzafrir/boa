@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import string
 from subprocess import *
 
 boaExecutable = './boa'
@@ -44,8 +45,10 @@ Runs BOA over testName.c, returns a list of tuples in the form
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
     if (separatorCount < 1) and (line != separator):
+      # Unparsed output, human readable or whatever boa want to output.
       continue
     if (separatorCount == 1 and line != separator):
+      # Blames part.
       blames.append(line)
       continue
     if (separatorCount == 3 and line == separator):
@@ -63,21 +66,25 @@ def applyAssertions(testName, testOutput, blamesDict):
   """\
 testOutput is a list of tuples in the form (bufferName, bufferLocation).
 
-A file named tests/testcases/testName.asserts is expected to have assertions in the following form:
+A file named tests/testcases/testName.asserts is expected to have assertions in
+one of the following forms:
 
 [HAS/NOT] [ByName/ByLocation/ByBoth] [buffer name / buffer location] [buffer location (when using both)]
+[BLAME] [ByName/ByLocation] [string to match against that can include spaces]
+
 
 Examples:
 
 HAS ByName buffer
 NOT ByLocation file.c:82
 HAS ByBoth mychars_ chartest.c:15
+BLAME ByName buffy unsafe function call
 
 This method returns True iff all assertions pass.
 This method has a side effect of printing all failing assertions to stderr.
 
-blames is a list of tuples in the form (bufName, line), where line is a blame line attached to the
-buffer bufName.
+blamesDict is a dictionary in the form:
+{"bufname":["   blame reason 1", ..., "   blame reason 2"], "otherbuf":["   other reasons"]}
 
 """
   assertFilename = testName + assertsSuffix
@@ -102,15 +109,10 @@ buffer bufName.
       isHasAssertion = False
     elif firstWord == "BLAME":
       bufName = values[1]
-      # Remove first two words. Rebuild a string for the rest of the line.
-      values.reverse()
-      values.pop()
-      values.pop()
-      str = ""
-      while (len(values) > 0):
-        str += values.pop()
-        if (len(values) > 0):
-          str += " "
+      # Remove first three words. Rebuild a string for the rest of the line.
+      for i in range(3):
+        values.pop(0)
+      str = string.join(values, " ")
 
       # Assert that the output contains the line.
       foundMatch = False
@@ -174,8 +176,10 @@ To the form:
   for line in blames:
     firstWord = line.split(" ")[0]
     if (firstWord != ""):
+      # A buffer declaration line starts with the buffer name.
       curBuf = firstWord
     else:
+      # A buffer blame line starts with two spaces.
       try:
         result[curBuf].append(line)
       except KeyError:
