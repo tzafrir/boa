@@ -9,7 +9,7 @@ namespace Helpers {
     size_t n = s.find_first_of(c, 0);
     while (n != string::npos) {
       s.replace(n, 1, replaceWith);
-      n = s.find_first_of(c, n+1);
+      n = s.find_first_of(c, n + replaceWith.size());
     }
   }
 
