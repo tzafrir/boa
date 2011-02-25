@@ -184,10 +184,13 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
+          Helpers::ReplaceInString(s, '[', "\\[");
+          Helpers::ReplaceInString(s, ']', "\\]");
         }
       }
     }
     s = "string literal \"" + s + "\"";
+    LOG << "s is " << s << endl;
     Buffer buf(G, s, ""); // TODO - file? line?
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
