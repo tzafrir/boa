@@ -44,7 +44,7 @@ class Constraint {
    *
    * NORMAL - A constraint that doesn't fit in the above categories.
    */
-  enum Type {STRUCTURAL, NORMAL, INTERESTING};
+  enum Type {STRUCTURAL, ALIASING, NORMAL};
 
  private:
   const static int MAX_SIZE = 100;
@@ -68,17 +68,17 @@ class Constraint {
   static char TypeToChar(Type t) {
     switch (t) {
     case STRUCTURAL : return '0';
-    case NORMAL     : return '1';
-    case INTERESTING: return '2';
-    default         : return '1';
+    case ALIASING   : return '1';
+    case NORMAL     : return '2';
+    default         : return '2';
     }
   }
 
   static Type CharToType(char c) {
     switch (c) {
     case '0' : return STRUCTURAL;
-    case '1' : return NORMAL;
-    case '2' : return INTERESTING;
+    case '1' : return ALIASING;
+    case '2' : return NORMAL;
     default  : return NORMAL;
     }
   }
@@ -161,7 +161,7 @@ class Constraint {
   };
 
   Constraint() : left_(0.0), blame_(""), type_(NORMAL) {}
-  Constraint(const string &blame, const string &location = "") : left_(0.0), blame_(blame), type_(NORMAL) {}
+  Constraint(const string &blame, const string &location) : left_(0.0), blame_(blame), type_(NORMAL) {}
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
              VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
@@ -188,7 +188,7 @@ class Constraint {
     return blame.substr(1);
   }
 
-  void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
+  void SetBlame(const string &blame, const string &location = "", Type T = NORMAL) {
     blame_ = TypeToChar(T);
     blame_ += blame + " [" + location + "]";
     type_ = T;
@@ -197,7 +197,7 @@ class Constraint {
   Type GetType() const {
     return type_;
   }
-  
+
   string Blame() {
     return blame_;
   }
