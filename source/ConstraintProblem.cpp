@@ -90,13 +90,15 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
     }
     lp.structuralRows_ = row - 1;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
-      if (c->GetType() == Constraint::NORMAL) {
+      if (c->GetType() == Constraint::ALIASING) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
         ++row;
       }     
     }    
+    lp.aliasingRows_ = (row - 1) - lp.structuralRows_;
+    lp.structuralRows_ = row - 1;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
-      if (c->GetType() == Constraint::INTERESTING) {
+      if (c->GetType() == Constraint::NORMAL) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
         ++row;
       }     
