@@ -405,7 +405,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
       bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
       bigExp.add(offsets[dir]);
       smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location);
+      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location, Constraint::ALIASING);
     }
   }
 }
@@ -645,7 +645,6 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // A function can be either safe, not safe, or unsafe.
     if (IsUnsafeFunction(functionName)) {
       blame = "unsafe function call " + functionName;
-      priority = Constraint::INTERESTING;
     } else if (IsSafeFunction(functionName)) {
       blame = "safe function call " + functionName;
     } else {
