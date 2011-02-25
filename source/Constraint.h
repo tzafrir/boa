@@ -272,7 +272,7 @@ class Constraint {
  private:
 
   static void EnforceBlameLocation(const string& blame) {
-    if (blame.find('[') == string::npos) {
+    if (blame.find('[') == string::npos || blame.find(']') == string::npos) {
       cerr << "Invalid blame string " << blame << endl;
       exit(1);
     }
