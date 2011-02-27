@@ -41,7 +41,8 @@ class Constraint {
    *
    * ALIASING   - A constraint for buffer aliasing, less important in boa's output
    *
-   * NORMAL - A constraint that doesn't fit in the above categories.
+   * NORMAL     - Any other constraint, these constraints has a high probability of being the cause
+   *              for a buffer overrun.
    */
   enum Type {STRUCTURAL, ALIASING, NORMAL};
 
