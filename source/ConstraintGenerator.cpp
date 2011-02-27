@@ -707,12 +707,12 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "strcmp",
                                     "strcoll",
                                     "strcspn",
-                                    "strtok",
                                     "strncmp",
                                     "strspn",
                                     "strstr",
+                                    "strtok",
                                     "syslog",
-                                    "vsyslog"};
+                                    "vsyslog" };
   for (size_t i = 0; i < (sizeof(safeFunctions) / sizeof(string)); ++i) {
     if (name == safeFunctions[i]) {
       return true;
