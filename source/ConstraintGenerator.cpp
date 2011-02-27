@@ -661,7 +661,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
   
-  if ((functionName == "strchr") || (functionName == "strrchr")) {
+  if ((functionName == "strchr") || (functionName == "strrchr") || (functionName == "strpbrk")) {
     Pointer to = makePointer(I->getArgOperand(0)), retval = makePointer(I);
     Constraint::Expression end(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
     
