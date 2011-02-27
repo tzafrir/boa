@@ -39,8 +39,7 @@ class Constraint {
   /**
    * STRUCTURAL - Created as part of boa's internal operation and not because of user code.
    *
-   * INTERESTING - An <i>intersting</i> constraint has a high probability of being the cause for
-   *               a buffer overrun.
+   * ALIASING   - A constraint for buffer aliasing, less important in boa's output
    *
    * NORMAL - A constraint that doesn't fit in the above categories.
    */
