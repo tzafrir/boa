@@ -188,7 +188,7 @@ class Constraint {
     return blame.substr(1);
   }
 
-  void SetBlame(const string &blame, const string &location = "", Type T = NORMAL) {
+  void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
     blame_ = TypeToChar(T);
     blame_ += blame + " [" + location + "]";
     type_ = T;
