@@ -96,7 +96,7 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
       }     
     }    
     lp.aliasingRows_ = (row - 1) - lp.structuralRows_;
-    lp.structuralRows_ = row - 1;
+    //lp.structuralRows_ = row - 1;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
       if (c->GetType() == Constraint::NORMAL) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
@@ -192,6 +192,7 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
   lp.Solve();
 
   // blame the interesting rows first
+  lp.structuralRows_ += lp.aliasingRows_;
   lp.realRows_ = glp_get_num_rows(lp.lp_) - lp.structuralRows_;
   vector<int> rows = lp.ElasticFilter();
   for (size_t i = 0; i < rows.size(); ++i) {
@@ -203,7 +204,7 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
   
   // then aliasing rows too
   lp.structuralRows_ -= lp.aliasingRows_;
-  lp.realRows_ += lp.aliasingRows_;
+  lp.realRows_ = lp.aliasingRows_;
   rows = lp.ElasticFilter();
   for (size_t i = 0; i < rows.size(); ++i) {
     char const *row = glp_get_row_name(lp.lp_, rows[i]);
