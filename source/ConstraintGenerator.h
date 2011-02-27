@@ -37,6 +37,7 @@ class ConstraintGenerator {
   set<const StructType*> structsVisited;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
+  bool IgnoreLiterals_;
 
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
@@ -90,7 +91,7 @@ class ConstraintGenerator {
     Add a buffer to the constraint problem, together with the nessesary constraints. This method
     should be used instead of adding buffer directly to the constraintProblem.
   */
-  void AddBuffer(const Buffer& buf, const string& location);
+  void AddBuffer(const Buffer& buf, const string& location, bool literal = false);
 
   /**
     Generate the Constraint::Expression reflected by "expr". The result will be a number in a case
@@ -162,7 +163,8 @@ class ConstraintGenerator {
   static bool IsUnsafeFunction(const string& name);
 
  public:
-  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
+  ConstraintGenerator(ConstraintProblem &CP, bool ignoreLiterals) : cp_(CP), 
+                                                                  IgnoreLiterals_(ignoreLiterals) {}
 
   void AnalyzePointers();
 

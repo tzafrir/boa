@@ -45,7 +45,7 @@ class ConstraintGeneratorTest : public ::testing::Test {
     delete cg;
     delete cp;
     cp = new MockConstraintProblem();
-    cg = new ConstraintGenerator(*cp);
+    cg = new ConstraintGenerator(*cp, false);
   }
 };
 
