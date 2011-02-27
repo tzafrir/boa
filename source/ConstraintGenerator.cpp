@@ -604,7 +604,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MAX, "strerror call", location);
     GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MIN, "strerror call", location);
     GenerateBufferAliasConstraint(buf, makePointer(I), location, NULL, &one);
-
+    GenerateBufferAliasConstraint(buf, makePointer(I), location, NULL);
     return;
   }
 

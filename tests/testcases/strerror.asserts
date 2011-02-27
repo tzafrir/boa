@@ -1,2 +1,0 @@
-NOT ByLocation tests/testcases/strerror.c:4
-HAS ByLocation tests/testcases/strerror.c:5
