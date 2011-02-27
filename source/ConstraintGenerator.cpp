@@ -186,6 +186,8 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
+          Helpers::ReplaceInString(s, '[', "\\[");
+          Helpers::ReplaceInString(s, ']', "\\]");
           s = "string literal \"" + s + "\"";
           Buffer buf(G, s, ""); // TODO - file? line?
           LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
@@ -319,8 +321,10 @@ void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string
 }
 
 void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I, const string &location) {
+  // TODO(tzafrir): Use GenerateConstraint here.
   Buffer buf(I);
-  Constraint cMax("Pointer Dereference", location), cMin("Pointer Dereference", location);
+  string blame("Pointer Dereference [" + location + "]");
+  Constraint cMax(blame, location), cMin(blame, location);
 
   cMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
   cp_.AddConstraint(cMax);
