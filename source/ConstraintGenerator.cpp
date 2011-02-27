@@ -394,7 +394,8 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
                                                         const string& location,
                                                         const Value *offset,
-                                                        const Constraint::Expression *offsetExp) {
+                                                        const Constraint::Expression *offsetExp,
+                                                        const string& blame) {
   if ((offset != NULL) && (offsetExp != NULL)) {
     // only one type of offset allowed
     LOG << "Error - GenerateBufferAliasConstraint got both offset and offsetExp" << endl;
@@ -402,7 +403,13 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
   }
 
   Constraint::Type type = Constraint::ALIASING;
-  string blame = "buffer alias";
+  string aliasBlame = "buffer alias";
+  if (offset != NULL || offsetExp != NULL) {
+    aliasBlame += " with offset";
+  }
+  if (blame != "") {
+    aliasBlame += " - " + blame;
+  }
 
   Constraint::Expression ToReadMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
   Constraint::Expression ToReadMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
@@ -412,24 +419,22 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
   Constraint::Expression FromReadMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
   Constraint::Expression FromWriteMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
   Constraint::Expression FromWriteMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
-  if (offset) {
+  if (offset != NULL) {
     FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
     FromReadMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
     FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
     FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
-    blame = "buffer alias with offset";
   } else if (offsetExp) {
     FromReadMax.sub(*offsetExp);
     FromReadMin.sub(*offsetExp);
     FromWriteMax.sub(*offsetExp);
     FromWriteMin.sub(*offsetExp);
-    blame = "buffer alias with offset";
   }
   
-  GenerateConstraint(ToReadMax,  FromReadMax,  VarLiteral::MAX, blame, location, type);
-  GenerateConstraint(ToWriteMax, FromWriteMax, VarLiteral::MIN, blame, location, type);
-  GenerateConstraint(ToReadMin,  FromReadMin,  VarLiteral::MIN, blame, location, type);
-  GenerateConstraint(ToWriteMin, FromWriteMin, VarLiteral::MAX, blame, location, type);
+  GenerateConstraint(ToReadMax,  FromReadMax,  VarLiteral::MAX, aliasBlame, location, type);
+  GenerateConstraint(ToWriteMax, FromWriteMax, VarLiteral::MIN, aliasBlame, location, type);
+  GenerateConstraint(ToReadMin,  FromReadMin,  VarLiteral::MIN, aliasBlame, location, type);
+  GenerateConstraint(ToWriteMin, FromWriteMin, VarLiteral::MAX, aliasBlame, location, type);
 }
 
 
@@ -616,6 +621,11 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
 
   if (functionName == "strxfrm") {
     GenerateStrNCopyConstraint(I, "strxfrm call", location);
+    return;
+  }
+
+  if (functionName == "memchr") {
+    GenerateMemchrConstraint(I);
     return;
   }
 
@@ -950,6 +960,22 @@ void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const stri
 
   GenerateConstraint(var, pMax, VarLiteral::LEN_READ, VarLiteral::MAX, blame, location);
   GenerateConstraint(var, pMin, VarLiteral::LEN_READ, VarLiteral::MIN, blame, location);
+}
+
+void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
+  static const string readBlame("memchr call might read beyond the buffer");
+  static string returnBlame("memchr return value might point beyond the buffer");
+  string location(GetInstructionFilename(I));
+
+  Pointer s(makePointer(I->getOperand(0)));
+  Pointer retval(makePointer(I));
+
+  // Generate constraints for the reading operation of memchr.
+  const Value* n = I->getOperand(2);
+  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, readBlame, location);
+
+  // Mark the return value as an alias.
+  GenerateBufferAliasConstraint(s, retval, location, n, NULL, returnBlame);
 }
 
 // Static.

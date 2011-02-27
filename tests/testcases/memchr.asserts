@@ -3,4 +3,4 @@ NOT ByName safe
 BLAME ByName unsafe memchr call
 HAS ByName unsafeAlias
 NOT ByName safeAlias
-BLAME ByName unsafeAlias TODO
+BLAME ByName unsafeAlias memchr return value
