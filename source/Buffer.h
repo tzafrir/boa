@@ -22,8 +22,9 @@ namespace boa {
     // Default constructor, so we can create a map of Buffers
     Buffer() : VarLiteral(NULL) {}
     
-    Buffer(const Value* ValueNode, const string& readableName, const string& filename) :
-      VarLiteral(ValueNode), readableName_(readableName), filename_(filename) {}
+    Buffer(const Value* ValueNode, const string& readableName, const string& filename, 
+           bool isTmp = false) :
+      VarLiteral(ValueNode, isTmp), readableName_(readableName), filename_(filename) {}
 
     Buffer(const Value* ValueNode) : VarLiteral(ValueNode) {}
 
