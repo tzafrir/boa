@@ -597,12 +597,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strerror") {
-    Buffer buf(I, "strerror", GetInstructionFilename(I));
+    Buffer buf(I, "strerror", GetInstructionFilename(I), true);
     AddBuffer(buf, location);
 
     Expression one(1.0);
     GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MAX, "strerror call", location);
     GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MIN, "strerror call", location);
+    GenerateBufferAliasConstraint(buf, makePointer(I), location, NULL, &one);
 
     return;
   }
