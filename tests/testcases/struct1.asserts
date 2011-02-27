@@ -1,2 +1,1 @@
-HAS ByName s2.buf
-NOT ByName s1.buf
+HAS ByName s.buf

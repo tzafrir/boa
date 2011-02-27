@@ -33,7 +33,8 @@ class ConstraintGenerator {
     Mark buffers that was allocated, so they can be added to the constraint problem once the debug
     info is availble.
   */
-  map<const Value*, bool> allocedBuffers;
+  map<const Value *, bool> allocedBuffers;
+  set<const StructType*> structsVisited;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
 
@@ -64,7 +65,7 @@ class ConstraintGenerator {
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
   */
-  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location, 
+  void GenerateBufferAliasConstraint(const VarLiteral &from, const VarLiteral &to, const string& location,
                                      const Value *offset = NULL);
 
   /**
@@ -97,9 +98,9 @@ class ConstraintGenerator {
   Constraint::Expression GenerateIntegerExpression(const Value *expr, VarLiteral::ExpressionDir dir);
 
   /**
-    Generate the aliasing reflected by getElementPtr instruction
-  */
-  void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
+      Generate the aliasing reflected by getElementPtr instruction
+    */
+  void GenerateGetElementPtrConstraint(const GetElementPtrInst *I);
 
   /**
     Generate the constraints reflecting defreference of a pointer (usually accesing a buffer through
@@ -111,6 +112,12 @@ class ConstraintGenerator {
     Generate buffer allocation constraints and register the buffer as allocated
   */
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType, const string& location);
+
+  /**
+   * Generate buffer allocation constraints and register buffers as allocated
+   * for all buffers contained in the struct tree
+   */
+  void AddContainedBuffers(const StructType *structType, const MDNode *node);
 
   /**
     Generate a constraint for the result of a boolean comparison.

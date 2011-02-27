@@ -14,9 +14,9 @@ namespace boa {
 
   class VarLiteral {
    protected:
-    const Value* ValueNode_;
+    const void* ValueNode_;
 
-    VarLiteral(const Value* ValueNode) : ValueNode_(ValueNode) {}
+    VarLiteral(const void* ValueNode) : ValueNode_(ValueNode) {}
 
   public:
     enum ExpressionDir  {MIN, MAX};
@@ -62,7 +62,7 @@ namespace boa {
     
     virtual bool IsBuffer() const { return false; }
 
-    bool operator<(const VarLiteral& other) const {
+    virtual bool operator<(const VarLiteral& other) const {
       return this->ValueNode_ < other.ValueNode_;
     }
   };
