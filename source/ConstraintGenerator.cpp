@@ -424,7 +424,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
     FromReadMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
     FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
     FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
-  } else if (offsetExp) {
+  } else if (offsetExp != NULL) {
     FromReadMax.sub(*offsetExp);
     FromReadMin.sub(*offsetExp);
     FromWriteMax.sub(*offsetExp);
