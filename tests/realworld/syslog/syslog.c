@@ -65,6 +65,8 @@ static char sccsid[] = "@(#)syslog.c    8.9 (Berkeley) 9/4/95";
 #include <time.h>
 #include <unistd.h>
 
+#include <stdlib.h> // added by boa to prevent compilation warnings
+
 #ifdef HAVE_PATHS_H
 # include <paths.h>
 #endif
