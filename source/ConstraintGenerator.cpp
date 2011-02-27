@@ -386,28 +386,29 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
                                                         const string& location, 
                                                         const Value *offset) {
-  static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
-  static const int dirCoef[2] = {1, -1};
-  static const VarLiteral::ExpressionType types[2] = {VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
-  static const int typeCoef[2] = {-1, 1};
+  Constraint::Type type = Constraint::ALIASING;
+  string blame = "buffer alias";
 
-  for (int type = 0; type < 2; ++type) {
-    Constraint::Expression offsets[2];
-    if (offset) {
-      offsets[0] = GenerateIntegerExpression(offset, dirs[0]);
-      offsets[0].mul(dirCoef[0] * typeCoef[type]);
-      offsets[1] = GenerateIntegerExpression(offset, dirs[1]);
-      offsets[1].mul(dirCoef[1] * typeCoef[type]);
-    }
-
-    for (int dir = 0; dir < 2; ++ dir) {
-      Expression bigExp, smallExp;
-      bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      bigExp.add(offsets[dir]);
-      smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location, Constraint::ALIASING);
-    }
+  Constraint::Expression ToReadMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression ToReadMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression ToWriteMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression ToWriteMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromReadMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression FromReadMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression FromWriteMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromWriteMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  if (offset) {
+    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
+    FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
+    blame = "buffer alias with offset";
   }
+  
+  GenerateConstraint(ToReadMax,  FromReadMax,  VarLiteral::MAX, blame, location, type);
+  GenerateConstraint(ToWriteMax, FromWriteMax, VarLiteral::MIN, blame, location, type);
+  GenerateConstraint(ToReadMin,  FromReadMin,  VarLiteral::MIN, blame, location, type);
+  GenerateConstraint(ToWriteMin, FromWriteMin, VarLiteral::MAX, blame, location, type);
 }
 
 
