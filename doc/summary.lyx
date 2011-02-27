@@ -6,7 +6,7 @@
 \begin_preamble
 \usepackage{fullpage}
 \usepackage{listings}
-\lstset{language=C, numbers=left, frame=single}
+\lstset{language=C, numbers=left, frame=single, xleftmargin=20pt, xrightmargin=40pt}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -29,6 +29,7 @@
 \output_sync 0
 \bibtex_command default
 \index_command default
+\float_placement h
 \paperfontsize default
 \spacing single
 \use_hyperref false
@@ -55,7 +56,7 @@
 \quotes_language english
 \papercolumns 1
 \papersides 1
-\paperpagestyle default
+\paperpagestyle fancy
 \tracking_changes false
 \output_changes false
 \html_math_output 0
@@ -73,6 +74,25 @@ boa
 \size default
  
 \lang english
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
 
 \begin_inset ERT
 status open
@@ -180,7 +200,25 @@ status collapsed
 \end_layout
 
 \begin_layout Chapter
-Requirements
+Introduction
+\end_layout
+
+\begin_layout Section
+Goal
+\end_layout
+
+\begin_layout Standard
+Given a C program that performs buffer manipulations, statically (at compile
+ time) identify whether the program may perform array access out of the
+ array bounds.
+\end_layout
+
+\begin_layout Section
+Previous work
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Chapter
@@ -192,22 +230,23 @@ Overview
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
+\begin_inset Float figure
+wide false
+sideways false
 status open
 
 \begin_layout Plain Layout
-Source code -
-\end_layout
+\begin_inset Graphics
+	filename flow.png
+	width 100text%
+
+\end_inset
+
+
+\begin_inset Caption
 
 \begin_layout Plain Layout
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-lstinputlisting[firstline=1,lastline=5]{../tests/testcases/simple2.c}
+Main components and stages
 \end_layout
 
 \end_inset
@@ -221,7 +260,71 @@ lstinputlisting[firstline=1,lastline=5]{../tests/testcases/simple2.c}
 \end_layout
 
 \begin_layout Section
-Algorithms
+Constraint Generator
+\end_layout
+
+\begin_layout Subsection
+Integers 
+\end_layout
+
+\begin_layout Subsection
+Direct array access
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=4,lastline=5]{../tests/testcases/simple3.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+String manipulation functions
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=1,lastline=15]{../tests/testcases/string1.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Buffer aliasing
+\end_layout
+
+\begin_layout Section
+Linear Solver
+\end_layout
+
+\begin_layout Subsection
+GLPK
+\end_layout
+
+\begin_layout Subsection
+Elastic filter
+\end_layout
+
+\begin_layout Subsection
+Blame system
 \end_layout
 
 \begin_layout Section
@@ -242,6 +345,18 @@ Version control
 
 \begin_layout Subsection
 Code reviews
+\end_layout
+
+\begin_layout Chapter
+Results
+\end_layout
+
+\begin_layout Section
+fingerd
+\end_layout
+
+\begin_layout Section
+flex
 \end_layout
 
 \begin_layout --Separator--

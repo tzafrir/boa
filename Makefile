@@ -37,7 +37,7 @@ ${BUILD}/HelpersTest.o: ${UNITTESTS}/HelpersTest.cpp ${BUILD}/Helpers.o
 	g++ ${TFLAGS} -o ${BUILD}/HelpersTest.o ${UNITTESTS}/HelpersTest.cpp
 
 ${BUILD}/ConstraintGeneratorTest.o: ${UNITTESTS}/ConstraintGeneratorTest.cpp ${BUILD}/ConstraintGenerator.o
-	g++ ${TFLAGS} -o ${BUILD}/ConstraintGeneratorTest.o ${UNITTESTS}/ConstraintGeneratorTest.cpp
+	g++ ${TFLAGS} -I${LLVM_DIR}/include -o ${BUILD}/ConstraintGeneratorTest.o ${UNITTESTS}/ConstraintGeneratorTest.cpp
 
 ${BUILD}:
 	mkdir -p ${BUILD}

@@ -270,7 +270,7 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
     minOperand = &operand0Min;
     maxOperand = &operand0Max;
   } else {
-    GenerateUnboundConstraint(intLiteral, "Unconst multiplication.");
+    GenerateUnboundConstraint(intLiteral, "Unconst multiplication.", GetInstructionFilename(I));
     return;
   }
 
@@ -290,7 +290,7 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   if (!operand1.IsConst()) {
-    GenerateUnboundConstraint(intLiteral, "Non-const denominator.");
+    GenerateUnboundConstraint(intLiteral, "Non-const denominator.", GetInstructionFilename(I));
     return;
   }
   double constOperand = operand1.GetConst();
@@ -415,7 +415,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   Expression operand1 = GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX);
   if (!operand1.IsConst()) {
-    GenerateUnboundConstraint(intLiteral, "Non-const shift factor.");
+    GenerateUnboundConstraint(intLiteral, "Non-const shift factor.", GetInstructionFilename(I));
     return;
   }
   double shiftFactor = 1 << (int)operand1.GetConst();
@@ -432,7 +432,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
       maxOperand.div(shiftFactor);
       break;
     default:
-      GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.");
+      GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.", GetInstructionFilename(I));
       return;
   }
 
@@ -446,7 +446,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
 
 void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
     Integer intLiteral(I);
-    GenerateUnboundConstraint(intLiteral, "(X)OR operation");
+    GenerateUnboundConstraint(intLiteral, "(X)OR operation", GetInstructionFilename(I));
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
@@ -511,60 +511,17 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   string functionName = f->getNameStr(), location = GetInstructionFilename(I);
 
   if (functionName == "malloc") {
-    // malloc calls are of the form:
-    //   %2 = call i8* @malloc(i64 4)
-    //   ...
-    //   store i8* %2, i8** %buf1, align 8
-    //
-    // This method generates an Alloc expression for the malloc call, and the store instruction will
-    // generate a BufferAlias.
-    LOG << I << " malloc call" << endl;
-    Buffer buf(I, "malloc", GetInstructionFilename(I));
-    GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
-    AddBuffer(buf, location);
+    GenerateMallocConstraint(I, location);
     return;
   }
 
   if (functionName == "strdup") {
-    Buffer buf(I, "strdup", GetInstructionFilename(I));
-    AddBuffer(buf, location);
-    Pointer from(I->getArgOperand(0));
-
-    Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    Expression minExp(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    Expression allocMax(maxExp), allocMin(minExp);
-    allocMax.add(1.0);
-    allocMin.add(1.0);
-
-    GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, "strdup call", location);
-    GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, "strdup call", location);
-
-    GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MAX, "strdup call", location);
-    GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE,
-                       VarLiteral::MIN, "strdup call", location);
+    GenerateStrdupConstraint(I, location);
     return;
   }
 
   if (functionName == "strlen") {
-    Pointer p(makePointer(I->getArgOperand(0)));
-    Integer var(I);
-
-    Constraint cMax("strlen call");
-    cMax.addBig(var.NameExpression(VarLiteral::MAX));
-    cMax.addSmall(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
-    cMax.addSmall(1);
-    cp_.AddConstraint(cMax);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MAX) << " >= "
-              << p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ) << " + 1" << endl;
-
-    Constraint cMin("strlen call");
-    cMin.addSmall(var.NameExpression(VarLiteral::MIN));
-    cMin.addBig(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
-    cMax.addBig(1);
-    cp_.AddConstraint(cMin);
-    LOG << "Adding - " << var.NameExpression(VarLiteral::MIN) << " <= "
-              << p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ) << " + 1" << endl;
+    GenerateStrlenConstraint(I, location);
     return;
   }
 
@@ -574,16 +531,16 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strncpy") {
-    GenerateStrNCopyConstraint(I, "strncpy call");
+    GenerateStrNCopyConstraint(I, "strncpy call", location);
     return;
   }
 
   if (functionName == "strxfrm") {
-    GenerateStrNCopyConstraint(I, "strxfrm call");
+    GenerateStrNCopyConstraint(I, "strxfrm call", location);
     return;
   }
 
-  string memcpyStr("llvm.memcpy.");
+  const static string memcpyStr("llvm.memcpy.");
   if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
     Pointer to(makePointer(I));
@@ -614,7 +571,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (functionName == "sprintf") {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
-      GenerateUnboundConstraint(to, "sprintf with unknown length format string");
+      GenerateUnboundConstraint(to, "sprintf with unknown length format string",
+          GetInstructionFilename(I));
     } else {
       GenerateStringCopyConstraint(I);
     }
@@ -704,13 +662,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 }
 
-void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const string &blame) {
+void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const string &blame,
+                                                     const string &location) {
   Pointer to(makePointer(I->getArgOperand(0)));
   Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
   minExp.add(-1.0);
   Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
   maxExp.add(-1.0);
-  string location = GetInstructionFilename(I);
 
   GenerateConstraint(to, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
   GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
@@ -859,6 +817,52 @@ void ConstraintGenerator::GenerateSelectConstraint(const SelectInst *I) {
   LOG << "Select Node at " << I << " (" << blame << ")" << endl;
   GenerateGenericConstraint(select, I->getTrueValue(), VarLiteral::USED, blame, loc);
   GenerateGenericConstraint(select, I->getFalseValue(), VarLiteral::USED, blame, loc);
+}
+
+void ConstraintGenerator::GenerateMallocConstraint(const CallInst* I, const string& location) {
+  // malloc calls are of the form:
+  //   %2 = call i8* @malloc(i64 4)
+  //   ...
+  //   store i8* %2, i8** %buf1, align 8
+  //
+  // This method generates an Alloc expression for the malloc call, and the store instruction will
+  // generate a BufferAlias.
+  LOG << I << " malloc call" << endl;
+  Buffer buf(I, "malloc", location);
+  GenerateGenericConstraint(buf, I->getArgOperand(0), VarLiteral::ALLOC, "malloc call", location);
+  AddBuffer(buf, location);
+}
+
+void ConstraintGenerator::GenerateStrdupConstraint(const CallInst* I, const string &location) {
+  static const string blame = "strdup call";
+  Buffer buf(I, "strdup", GetInstructionFilename(I));
+  AddBuffer(buf, location);
+  Pointer from(I->getArgOperand(0));
+
+  Expression maxExp(from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+  Expression minExp(from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+  Expression allocMax(maxExp), allocMin(minExp);
+  allocMax.add(1.0);
+  allocMin.add(1.0);
+
+  GenerateConstraint(buf, allocMax, VarLiteral::ALLOC, VarLiteral::MAX, blame, location);
+  GenerateConstraint(buf, allocMin, VarLiteral::ALLOC, VarLiteral::MIN, blame, location);
+
+  GenerateConstraint(buf, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blame, location);
+  GenerateConstraint(buf, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
+}
+
+void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const string &location) {
+  static const string blame = "strlen call";
+  Pointer p(makePointer(I->getArgOperand(0)));
+  Integer var(I);
+
+  Expression pMax(p.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+
+  Expression pMin(p.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ));
+
+  GenerateConstraint(var, pMax, VarLiteral::LEN_READ, VarLiteral::MAX, blame, location);
+  GenerateConstraint(var, pMin, VarLiteral::LEN_READ, VarLiteral::MIN, blame, location);
 }
 
 // Static.

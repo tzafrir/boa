@@ -41,7 +41,7 @@ class ConstraintGenerator {
     Set the bounds of an integer variable to be [-infinity , infinity]
   */
   void GenerateUnboundConstraint(const VarLiteral &var, const string &blame,
-                                 const string &location = "",
+                                 const string &location,
                                  Constraint::Type prio = Constraint::NORMAL);
 
   /**
@@ -86,9 +86,9 @@ class ConstraintGenerator {
 
   /**
     Add a buffer to the constraint problem, together with the nessesary constraints. This method
-    shouldbe used instead of adding buffer directly to the constraintProblem.
+    should be used instead of adding buffer directly to the constraintProblem.
   */
-  void AddBuffer(const Buffer& buf, const string& location = "");
+  void AddBuffer(const Buffer& buf, const string& location);
 
   /**
     Generate the Constraint::Expression reflected by "expr". The result will be a number in a case
@@ -128,8 +128,11 @@ class ConstraintGenerator {
   void GenerateReturnConstraint(const ReturnInst* I, const Function *F);
 
   void GenerateStringCopyConstraint(const CallInst* I);
-  void GenerateStrNCopyConstraint(const CallInst* I, const string &blame);
-  
+  void GenerateStrNCopyConstraint(const CallInst* I, const string &blame, const string &location);
+  void GenerateMallocConstraint(const CallInst* I, const string &location);
+  void GenerateStrdupConstraint(const CallInst* I, const string &location);
+  void GenerateStrlenConstraint(const CallInst* I, const string &location);
+
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
   */
