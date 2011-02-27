@@ -36,11 +36,12 @@ class LinearProblem {
     this->varToCol_ = old.varToCol_;
     this->colToVar_ = old.colToVar_;
     this->structuralRows_ = old.structuralRows_;
+    this->aliasingRows_ = old.aliasingRows_;
   }
 
  public:
   glp_prob *lp_;
-  int realRows_, structuralRows_;
+  int realRows_, structuralRows_, aliasingRows_;
   map<string, int> varToCol_;
   map<int, string> colToVar_;
 

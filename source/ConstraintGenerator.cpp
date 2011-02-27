@@ -386,28 +386,29 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
                                                         const string& location,
                                                         const Value *offset) {
-  static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
-  static const int dirCoef[2] = {1, -1};
-  static const VarLiteral::ExpressionType types[2] = {VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
-  static const int typeCoef[2] = {-1, 1};
+  Constraint::Type type = Constraint::ALIASING;
+  string blame = "buffer alias";
 
-  for (int type = 0; type < 2; ++type) {
-    Constraint::Expression offsets[2];
-    if (offset) {
-      offsets[0] = GenerateIntegerExpression(offset, dirs[0]);
-      offsets[0].mul(dirCoef[0] * typeCoef[type]);
-      offsets[1] = GenerateIntegerExpression(offset, dirs[1]);
-      offsets[1].mul(dirCoef[1] * typeCoef[type]);
-    }
-
-    for (int dir = 0; dir < 2; ++ dir) {
-      Expression bigExp, smallExp;
-      bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      bigExp.add(offsets[dir]);
-      smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location);
-    }
+  Constraint::Expression ToReadMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression ToReadMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression ToWriteMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression ToWriteMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromReadMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression FromReadMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression FromWriteMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromWriteMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  if (offset) {
+    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
+    FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
+    blame = "buffer alias with offset";
   }
+  
+  GenerateConstraint(ToReadMax,  FromReadMax,  VarLiteral::MAX, blame, location, type);
+  GenerateConstraint(ToWriteMax, FromWriteMax, VarLiteral::MIN, blame, location, type);
+  GenerateConstraint(ToReadMin,  FromReadMin,  VarLiteral::MIN, blame, location, type);
+  GenerateConstraint(ToWriteMin, FromWriteMin, VarLiteral::MAX, blame, location, type);
 }
 
 
@@ -540,8 +541,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  const static string memcpyStr("llvm.memcpy.");
-  if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
+  static const string memcpyStr("llvm.memcpy.");
+  if (functionName.find(memcpyStr) == 0) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
     Pointer to(makePointer(I));
 
@@ -550,10 +551,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
-    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
-    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
-    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
+    static const string blameDest = "memcpy write to destination buffer",
+                        blameSrc  = "memcpy read from source buffer";
+
+    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameDest, location);
+    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameDest, location);
+    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameSrc, location);
+    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameSrc, location);
     GenerateBufferAliasConstraint(dest, to, location);
     return;
   }
@@ -614,7 +618,6 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // A function can be either safe, not safe, or unsafe.
     if (IsUnsafeFunction(functionName)) {
       blame = "unsafe function call " + functionName;
-      priority = Constraint::INTERESTING;
     } else if (IsSafeFunction(functionName)) {
       blame = "safe function call " + functionName;
     } else {

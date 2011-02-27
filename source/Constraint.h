@@ -39,12 +39,12 @@ class Constraint {
   /**
    * STRUCTURAL - Created as part of boa's internal operation and not because of user code.
    *
-   * INTERESTING - An <i>intersting</i> constraint has a high probability of being the cause for
-   *               a buffer overrun.
+   * ALIASING   - A constraint for buffer aliasing, less important in boa's output
    *
-   * NORMAL - A constraint that doesn't fit in the above categories.
+   * NORMAL     - Any other constraint, these constraints has a high probability of being the cause
+   *              for a buffer overrun.
    */
-  enum Type {STRUCTURAL, NORMAL, INTERESTING};
+  enum Type {STRUCTURAL, ALIASING, NORMAL};
 
  private:
   const static int MAX_SIZE = 100;
@@ -68,17 +68,17 @@ class Constraint {
   static char TypeToChar(Type t) {
     switch (t) {
     case STRUCTURAL : return '0';
-    case NORMAL     : return '1';
-    case INTERESTING: return '2';
-    default         : return '1';
+    case ALIASING   : return '1';
+    case NORMAL     : return '2';
+    default         : return '2';
     }
   }
 
   static Type CharToType(char c) {
     switch (c) {
     case '0' : return STRUCTURAL;
-    case '1' : return NORMAL;
-    case '2' : return INTERESTING;
+    case '1' : return ALIASING;
+    case '2' : return NORMAL;
     default  : return NORMAL;
     }
   }
