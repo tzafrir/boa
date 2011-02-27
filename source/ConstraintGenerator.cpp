@@ -526,7 +526,7 @@ void ConstraintGenerator::AddContainedBuffers(const StructType *structType, cons
           if (const MDNode* arrayNode = dyn_cast<const MDNode>(memberNode->getOperand(typeIt))) {
             if (const MDString* memberNameNode = dyn_cast<const MDString>(arrayNode->getOperand(2))) {
               string memberName = structName + "." + memberNameNode->getString().str();
-              Buffer buf(structType, memberName, "", typeIt);
+              Buffer buf(structType, memberName, "", false, typeIt);
               double allocSize = aType->getNumElements();
               GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MAX, "Struct alloc", "");
               GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MIN, "Struct alloc", "");
