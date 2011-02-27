@@ -179,8 +179,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
-          s = CA->getAsString();
-          Helpers::ReplaceInString(s, '\0', "\\0");
+          s = CA->getAsString().c_str();
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
