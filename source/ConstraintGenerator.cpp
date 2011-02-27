@@ -385,7 +385,14 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
                                                         const string& location,
-                                                        const Value *offset) {
+                                                        const Value *offset,
+                                                        const Constraint::Expression *offsetExp) {
+  if ((offset != NULL) && (offsetExp != NULL)) {
+    // only one type of offset allowed
+    LOG << "Error - GenerateBufferAliasConstraint got both offset and offsetExp" << endl;
+    return;
+  }                
+                                        
   Constraint::Type type = Constraint::ALIASING;
   string blame = "buffer alias";
 
@@ -399,9 +406,15 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
   Constraint::Expression FromWriteMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
   if (offset) {
     FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
-    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromReadMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
     FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
     FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
+    blame = "buffer alias with offset";
+  } else if (offsetExp) {
+    FromReadMax.sub(*offsetExp);
+    FromReadMin.sub(*offsetExp);
+    FromWriteMax.sub(*offsetExp);
+    FromWriteMin.sub(*offsetExp);
     blame = "buffer alias with offset";
   }
   
