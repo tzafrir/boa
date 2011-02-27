@@ -1,0 +1,2 @@
+HAS ByName t.buf
+NOT ByName s.buf

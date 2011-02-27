@@ -100,7 +100,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
     break;
   case Instruction::GetElementPtr:
-    GenerateArraySubscriptConstraint(dyn_cast<const GetElementPtrInst>(I));
+    GenerateGetElementPtrConstraint(dyn_cast<const GetElementPtrInst>(I));
     break;
 
   // Convert instructions...
@@ -173,27 +173,28 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     return;
   }
   if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
-    // string literals are global arrays
-    unsigned len = ar->getNumElements() - 1;
-    string s;
     if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
+          // string literals are global arrays
+          unsigned len = ar->getNumElements() - 1;
+          string s;
           s = CA->getAsString();
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
+          s = "string literal \"" + s + "\"";
+          Buffer buf(G, s, ""); // TODO - file? line?
+          LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
+
+          GenerateAllocConstraint(G, ar, "(literal)");
+          GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
+          GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
+          AddBuffer(buf, "(literal)");
+          return;
         }
       }
     }
-    s = "string literal \"" + s + "\"";
-    Buffer buf(G, s, ""); // TODO - file? line?
-    LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
-
-    GenerateAllocConstraint(G, ar, "(literal)");
-    GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
-    GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
-    AddBuffer(buf, "(literal)");
   }
 }
 
@@ -383,7 +384,7 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
   }
 }
 
-void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
+void ConstraintGenerator::GenerateBufferAliasConstraint(const VarLiteral &from, const VarLiteral &to,
                                                         const string& location, 
                                                         const Value *offset) {
   static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
@@ -451,6 +452,14 @@ void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   // FIXME - magic numbers!
+  if (const PointerType *pType = dyn_cast<const PointerType>(D->getAddress()->getType())) {
+    if (const StructType *sType = dyn_cast<const StructType>(pType->getElementType())) {
+      if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(5))) {
+        AddContainedBuffers(sType, node);
+        return;
+      }
+    }
+  }
   if (const MDString *S = dyn_cast<const MDString>(D->getVariable()->getOperand(2))) {
     if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(3))) {
       if (const MDString *file = dyn_cast<const MDString>(node->getOperand(1))) {
@@ -473,7 +482,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   LOG << "Can't extract debug info\n";
 }
 
-void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType, 
+void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType,
                                                   const string& location) {
   Buffer buf(I);
   double allocSize = aType->getNumElements();
@@ -486,20 +495,69 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
   GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MIN, blame, location);
 }
 
-void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
-  if (const PointerType *pType = dyn_cast<const PointerType>(I->getType())) {
-    if (const ArrayType *aType = dyn_cast<const ArrayType>(pType->getElementType())) {
-      GenerateAllocConstraint(I, aType, GetInstructionFilename(I));
+void ConstraintGenerator::AddContainedBuffers(const StructType *structType, const MDNode *node) {
+  if (this->structsVisited.insert(structType).second)  {
+    while (node->getNumOperands() == 10) {
+      node = dyn_cast<MDNode>(node->getOperand(9));
+      if (node == NULL) return;
+    }
+    string structName;
+    const MDNode* memberNode;
+    if (const MDString* structNameNode = dyn_cast<const MDString>(node->getOperand(2))) {
+      structName = structNameNode->getString().str();
+    }
+    if ((memberNode = dyn_cast<const MDNode>(node->getOperand(10)))) {
+      for (unsigned typeIt = 0; typeIt < structType->getNumElements(); typeIt++) {
+        if (const ArrayType *aType = dyn_cast<const ArrayType>(structType->getTypeAtIndex(typeIt))) {
+          if (const MDNode* arrayNode = dyn_cast<const MDNode>(memberNode->getOperand(typeIt))) {
+            if (const MDString* memberNameNode = dyn_cast<const MDString>(arrayNode->getOperand(2))) {
+              string memberName = structName + "." + memberNameNode->getString().str();
+              Buffer buf(structType, memberName, "", typeIt);
+              double allocSize = aType->getNumElements();
+              GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MAX, "Struct alloc", "");
+              GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MIN, "Struct alloc", "");
+              AddBuffer(buf, "");
+            }
+          }
+        }
+        if (const StructType *sType = dyn_cast<const StructType>(structType->getTypeAtIndex(typeIt))) {
+          AddContainedBuffers(sType, dyn_cast<const MDNode>(memberNode->getOperand(typeIt)));
+        }
+      }
     }
   }
 }
 
-void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
-  Buffer b(I->getPointerOperand());
+void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getType())) {
+    if (const ArrayType *aType = dyn_cast<const ArrayType>(pType->getElementType())) {
+      GenerateAllocConstraint(I, aType, GetInstructionFilename(I));
+      return;
+    }
+  }
+}
 
-  Pointer ptr(I);
-  GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I),
-      I->getOperand(I->getNumOperands()-1));
+void ConstraintGenerator::GenerateGetElementPtrConstraint(const GetElementPtrInst *I) {
+  const Value *pointerOp = I->getPointerOperand();
+  const Value *accessIdx = I->getOperand(I->getNumOperands()-1);
+
+  if (const PointerType *pType = dyn_cast<const PointerType>(pointerOp->getType())) {
+    const Type *elementType = pType->getElementType();
+    if (const StructType *sType = dyn_cast<const StructType>(elementType)) {
+      if (const PointerType *retType = dyn_cast<const PointerType>(I->getType())) {
+        if (/*const ArrayType *aType = */dyn_cast<const ArrayType>(retType->getElementType())) {
+          int offset = (int)dyn_cast<ConstantInt>(accessIdx)->getSExtValue();
+          Buffer b(sType, offset);
+          Pointer ptr(I);
+          GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I));
+          return;
+        }
+      }
+    }
+    Pointer b(pointerOp), ptr(I);
+    GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I), accessIdx);
+    return;
+  }
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
