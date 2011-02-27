@@ -182,7 +182,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
           // string literals are global arrays
           unsigned len = ar->getNumElements() - 1;
           string s;
-          s = CA->getAsString();
+          s = CA->getAsString().c_str();
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
