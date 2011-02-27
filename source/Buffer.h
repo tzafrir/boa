@@ -22,9 +22,11 @@ namespace boa {
    public:
     // Default constructor, so we can create a map of Buffers
     Buffer() : VarLiteral(NULL), offset_(0) {}
-    
-    Buffer(const void* ValueNode, const string& readableName, const string& filename, unsigned offset = 0) :
-      VarLiteral(ValueNode), readableName_(readableName), filename_(filename), offset_(offset) {}
+
+    Buffer(const void* ValueNode, const string& readableName, const string& filename,
+           bool isTmp = false, unsigned offset = 0) :
+      VarLiteral(ValueNode, isTmp), readableName_(readableName), filename_(filename),
+      offset_(offset) {}
 
     Buffer(const void* ValueNode, unsigned offset = 0) :
       VarLiteral(ValueNode), offset_(offset) {}
@@ -42,9 +44,9 @@ namespace boa {
       ss << filename_;
       return ss.str();
     }
-    
+
     bool inline IsBuffer() const { return true; }
-    
+
     bool operator<(const Buffer& other) const {
        return (this->ValueNode_ < other.ValueNode_) ||
            ((this->ValueNode_ == other.ValueNode_) && (this->offset_ < other.offset_));

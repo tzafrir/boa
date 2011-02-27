@@ -65,8 +65,9 @@ class ConstraintGenerator {
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
   */
-  void GenerateBufferAliasConstraint(const VarLiteral &from, const VarLiteral &to, const string& location,
-                                     const Value *offset = NULL);
+  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location,
+                                     const Value *offset = NULL,
+                                     const Constraint::Expression *offsetExp = NULL);
 
   /**
     Make a boa::Pointer instance out of an instruction parameter. This function should be used in
