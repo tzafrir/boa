@@ -508,7 +508,7 @@ void ConstraintGenerator::AddContainedBuffers(const StructType *structType, cons
       structName = structNameNode->getString().str();
     }
     if ((memberNode = dyn_cast<const MDNode>(node->getOperand(10)))) {
-      for (unsigned typeIt = 0; typeIt < structType->getNumElements(); typeIt++) {
+      for (size_t typeIt = 0; typeIt < structType->getNumElements(); typeIt++) {
         if (const ArrayType *aType = dyn_cast<const ArrayType>(structType->getTypeAtIndex(typeIt))) {
           if (const MDNode* arrayNode = dyn_cast<const MDNode>(memberNode->getOperand(typeIt))) {
             if (const MDString* memberNameNode = dyn_cast<const MDString>(arrayNode->getOperand(2))) {
