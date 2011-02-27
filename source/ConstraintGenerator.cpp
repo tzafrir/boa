@@ -964,7 +964,7 @@ void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const stri
 
 void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
   static const string readBlame("memchr call might read beyond the buffer");
-  static string returnBlame("memchr return value might point beyond the buffer");
+  static string returnBlame("use of memchr return value");
   string location(GetInstructionFilename(I));
 
   Pointer s(makePointer(I->getOperand(0)));
