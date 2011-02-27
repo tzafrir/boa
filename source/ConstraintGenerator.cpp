@@ -189,7 +189,6 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
       }
     }
     s = "string literal \"" + s + "\"";
-    LOG << "s is " << s << endl;
     Buffer buf(G, s, ""); // TODO - file? line?
     LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
