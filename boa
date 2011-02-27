@@ -17,16 +17,7 @@ do
     -log)
       args="$args -logfile /dev/stderr"
     ;;
-    -output_glpk)
-      FLAGS="$FLAGS $arg"
-    ;;
-    -blame)
-      FLAGS="$FLAGS $arg"
-    ;;
-    -no_pointer_analysis)
-      FLAGS="$FLAGS $arg"
-    ;;
-    -ignore_literals)
+    -output_glpk|-blame|-no_pointer_analysis|-ignore_literals)
       FLAGS="$FLAGS $arg"
     ;;
     *)
