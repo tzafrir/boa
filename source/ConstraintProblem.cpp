@@ -96,7 +96,6 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
       }     
     }    
     lp.aliasingRows_ = (row - 1) - lp.structuralRows_;
-    //lp.structuralRows_ = row - 1;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
       if (c->GetType() == Constraint::NORMAL) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
