@@ -24,6 +24,8 @@ using namespace llvm;
 cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
 cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 cl::opt<bool> Blame("blame", cl::desc("Calculate and show Blame information"), cl::value_desc(""));
+cl::opt<bool> NoPointerAnalysis("no_pointer_analysis", 
+                     cl::desc("Do not generate pointer analysis constraints"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -58,7 +60,9 @@ class boa : public ModulePass {
       }
     }
     
-    constraintGenerator.AnalyzePointers();
+    if (!NoPointerAnalysis) {
+      constraintGenerator.AnalyzePointers();
+    }
     return false;
   }
 
