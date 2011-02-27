@@ -8,9 +8,7 @@ BOA_SO="$BOADIR/build/boa.so"
 CLANG="$BOADIR/../llvm/Debug+Asserts/bin/clang"
 OPT="$BOADIR/../llvm/Debug+Asserts/bin/opt"
 
-OUTPUT_GLPK=""
-BLAME=""
-POINTER_ANALYSIS=""
+FLAGS=""
 
 for arg in $@
 do
@@ -20,13 +18,16 @@ do
       args="$args -logfile /dev/stderr"
     ;;
     -output_glpk)
-      OUTPUT_GLPK=$arg
+      FLAGS="$FLAGS $arg"
     ;;
     -blame)
-      BLAME=$arg
+      FLAGS="$FLAGS $arg"
     ;;
     -no_pointer_analysis)
-      POINTER_ANALYSIS=$arg
+      FLAGS="$FLAGS $arg"
+    ;;
+    -ignore_literals)
+      FLAGS="$FLAGS $arg"
     ;;
     *)
       files="$files $arg"
@@ -35,7 +36,7 @@ do
 done
 
 if [ "$files" != "" ]; then
-  $CLANG -g -O0 -c -emit-llvm ${files} -o /dev/stdout | $OPT -load $BOA_SO $args -boa $OUTPUT_GLPK $BLAME $POINTER_ANALYSIS > /dev/null
+  $CLANG -g -O0 -c -emit-llvm ${files} -o /dev/stdout | $OPT -load $BOA_SO $args -boa $FLAGS > /dev/null
 else
   echo -e " usage : \033[1m./boa [flags] <source files>\033[0m"
   echo ""
@@ -44,4 +45,5 @@ else
   echo -e "  \033[1m-blame\033[0m               - print a set of constraints that cause each overrun"
   echo -e "  \033[1m-glpk\033[0m                - pring glpk to log"
   echo -e "  \033[1m-no_pointer_analysis\033[0m - do not generate pointer analysis constraints"  
+  echo -e "  \033[1m-ignore_literals\033[0m     - don't report buffer overruns on string literals"  
 fi

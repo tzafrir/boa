@@ -21,9 +21,12 @@ using namespace llvm;
 
 namespace boa {
 
-void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location) {
-  cp_.AddBuffer(buf);
-  buffers_.insert(buf);
+void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location, bool literal) {
+  if (!(IgnoreLiterals_ && literal)) {
+    // add buffer to problem unless it is a string literal and we ignore literals
+    cp_.AddBuffer(buf);
+    buffers_.insert(buf);
+  }
 
   GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
                      buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
@@ -193,7 +196,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     GenerateAllocConstraint(G, ar, "(literal)");
     GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
     GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
-    AddBuffer(buf, "(literal)");
+    AddBuffer(buf, "(literal)", true);
   }
 }
 

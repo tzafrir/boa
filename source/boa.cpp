@@ -25,7 +25,9 @@ cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("
 cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 cl::opt<bool> Blame("blame", cl::desc("Calculate and show Blame information"), cl::value_desc(""));
 cl::opt<bool> NoPointerAnalysis("no_pointer_analysis", 
-                     cl::desc("Do not generate pointer analysis constraints"), cl::value_desc(""));
+                   cl::desc("Do not generate pointer analysis constraints"), cl::value_desc(""));
+cl::opt<bool> IgnoreLiterals("ignore_literals", 
+                   cl::desc("Don't report buffer overruns on string literals"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -47,7 +49,7 @@ class boa : public ModulePass {
    }
 
   virtual bool runOnModule(Module &M) {
-    ConstraintGenerator constraintGenerator(constraintProblem_);
+    ConstraintGenerator constraintGenerator(constraintProblem_, IgnoreLiterals);
 
     for (Module::const_global_iterator it = M.global_begin(); it != M.global_end(); ++it) {
       const GlobalValue *g = it;
