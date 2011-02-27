@@ -597,6 +597,11 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   }
 
   if (functionName == "strerror") {
+    // strerror return a read only buffer. Since we can't create a buffer of size 0 (this kind 
+    // of buffer will always result in overrun) 
+    // We model it by a temporary buffer of length 1, and the returned buffer is aliased both to
+    // the 0th and 1st place of the buffer. This way any write access to the buffer will result
+    // in buffer overrun, but read access won't.
     Buffer buf(I, "strerror", GetInstructionFilename(I), true);
     AddBuffer(buf, location);
 
