@@ -10,7 +10,7 @@ int main() {
   c = memchr(safe, 'z', 2);
   char* a1 = memchr(safeAlias, '1', 1);
   a1[3] = '0';
-  char* a2 = memchr(unsafeAlias, 'd', 5);
-  a2[0] = '0';
+  char* a2 = memchr(unsafeAlias, 'd', 3);
+  a2[3] = '0';
   return 0;
 }
