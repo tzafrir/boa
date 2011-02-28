@@ -629,6 +629,10 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  if (Helpers::IsPrefix("llvm.memmove", functionName)) {
+    GenerateMemmoveConstraint(I);
+    return;
+  }
   static const string memcpyStr("llvm.memcpy.");
   if (Helpers::IsPrefix(memcpyStr, functionName)) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
@@ -973,7 +977,7 @@ void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const stri
 
 void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
   static const string readBlame("memchr call might read beyond the buffer");
-  static string returnBlame("use of memchr return value");
+  static const string returnBlame("use of memchr return value");
   string location(GetInstructionFilename(I));
 
   Pointer s(makePointer(I->getOperand(0)));
@@ -985,6 +989,19 @@ void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
 
   // Mark the return value as an alias.
   GenerateBufferAliasConstraint(s, retval, location, n, NULL, returnBlame);
+}
+
+void ConstraintGenerator::GenerateMemmoveConstraint(const CallInst* I) {
+  static const string sourceBlame("memmove source buffer");
+  static const string destBlame("memmove destination buffer");
+  string location(GetInstructionFilename(I));
+
+  const Value* n = I->getOperand(2);
+  Pointer source(makePointer(I->getOperand(0)));
+  Pointer destination(makePointer(I->getOperand(1)));
+
+  GenerateGenericConstraint(source, n, VarLiteral::LEN_WRITE, sourceBlame, location);
+  GenerateGenericConstraint(destination, n, VarLiteral::LEN_WRITE, destBlame, location);
 }
 
 // Static.

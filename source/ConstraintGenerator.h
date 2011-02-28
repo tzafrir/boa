@@ -143,6 +143,7 @@ class ConstraintGenerator {
   void GenerateStrdupConstraint(const CallInst* I, const string &location);
   void GenerateStrlenConstraint(const CallInst* I, const string &location);
   void GenerateMemchrConstraint(const CallInst* I);
+  void GenerateMemmoveConstraint(const CallInst* I);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
