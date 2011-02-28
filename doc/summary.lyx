@@ -5,8 +5,22 @@
 \textclass extreport
 \begin_preamble
 \usepackage{fullpage}
+\usepackage{framed}
 \usepackage{listings}
-\lstset{language=C, numbers=left, frame=single, xleftmargin=20pt, xrightmargin=40pt}
+\lstset{language=C, numbers=left, frame=single, xleftmargin=20pt, xrightmargin=40pt, basicstyle=\footnotesize, tabsize=2}
+
+\newenvironment{boa}
+{% This is the begin code
+\begin{minipage}[t]{0.8\columnwidth}%
+%  \begin{framed}
+%    \texttt
+\footnotesize
+     
+}
+{% This is the end code
+%  \end{framed}
+\end{minipage}\\
+ }
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -33,7 +47,7 @@
 \paperfontsize default
 \spacing single
 \use_hyperref false
-\papersize default
+\papersize a4paper
 \use_geometry false
 \use_amsmath 1
 \use_esint 1
@@ -73,8 +87,6 @@ boa
 \series default
 \size default
  
-\lang english
-
 \begin_inset ERT
 status open
 
@@ -112,7 +124,7 @@ status open
 \begin_inset Graphics
 	filename /home/gai/boa/boa.png
 	lyxscale 33
-	height 40pt
+	height 50pt
 
 \end_inset
 
@@ -215,10 +227,6 @@ Given a C program that performs buffer manipulations, statically (at compile
 
 \begin_layout Section
 Previous work
-\end_layout
-
-\begin_layout Standard
-
 \end_layout
 
 \begin_layout Chapter
@@ -351,8 +359,539 @@ Code reviews
 Results
 \end_layout
 
+\begin_layout Standard
+We tested boa on several widespread real world programs.
+ We tested to see whether boa discover real buffer overruns, and also to
+ evaluate the number of false alarms and their main causes.
+ The source files used in all of the experiments is availble in boa git
+ repository
+\begin_inset CommandInset citation
+LatexCommand cite
+key "git repository"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Performence"
+
+\end_inset
+
+ summerize the performence of boa on the programs we present in this document,
+ the reported runnig times are the results of experiments on Dell vostro
+ 1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
+ Debian GNU/Linux Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
+ On this humble configuration boa can analyze few thouthends lines of code
+ within seconds, thus the use of elastic filter did pay off and boa can
+ be used to efficiently analyze any reasonable piece of C code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+fingerd
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+flex
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+syslog
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Source lines
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+230
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+332
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Constraints
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2894
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1206
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Running time
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.508s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.304s
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Buffers
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Overruns reported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Real overruns
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+boa performence on various real world examples
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Performence"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 fingerd
+\end_layout
+
+\begin_layout Standard
+We tested boa using 
+\emph on
+fingerd
+\emph default
+, unix finger deamon.
+ We altered the current source code to reflect the well known buffer overrun,
+ used by the Internet worm in 1988.
+ The overrun is caused by using the unsafe function 
+\emph on
+gets
+\emph default
+ to read data into the 1024
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Back in 1988 
+\emph on
+line
+\emph default
+ was 512 bytes, but it does not matter for the analysis.
+\end_layout
+
+\end_inset
+
+ bytes buffer 
+\emph on
+line
+\emph default
+.
+ As far as we know, this is the only real buffer overrun in the 230 lines
+ source code.
+\end_layout
+
+\begin_layout Standard
+Running on 
+\emph on
+fingerd
+\emph default
+ source, boa report overruns on 6 out of the 34 buffers.
+ Next we present boa's blame for each of them, and analyze the reason for
+ the reported overrun -
+\end_layout
+
+\begin_layout Paragraph
+line
+\end_layout
+
+\begin_layout Standard
+is the only real overrun in 
+\emph on
+fingerd
+\emph default
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\color red
+line
+\color inherit
+ tests/realworld/fingerd/fingerd.c:85 
+\end_layout
+
+\begin_layout Standard
+- unsafe function call gets [tests/realworld/fingerd/fingerd.c:121] 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- memchr call might read beyond the buffer [tests/realworld/fingerd/fingerd.c:139
+] 
+\end_layout
+
+\begin_layout Standard
+[ ...
+ 10 more lines ...
+ ]
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+The overrun discovered by boa, and the real cause reported briefly.
+\end_layout
+
+\begin_layout Paragraph
+rhost
+\end_layout
+
+\begin_layout Standard
+is a char buffer ment to hold the host name
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\color red
+rhost
+\color inherit
+ tests/realworld/fingerd/fingerd.c:86 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128]
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -376,6 +915,25 @@ key "הודים"
 LatexCommand href
 name "Buffer Overrun Detection using Linear Programming and Static Analysis"
 target "www.cs.wisc.edu/wisa/papers/ccs03/p351-ganapathy.pdf "
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\labelwidthstring References
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "git repository"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "boa git repository - https://github.com/tzafrir/boa/"
+target "https://github.com/tzafrir/boa/"
 
 \end_inset
 
