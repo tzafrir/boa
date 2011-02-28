@@ -25,9 +25,9 @@ using namespace llvm;
 cl::opt<string> LogFile("logfile", cl::desc("Log to filename"), cl::value_desc("filename"));
 cl::opt<bool> OutputGlpk("output_glpk", cl::desc("Show GLPK Output"), cl::value_desc(""));
 cl::opt<bool> Blame("blame", cl::desc("Calculate and show Blame information"), cl::value_desc(""));
-cl::opt<bool> NoPointerAnalysis("no_pointer_analysis", 
+cl::opt<bool> NoPointerAnalysis("no_pointer_analysis",
                    cl::desc("Do not generate pointer analysis constraints"), cl::value_desc(""));
-cl::opt<bool> IgnoreLiterals("ignore_literals", 
+cl::opt<bool> IgnoreLiterals("ignore_literals",
                    cl::desc("Don't report buffer overruns on string literals"), cl::value_desc(""));
 cl::opt<bool> Verbose("v", cl::desc("Verbose output format"), cl::value_desc(""));
 
@@ -77,7 +77,7 @@ class boa : public ModulePass {
         constraintGenerator.VisitInstruction(&(*ii), F);
       }
     }
-    
+
     if (!NoPointerAnalysis) {
       constraintGenerator.AnalyzePointers();
     }
@@ -102,9 +102,9 @@ class boa : public ModulePass {
         if (Verbose) {
           cerr << Colors::Bold << "Blames section" << Colors::Normal << " Each of the overrunning "
                   "buffers appear here with a small list of constraints which cause an overrun in "
-                  "this buffer. A buffer described by it's name and  the source location where it "
+                  "this buffer. A buffer is described by its name and the source location where it is "
                   "defined, a constraint consist of a brief desctiption and the source line where "
-                  "it originate." << endl << endl;
+                  "it originates." << endl << endl;
         }
         map<Buffer, vector<string> > blames = constraintProblem_.SolveAndBlame();
         for (map<Buffer, vector<string> >::iterator it = blames.begin();
@@ -120,13 +120,13 @@ class boa : public ModulePass {
       cerr << SEPARATOR << endl;
       if (Verbose) {
         cerr << Colors::Bold << "Buffers section" << Colors::Normal << " Each of the overrunning "
-                "buffers appear here, one in each line. A buffer described by it's name and the "
-                "source location where it defined" << endl << endl;      
+                "buffers appear here, one in each line. A buffer is described by its name and the "
+                "source location where it is defined" << endl << endl;
       }
       for (vector<Buffer>::iterator buff = unsafeBuffers.begin();
            buff != unsafeBuffers.end();
            ++buff) {
-        cerr << Colors::Red << buff->getReadableName() << Colors::Normal << " " << 
+        cerr << Colors::Red << buff->getReadableName() << Colors::Normal << " " <<
                 buff->getSourceLocation() << endl;
       }
       cerr << SEPARATOR << endl;
