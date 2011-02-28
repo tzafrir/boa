@@ -402,12 +402,7 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
     return;
   }
 
-  Constraint::Type type;
-  if (blame == "") {
-    type = Constraint::ALIASING;
-  } else {
-    type = Constraint::NORMAL;
-  }
+  Constraint::Type type = Constraint::ALIASING;
   string aliasBlame = "buffer alias";
   if (offset != NULL || offsetExp != NULL) {
     aliasBlame += " with offset";
