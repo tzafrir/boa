@@ -68,7 +68,8 @@ class ConstraintGenerator {
   */
   void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location,
                                      const Value *offset = NULL,
-                                     const Constraint::Expression *offsetExp = NULL);
+                                     const Constraint::Expression *offsetExp = NULL,
+                                     const string& blame = "");
 
   /**
     Make a boa::Pointer instance out of an instruction parameter. This function should be used in
@@ -141,6 +142,7 @@ class ConstraintGenerator {
   void GenerateMallocConstraint(const CallInst* I, const string &location);
   void GenerateStrdupConstraint(const CallInst* I, const string &location);
   void GenerateStrlenConstraint(const CallInst* I, const string &location);
+  void GenerateMemchrConstraint(const CallInst* I);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
