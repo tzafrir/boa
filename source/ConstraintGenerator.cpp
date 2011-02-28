@@ -670,6 +670,15 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     }
     return;
   }
+  
+  if ((functionName == "strchr") || (functionName == "strrchr") || (functionName == "strpbrk")) {
+    Pointer to = makePointer(I->getArgOperand(0)), retval = makePointer(I);
+    Constraint::Expression end(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    
+    // worst case - strchr/strrchr return a pointer to the end of the buffer
+    GenerateBufferAliasConstraint(to, retval, location, NULL, &end);
+    return;
+  }
 
   if (functionName == "strerror") {
     // strerror return a read only buffer. Since we can't create a buffer of size 0 (this kind 
