@@ -18,6 +18,10 @@ namespace Helpers {
     buffer << d;
     return buffer.str();
   }
+
+  bool IsPrefix(string str1, string str2) {
+    return str2.find(str1) == 0;
+  }
 }  // namespace Helpers
 
 }  // namespace boa

@@ -22,6 +22,11 @@ namespace Helpers {
    * Returns a string representation of the input.
    */
   string DoubleToString(double d);
+
+  /**
+   * Return true iff str1 is a prefix of str2
+   */
+  bool IsPrefix(string str1, string str2);
 }  // namespace Helpers
 
 }  // namespace boa
