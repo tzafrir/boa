@@ -629,6 +629,11 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
+  if (functionName == "memcmp") {
+    GenerateMemcmpConstraint(I);
+    return;
+  }
+
   static const string memcpyStr("llvm.memcpy.");
   if (functionName.find(memcpyStr) == 0) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
@@ -985,6 +990,24 @@ void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
 
   // Mark the return value as an alias.
   GenerateBufferAliasConstraint(s, retval, location, n, NULL, returnBlame);
+}
+
+void ConstraintGenerator::GenerateMemcmpConstraint(const CallInst* I) {
+  static const string blame("memcmp might read beyond array boundaries");
+  static const string returnBlame("use of memcmp return value");
+  string location(GetInstructionFilename(I));
+
+  Pointer s1(makePointer(I->getOperand(0)));
+  Pointer s2(makePointer(I->getOperand(1)));
+  Integer retval(I);
+
+  // Generate constraints for the reading operation of memchr.
+  const Value* n = I->getOperand(2);
+  GenerateGenericConstraint(s1, n, VarLiteral::LEN_WRITE, blame, location);
+  GenerateGenericConstraint(s2, n, VarLiteral::LEN_WRITE, blame, location);
+
+  // Mark the return value as unbound.
+  GenerateUnboundConstraint(retval, returnBlame, location);
 }
 
 // Static.
