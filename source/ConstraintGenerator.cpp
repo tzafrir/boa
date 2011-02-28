@@ -402,7 +402,12 @@ void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLite
     return;
   }
 
-  Constraint::Type type = Constraint::ALIASING;
+  Constraint::Type type;
+  if (blame == "") {
+    type = Constraint::ALIASING;
+  } else {
+    type = Constraint::NORMAL;
+  }
   string aliasBlame = "buffer alias";
   if (offset != NULL || offsetExp != NULL) {
     aliasBlame += " with offset";
@@ -633,6 +638,7 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     GenerateMemmoveConstraint(I);
     return;
   }
+
   static const string memcpyStr("llvm.memcpy.");
   if (Helpers::IsPrefix(memcpyStr, functionName)) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
@@ -994,14 +1000,20 @@ void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
 void ConstraintGenerator::GenerateMemmoveConstraint(const CallInst* I) {
   static const string sourceBlame("memmove source buffer");
   static const string destBlame("memmove destination buffer");
+  static const string returnBlame("use of memmove return value");
   string location(GetInstructionFilename(I));
 
   const Value* n = I->getOperand(2);
-  Pointer source(makePointer(I->getOperand(0)));
-  Pointer destination(makePointer(I->getOperand(1)));
+  Pointer destination(makePointer(I->getOperand(0)));
+  Pointer source(makePointer(I->getOperand(1)));
+  Pointer retval(makePointer(I));
 
+  // Model the read and write to source and destination.
   GenerateGenericConstraint(source, n, VarLiteral::LEN_WRITE, sourceBlame, location);
   GenerateGenericConstraint(destination, n, VarLiteral::LEN_WRITE, destBlame, location);
+
+  // Model the return value, which is destination.
+  GenerateBufferAliasConstraint(destination, retval, location, NULL, NULL, returnBlame);
 }
 
 // Static.
