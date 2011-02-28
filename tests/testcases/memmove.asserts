@@ -4,5 +4,7 @@ HAS ByName unsafe1
 HAS ByName unsafe2
 HAS ByName unsafe3
 HAS ByName unsafe4
+HAS ByName unsafe5
 BLAME ByName unsafe1 memmove destination
 BLAME ByName unsafe2 memmove source
+BLAME ByName unsafe5 memmove return value
