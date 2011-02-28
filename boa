@@ -17,7 +17,7 @@ do
     -log)
       args="$args -logfile /dev/stderr"
     ;;
-    -output_glpk|-blame|-no_pointer_analysis|-ignore_literals)
+    -output_glpk|-blame|-no_pointer_analysis|-ignore_literals|-v)
       FLAGS="$FLAGS $arg"
     ;;
     *)
@@ -33,6 +33,7 @@ else
   echo ""
   echo "possible flags - "
   echo -e "  \033[1m-log\033[0m                 - print log to stdout"
+  echo -e "  \033[1m-v\033[0m                   - verbose output"
   echo -e "  \033[1m-blame\033[0m               - print a set of constraints that cause each overrun"
   echo -e "  \033[1m-glpk\033[0m                - pring glpk to log"
   echo -e "  \033[1m-no_pointer_analysis\033[0m - do not generate pointer analysis constraints"  
