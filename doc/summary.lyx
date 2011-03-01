@@ -135,7 +135,7 @@ status open
 
 
 \begin_inset Graphics
-	filename /home/gai/boa/boa.png
+	filename ../boa.png
 	lyxscale 33
 	height 50pt
 
@@ -233,8 +233,7 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Given a C program that performs buffer manipulations, statically (at compile
- time) identify whether the program may perform array access out of the
+Given a C program that performs buffer manipulations, statically identify whether the program may perform array access out of the
  array bounds.
 \end_layout
 
@@ -340,7 +339,7 @@ Linear Solver
 The constraints generated represent a linear problem, and each solution
  of the problem suggests a set of ranges for the values each integer may
  recieve and the allocation and usage of each buffer.
- As we aim to find the tightest ranges, therefore we we direct our linear
+ As we aim to find the tightest ranges, we direct our linear
  solver to find a solution maximizing -
 \begin_inset Formula 
 \[
@@ -349,7 +348,7 @@ Goal=\sum_{\mathbf{Buffers}}\left[\left\{ \mbox{buf!used!min}\right\} \stackrel{
 
 \end_inset
 
-A solution sutisfying this goal will maximize the lower bounds and minimize
+A solution satisfying this goal will maximize the lower bounds and minimize
  the upper bounds of each buffer access, and thus assure we get the tightest
  solution.
 \end_layout
@@ -360,7 +359,7 @@ Once we have the solution
 status collapsed
 
 \begin_layout Plain Layout
-The solution is a set of integer valuse, one for each of the problem variables,
+The solution is a set of integer values, one for each of the problem variables,
  such that all the constraints are satisfied and the 
 \begin_inset Formula $Goal$
 \end_inset
@@ -407,7 +406,7 @@ Handling infeasible problems
 \end_layout
 
 \begin_layout Standard
-In many cases, the constraints we generate create an infeasble linear problem.
+In many cases, the constraints we generate create an infeasable linear problem.
  The simplest example of such case is - 
 \end_layout
 
@@ -455,12 +454,12 @@ Which is obviously an infeasible set of constraints.
 \emph on
 strcat
 \emph default
- (which concat one string to the end of another, and therefor imply equivalent
+ (which concatenates one string to the end of another, and therefore implies an equivalent
  set of constraints to the string used length).
 \end_layout
 
 \begin_layout Standard
-When our linear solver discover that the constraints problem we have generated
+When our linear solver discovers that the constraints problem we have generated
  is infeasible, we wish make the smallest change to the problem and make
  it feasible once again.
  There is a great body of work in the area of finding and eliminating IIS
@@ -707,9 +706,9 @@ name "chap:Results"
 
 \begin_layout Standard
 We tested boa on several widespread real world programs.
- We tested to see whether boa discover real buffer overruns, and also to
+ We tested to see whether boa discovers real buffer overruns, and also to
  evaluate the number of false alarms and their main causes.
- The source files used in all of the experiments is availble in boa git
+ The source files used in all of the experiments are availble in boa git
  repository
 \begin_inset CommandInset citation
 LatexCommand cite
@@ -724,15 +723,15 @@ key "git repository"
 Table 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "tab:Performence"
+reference "tab:Performance"
 
 \end_inset
 
- summerize the performence of boa on the programs we present in this document,
- the reported runnig times are the results of experiments on Dell vostro
+ summerize the performance of boa on the programs we present in this document,
+ the reported running times are the results of experiments ran on a Dell Vostro
  1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
  Debian GNU/Linux Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
- On this humble configuration boa can analyze few thouthends lines of code
+ On this humble configuration boa can analyze few thousands lines of code
  within seconds, thus the use of elastic filter did pay off and boa can
  be used to efficiently analyze any reasonable piece of C code.
 \end_layout
@@ -1029,10 +1028,10 @@ Real overruns
 \begin_inset Caption
 
 \begin_layout Plain Layout
-boa performence on various real world examples
+boa performance on various real world examples
 \begin_inset CommandInset label
 LatexCommand label
-name "tab:Performence"
+name "tab:Performance"
 
 \end_inset
 
@@ -1088,7 +1087,7 @@ line
 line
 \emph default
 .
- As far as we know, this is the only real buffer overrun in the 230 lines
+ As far as we know, this is the only real buffer overrun in the 230 lines of
  source code.
 \end_layout
 
@@ -1097,8 +1096,8 @@ Running on
 \emph on
 fingerd
 \emph default
- source, boa report overruns on 6 out of the 34 buffers.
- Next we present boa's blame three of them, and analyze the reason for the
+ source, boa reported overruns on 6 out of the 34 buffers.
+ Next we present boa's blame for three of them, and analyze the reason for the
  reported overrun -
 \end_layout
 
@@ -1188,7 +1187,7 @@ rhost
 \end_layout
 
 \begin_layout Standard
-is a char buffer ment to hold the host name
+is a char buffer meant to hold the host name
 \end_layout
 
 \begin_layout Standard
@@ -1268,8 +1267,8 @@ malloc
 \end_layout
 
 \begin_layout Standard
-is a generic name for any buffer created by a malloc call, one can distingush
- between two malloc calls by thies source location (filename and line number)
+is a generic name for any buffer created by a malloc call, one can distinguish
+ between two malloc calls by their source location (filename and line number)
 \end_layout
 
 \begin_layout Standard
@@ -1361,7 +1360,7 @@ ngerd/fingerd.c}
 
 \end_inset
 
-The programmer allocate a buffer large enough to include 
+The programmer allocates a buffer large enough to include 
 \emph on
 line
 \emph default
@@ -1372,7 +1371,7 @@ line
  operator on a pointer.
  Since boa is a flow-insensitive analyzing tool, we can not assure that
  the inceremental pointer aliasing will be limited to the buffer size -
- and therefore boa report a possible buffer overrun.
+ and therefore boa reports a possible buffer overrun.
 \end_layout
 
 \begin_layout Section
