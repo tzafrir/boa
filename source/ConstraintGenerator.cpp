@@ -852,9 +852,12 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,
                                                     const Value *integerExpression,
                                                     VarLiteral::ExpressionType type,
                                                     const string &blame,
-                                                    const string &location) {
+                                                    const string &location,
+                                                    const Expression &offset) {
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
+  maxExpr.add(offset);
   Expression minExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MIN);
+  minExpr.add(offset);
   GenerateConstraint(var, maxExpr, type, VarLiteral::MAX, blame, location);
   GenerateConstraint(var, minExpr, type, VarLiteral::MIN, blame, location);
 }

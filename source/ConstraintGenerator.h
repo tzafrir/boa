@@ -51,7 +51,7 @@ class ConstraintGenerator {
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  VarLiteral::ExpressionType type, const string &blame,
-                                 const string &location);
+                                 const string &location, const Expression &offset = 0.0);
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
                           VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
