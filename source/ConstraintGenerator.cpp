@@ -903,7 +903,7 @@ void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
                                              const string &location,
                                              Constraint::Type prio) {
   GenerateConstraint(var.NameExpression(direction, type), integerExpression,
-    direction, blame, location, prio);
+                     direction, blame, location, prio);
 }
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
@@ -1018,8 +1018,8 @@ void ConstraintGenerator::GenerateMemcmpConstraint(const CallInst* I) {
 
   // Generate constraints for the reading operation of memchr.
   const Value* n = I->getOperand(2);
-  GenerateGenericConstraint(s1, n, VarLiteral::LEN_WRITE, blame, location);
-  GenerateGenericConstraint(s2, n, VarLiteral::LEN_WRITE, blame, location);
+  GenerateGenericConstraint(s1, n, VarLiteral::LEN_WRITE, blame, location, -1.0);
+  GenerateGenericConstraint(s2, n, VarLiteral::LEN_WRITE, blame, location, -1.0);
 
   // Mark the return value as unbound.
   GenerateUnboundConstraint(retval, returnBlame, location);
@@ -1037,8 +1037,8 @@ void ConstraintGenerator::GenerateMemmoveConstraint(const CallInst* I) {
   Pointer retval(makePointer(I));
 
   // Model the read and write to source and destination.
-  GenerateGenericConstraint(source, n, VarLiteral::LEN_WRITE, sourceBlame, location);
-  GenerateGenericConstraint(destination, n, VarLiteral::LEN_WRITE, destBlame, location);
+  GenerateGenericConstraint(source, n, VarLiteral::LEN_WRITE, sourceBlame, location, -1.0);
+  GenerateGenericConstraint(destination, n, VarLiteral::LEN_WRITE, destBlame, location, -1.0);
 
   // Model the return value, which is destination.
   GenerateBufferAliasConstraint(destination, retval, location, NULL, NULL, returnBlame);
@@ -1052,7 +1052,7 @@ void ConstraintGenerator::GenerateMemsetConstraint(const CallInst* I) {
 
   // Generate constraints for the reading operation of memchr.
   const Value* n = I->getOperand(2);
-  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, blame, location);
+  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, blame, location, -1.0);
 }
 
 // Static.
