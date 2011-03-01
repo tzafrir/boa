@@ -7,7 +7,20 @@
 \usepackage{fullpage}
 \usepackage{framed}
 \usepackage{listings}
-\lstset{language=C, numbers=left, frame=single, xleftmargin=20pt, xrightmargin=40pt, basicstyle=\footnotesize, tabsize=2, firstnumber=auto}
+
+% bold ttfonts
+\usepackage{courier}
+\renewcommand{\ttdefault}{pcr}
+
+\lstset{%
+language=C, 
+numbers=left, 
+frame=single, 
+xleftmargin=20pt, 
+xrightmargin=40pt, 
+basicstyle=\ttfamily \small, 
+tabsize=2 %
+}
 
 \newenvironment{boa}
 {% This is the begin code
@@ -390,7 +403,7 @@ Note that we stick to the size and numbering conventions of C, safe access
 \end_layout
 
 \begin_layout Subsection
-Elastic filter
+Handling infeasible problems
 \end_layout
 
 \begin_layout Standard
@@ -437,7 +450,7 @@ The constraint generated from the second line will be -
 
 \end_inset
 
-Which is obviously an infeasable set of constraints.
+Which is obviously an infeasible set of constraints.
  The same problem holds in many different cases, including 
 \emph on
 strcat
@@ -448,14 +461,213 @@ strcat
 
 \begin_layout Standard
 When our linear solver discover that the constraints problem we have generated
- is infeasable, we wish make the smallest change to the problem and make
- it feasable once again.
+ is infeasible, we wish make the smallest change to the problem and make
+ it feasible once again.
  There is a great body of work in the area of finding and eliminating IIS
  (
 \emph on
 irreducibly inconsistent system
 \emph default
-), the common and naieve 
+), and we follow the algorithms and terminology of Chinneck and Dravnieks
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Elastic IIS"
+
+\end_inset
+
+.
+ The common and naieve approach is the deletion filtering -
+\end_layout
+
+\begin_layout Enumerate
+input: 
+\begin_inset Formula $Q$
+\end_inset
+
+ is an infeasible set of constraints
+\end_layout
+
+\begin_layout Enumerate
+Try to delete - for each 
+\begin_inset Formula $q_{i}\in Q$
+\end_inset
+
+ DO:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Test whether 
+\begin_inset Formula $Q\backslash q_{i}$
+\end_inset
+
+ is feasable -
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+If infeasible - set 
+\begin_inset Formula $Q=Q\backslash q_{i}$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Formula $Q$
+\end_inset
+
+ is an IIS.
+\end_layout
+
+\begin_layout Standard
+After one iteration the algorithm return an IIS, which can be removed from
+ the original problem.
+ In case there are several IISs in the original problem - the algorithm
+ should repeat until the problem become feasable.
+ We have implemented this approch at first, and it did woked well on small
+ pieces of code, but naturally did not scale well - on the same testing
+ system described in chapter 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "chap:Results"
+
+\end_inset
+
+ it took more than half an hour to eliminate the IISs in the 400 lines of
+ source of 
+\emph on
+md5
+\emph default
+ library, and more than 8 hours to find the blames as well.
+ Therefor we read furthr and implemented an elastic filter for eliminating
+ IIS -
+\end_layout
+
+\begin_layout Enumerate
+Initialize 
+\begin_inset Formula $S=\emptyset$
+\end_inset
+
+ (will hold the IIS)
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $Q$
+\end_inset
+
+ is an infeasible set of constraints of the form - 
+\begin_inset Formula 
+\[
+q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}\ge c_{i}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $a_{i_{j}},c_{i}$
+\end_inset
+
+ are constants and 
+\begin_inset Formula $X_{i_{j}}$
+\end_inset
+
+ is a variable of the constraint problem.
+\end_layout
+
+\begin_layout Enumerate
+Add an 
+\emph on
+elastic variable
+\emph default
+ 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ to each constreaint 
+\begin_inset Formula $q_{i}\in Q$
+\end_inset
+
+ such that - 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}+e_{i}\ge c_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Limit the elastic variables to accept non-negative values, and set the goal
+ of the linear problme to minimaize the sum of the elastic variables - 
+\begin_inset Formula $Goal=-\sum e_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+While the problem is feasible - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Solve the linear problem, for each elastic variable 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+If 
+\begin_inset Formula $e_{i}>0$
+\end_inset
+
+ - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+\begin_inset Formula $S=S\cup\left\{ q_{i}\right\} $
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Enumerate
+remove 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ (
+\begin_inset Formula $q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}\ge c_{i}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Formula $S$
+\end_inset
+
+ is an IIS
 \end_layout
 
 \begin_layout Subsection
@@ -484,6 +696,13 @@ Code reviews
 
 \begin_layout Chapter
 Results
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:Results"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
