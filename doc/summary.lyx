@@ -551,7 +551,7 @@ reference "chap:Results"
 md5
 \emph default
  library, and more than 8 hours to find the blames as well.
- Therefor we read furthr and implemented an elastic filter for eliminating
+ Therefore we read further and implemented an elastic filter for eliminating
  IIS -
 \end_layout
 
