@@ -5,7 +5,7 @@
 \textclass extreport
 \begin_preamble
 \usepackage{fullpage}
-\usepackage{framed}
+%\usepackage{framed}
 \usepackage{listings}
 
 % bold ttfonts
@@ -24,16 +24,15 @@ tabsize=2 %
 
 \newenvironment{boa}
 {% This is the begin code
-\begin{minipage}[t]{0.8\columnwidth}%
-%  \begin{framed}
-%    \texttt
-\footnotesize
-     
+  \begin{minipage}[t]{0.9\columnwidth}%
+  %  \begin{framed}
+  \footnotesize 
+  \ttfamily    
 }
 {% This is the end code
-%  \end{framed}
-\end{minipage}\\
- }
+  %  \end{framed}
+  \end{minipage}
+}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -1327,24 +1326,36 @@ begin{boa}
 
 \begin_layout Standard
 
+\series bold
 \color red
 line
+\series default
 \color inherit
  tests/realworld/fingerd/fingerd.c:85 
 \end_layout
 
 \begin_layout Standard
-- unsafe function call gets [tests/realworld/fingerd/fingerd.c:121] 
+- 
+\series bold
+unsafe function call gets
+\series default
+ [tests/realworld/fingerd/fingerd.c:121] 
 \end_layout
 
 \begin_layout Standard
-- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
- 
+- 
+\series bold
+unknown function call realhostname_sa
+\series default
+ [tests/realworld/fingerd/fingerd.c:128] 
 \end_layout
 
 \begin_layout Standard
-- memchr call might read beyond the buffer [tests/realworld/fingerd/fingerd.c:139
-] 
+- 
+\series bold
+memchr call might read beyond the buffer
+\series default
+ [tests/realworld/fingerd/fingerd.c:139] 
 \end_layout
 
 \begin_layout Standard
@@ -1366,6 +1377,11 @@ end{boa}
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 The overrun discovered by boa, and the real cause reported briefly.
  Note another result of 
 \emph on
@@ -1404,28 +1420,44 @@ begin{boa}
 
 \begin_layout Standard
 
+\series bold
 \color red
 rhost
+\series default
 \color inherit
  tests/realworld/fingerd/fingerd.c:86 
 \end_layout
 
 \begin_layout Standard
-- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
- 
+- 
+\series bold
+unknown function call realhostname_sa
+\series default
+ [tests/realworld/fingerd/fingerd.c:128] 
 \end_layout
 
 \begin_layout Standard
-- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
- 
+- 
+\series bold
+unknown function call realhostname_sa
+\series default
+ [tests/realworld/fingerd/fingerd.c:128] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128] 
+- 
+\series bold
+buffer alias with offset
+\series default
+ [tests/realworld/fingerd/fingerd.c:128] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128]
+- 
+\series bold
+buffer alias with offset
+\series default
+ [tests/realworld/fingerd/fingerd.c:128]
 \end_layout
 
 \begin_layout Standard
@@ -1441,6 +1473,11 @@ end{boa}
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 This false alarm is caused by the use of 
 \emph on
 realhostname_sa
@@ -1485,30 +1522,52 @@ begin{boa}
 
 \begin_layout Standard
 
+\series bold
 \color red
 malloc
+\series default
 \color inherit
  tests/realworld/fingerd/fingerd.c:141 
 \end_layout
 
 \begin_layout Standard
-- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+- 
+\series bold
+buffer alias
+\series default
+ [tests/realworld/fingerd/fingerd.c:149] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+- 
+\series bold
+buffer alias
+\series default
+ [tests/realworld/fingerd/fingerd.c:149] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+- 
+\series bold
+buffer alias
+\series default
+ [tests/realworld/fingerd/fingerd.c:149] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias [tests/realworld/fingerd/fingerd.c:141] 
+- 
+\series bold
+buffer alias
+\series default
+ [tests/realworld/fingerd/fingerd.c:141] 
 \end_layout
 
 \begin_layout Standard
-- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+- 
+\series bold
+buffer alias
+\series default
+ [tests/realworld/fingerd/fingerd.c:149] 
 \end_layout
 
 \begin_layout Standard
@@ -1524,6 +1583,11 @@ end{boa}
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 This blame might seem wierd at a first look, how comes buffer alias alone
  cause an overrun? But the solution appears quickly by looking at the source
  lines (141, 149) reffered by the blame -
