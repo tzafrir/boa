@@ -66,23 +66,6 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  static char TypeToChar(Type t) {
-    switch (t) {
-    case STRUCTURAL : return '0';
-    case ALIASING   : return '1';
-    case NORMAL     : return '2';
-    default         : return '2';
-    }
-  }
-
-  static Type CharToType(char c) {
-    switch (c) {
-    case '0' : return STRUCTURAL;
-    case '1' : return ALIASING;
-    case '2' : return NORMAL;
-    default  : return NORMAL;
-    }
-  }
 
   class Expression {
     double val_;
@@ -185,16 +168,8 @@ class Constraint {
     blame_ = blame;
   }
 
-  static string StripPrefix(const string& blame) {
-    if (blame.empty()) {
-      return blame;
-    }
-    return blame.substr(1);
-  }
-
   void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
-    blame_ = TypeToChar(T);
-    blame_ += blame + " [" + location + "]";
+    blame_ = blame + " [" + location + "]";
     type_ = T;
   }
 

@@ -26,7 +26,7 @@ class MockConstraintProblem : public ConstraintProblem {
 
   virtual void AddConstraint(const Constraint& constraint) {
     EXPECT_DOUBLE_EQ(left_, constraint.left_);
-    EXPECT_EQ(Constraint::TypeToChar(type_) + blame_ + " [" + location_ + "]", constraint.blame_);
+    EXPECT_EQ(blame_ + " [" + location_ + "]", constraint.blame_);
     EXPECT_EQ(type_, constraint.type_);
   }
 };
