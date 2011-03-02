@@ -1001,7 +1001,7 @@ void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
 
   // Generate constraints for the reading operation of memchr.
   const Value* n = I->getOperand(2);
-  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, readBlame, location);
+  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, readBlame, location, -1.0);
 
   // Mark the return value as an alias.
   GenerateBufferAliasConstraint(s, retval, location, n, NULL, returnBlame);

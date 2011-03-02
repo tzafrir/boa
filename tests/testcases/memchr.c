@@ -7,7 +7,7 @@ int main() {
   char unsafeAlias[4] = "abc";
   char* c = memchr(unsafe, 'b', 10);
   if (c != NULL) return 0;
-  c = memchr(safe, 'z', 2);
+  c = memchr(safe, 'z', 12);
   char* a1 = memchr(safeAlias, '1', 1);
   a1[3] = '0';
   char* a2 = memchr(unsafeAlias, 'd', 3);
