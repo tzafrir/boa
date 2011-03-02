@@ -239,6 +239,13 @@ Given a C program that performs buffer manipulations, statically identify
 
 \begin_layout Chapter
 boa
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:boa"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -810,8 +817,14 @@ After defining the initial requirements we began researching past work on
 \begin_layout Standard
 Our research reached the conclusion of using a linear problem solver, solving
  a set of linear constraints generated from each instruction in the source
- code, in order to find buffer overruns, as described in chapter 2.
- TODO: Reference.
+ code, in order to find buffer overruns, as described in chapter 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "chap:boa"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
