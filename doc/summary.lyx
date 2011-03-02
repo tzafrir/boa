@@ -737,7 +737,7 @@ reference "tab:Performance"
 
 \end_inset
 
- summerize the performance of boa on the programs we present in this document,
+ summarizes the performance of boa on the programs we present in this document,
  the reported running times are the results of experiments ran on a Dell Vostro
  1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
  Debian GNU/Linux Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
