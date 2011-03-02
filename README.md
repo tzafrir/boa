@@ -1,6 +1,18 @@
 BOA - Buffer Overrun Analyzer
 =============================
 
+Prerequisites
+-------------
+
+Boa requires the installation of libglpk, llvm, libllvm and clang.
+On a Ubuntu 10.10 system, those can be installed by running:
+    sudo apt-get install clang libglpk-dev
+
+(clang's dependencies include llvm and libllvm).
+
+To run unit tests, the `googletest` testing suite is also required,
+see instructions in the bottom of this document.
+
 In order to compile simply run
     $ make
 
