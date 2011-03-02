@@ -536,7 +536,7 @@ After one iteration the algorithm return an IIS, which can be removed from
  the original problem.
  In case there are several IISs in the original problem - the algorithm
  should repeat until the problem become feasible.
- We have implemented this approch at first, and it did woked well on small
+ We have implemented this approch at first, and it did work well on small
  pieces of code, but naturally did not scale well - on the same testing
  system described in chapter 
 \begin_inset CommandInset ref
