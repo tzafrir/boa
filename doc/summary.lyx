@@ -620,7 +620,7 @@ elastic variable
 
 \begin_layout Enumerate
 Limit the elastic variables to accept non-negative values, and set the goal
- of the linear problme to minimaize the sum of the elastic variables - 
+ of the linear problem to minimize the sum of the elastic variables - 
 \begin_inset Formula $Goal=-\sum e_{i}$
 \end_inset
 
