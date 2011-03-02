@@ -5,8 +5,35 @@
 \textclass extreport
 \begin_preamble
 \usepackage{fullpage}
+\usepackage{framed}
 \usepackage{listings}
-\lstset{language=C, numbers=left, frame=single, xleftmargin=20pt, xrightmargin=40pt}
+
+% bold ttfonts
+\usepackage{courier}
+\renewcommand{\ttdefault}{pcr}
+
+\lstset{%
+language=C, 
+numbers=left, 
+frame=single, 
+xleftmargin=20pt, 
+xrightmargin=40pt, 
+basicstyle=\ttfamily \small, 
+tabsize=2 %
+}
+
+\newenvironment{boa}
+{% This is the begin code
+\begin{minipage}[t]{0.8\columnwidth}%
+%  \begin{framed}
+%    \texttt
+\footnotesize
+     
+}
+{% This is the end code
+%  \end{framed}
+\end{minipage}\\
+ }
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -33,7 +60,7 @@
 \paperfontsize default
 \spacing single
 \use_hyperref false
-\papersize default
+\papersize a4paper
 \use_geometry false
 \use_amsmath 1
 \use_esint 1
@@ -73,8 +100,6 @@ boa
 \series default
 \size default
  
-\lang english
-
 \begin_inset ERT
 status open
 
@@ -110,9 +135,9 @@ status open
 
 
 \begin_inset Graphics
-	filename /home/gai/boa/boa.png
+	filename ../boa.png
 	lyxscale 33
-	height 40pt
+	height 50pt
 
 \end_inset
 
@@ -208,17 +233,12 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Given a C program that performs buffer manipulations, statically (at compile
- time) identify whether the program may perform array access out of the
- array bounds.
+Given a C program that performs buffer manipulations, statically identify
+ whether the program may perform array access out of the array bounds.
 \end_layout
 
 \begin_layout Section
 Previous work
-\end_layout
-
-\begin_layout Standard
-
 \end_layout
 
 \begin_layout Chapter
@@ -315,16 +335,384 @@ Buffer aliasing
 Linear Solver
 \end_layout
 
-\begin_layout Subsection
-GLPK
+\begin_layout Standard
+The constraints generated represent a linear problem, and each solution
+ of the problem suggests a set of ranges for the values each integer may
+ recieve and the allocation and usage of each buffer.
+ As we aim to find the tightest ranges, we direct our linear solver to find
+ a solution maximizing -
+\begin_inset Formula 
+\[
+Goal=\sum_{\mathbf{Buffers}}\left[\left\{ \mbox{buf!used!min}\right\} \stackrel{\phantom{+}}{+}\left\{ \mbox{buf!alloc!min}\right\} -\left\{ \mbox{buf!used!max}\right\} -\left\{ \mbox{buf!alloc!max}\right\} \right]
+\]
+
+\end_inset
+
+A solution satisfying this goal will maximize the lower bounds and minimize
+ the upper bounds of each buffer access, and thus assure we get the tightest
+ solution.
+\end_layout
+
+\begin_layout Standard
+Once we have the solution
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+The solution is a set of integer values, one for each of the problem variables,
+ such that all the constraints are satisfied and the 
+\begin_inset Formula $Goal$
+\end_inset
+
+ value is maximized
+\end_layout
+
+\end_inset
+
+ we test each buffer to verify that - 
+\begin_inset Formula 
+\[
+\left\{ \mbox{buf!used}\right\} \subseteq\left\{ \mbox{buf!alloc}\right\} 
+\]
+
+\end_inset
+
+Which means - 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!used!max}\right\}  & < & \left\{ \mbox{buf!alloc!min}\right\} \\
+\left\{ \mbox{buf!used!min}\right\}  & \ge & 0
+\end{eqnarray*}
+
+\end_inset
+
+Note that we stick to the size and numbering conventions of C, safe access
+ to a buffer of size 
+\begin_inset Formula $n$
+\end_inset
+
+ is any access to the cells 
+\begin_inset Formula $0\dots n-1$
+\end_inset
+
+.
+ If the solution does not satisfy one of the constraints, we report a possible
+ buffer overrun in this specific buffer.
+ 
 \end_layout
 
 \begin_layout Subsection
-Elastic filter
+Handling infeasible problems
+\end_layout
+
+\begin_layout Standard
+In many cases, the constraints we generate create an infeasible linear problem.
+ The simplest example of such case is - 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}
+\end_layout
+
+\begin_layout Plain Layout
+
+int i;
+\end_layout
+
+\begin_layout Plain Layout
+
+i++;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+The constraint generated from the second line will be - 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{tmp!max}\right\}  & \ge & \left\{ \mbox{i!max}\right\} +1\\
+\left\{ \mbox{i!max}\right\}  & \ge & \left\{ \mbox{tmp!max}\right\} 
+\end{eqnarray*}
+
+\end_inset
+
+Which is obviously an infeasible set of constraints.
+ The same problem holds in many different cases, including 
+\emph on
+strcat
+\emph default
+ (which concatenates one string to the end of another, and therefore implies
+ an equivalent set of constraints to the string used length).
+\end_layout
+
+\begin_layout Standard
+When our linear solver discovers that the constraints problem we have generated
+ is infeasible, we wish make the smallest change to the problem and make
+ it feasible once again.
+ There is a great body of work in the area of finding and eliminating IIS
+ (
+\emph on
+irreducibly inconsistent system
+\emph default
+), and we follow the algorithms and terminology of Chinneck and Dravnieks
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Elastic IIS"
+
+\end_inset
+
+.
+ The common and naive approach is the deletion filtering -
+\end_layout
+
+\begin_layout Enumerate
+input: 
+\begin_inset Formula $Q$
+\end_inset
+
+ is an infeasible set of constraints
+\end_layout
+
+\begin_layout Enumerate
+Try to delete - for each 
+\begin_inset Formula $q_{i}\in Q$
+\end_inset
+
+ DO:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Test whether 
+\begin_inset Formula $Q\backslash q_{i}$
+\end_inset
+
+ is feasible -
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+If infeasible - set 
+\begin_inset Formula $Q=Q\backslash q_{i}$
+\end_inset
+
+
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+We're not defining a loop here -- Tzafrir 2.3 11:17
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Formula $Q$
+\end_inset
+
+ is an IIS
+\end_layout
+
+\begin_layout Standard
+After one iteration the algorithm return an IIS, which can be removed from
+ the original problem.
+ In case there are several IISs in the original problem - the algorithm
+ should repeat until the problem become feasible.
+ We have implemented this approch at first, and it did work well on small
+ pieces of code, but naturally did not scale well - on the same testing
+ system described in chapter 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "chap:Results"
+
+\end_inset
+
+ it took more than half an hour to eliminate the IISs in the 400 lines of
+ source of 
+\emph on
+md5
+\emph default
+ library, and more than 8 hours to find the blames (section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Blame-system"
+
+\end_inset
+
+) as well.
+ Therefore we read furthr and implemented an elastic filter for eliminating
+ IIS.
+ The main idea behind elastic filtering is adding a new 
+\emph on
+elastic variable
+\emph default
+ to each constraint, allowing it to 
+\emph on
+strech
+\emph default
+ and therefore the infeasibility removed, than we solve the new problem,
+ trying to minimize effect of the 
+\emph on
+elastic variables
+\emph default
+ 
+\end_layout
+
+\begin_layout Enumerate
+Initialize 
+\begin_inset Formula $S=\emptyset$
+\end_inset
+
+ (will hold the IIS)
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $Q$
+\end_inset
+
+ is an infeasible set of constraints of the form - 
+\begin_inset Formula 
+\[
+q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}\ge c_{i}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $a_{i_{j}},c_{i}$
+\end_inset
+
+ are constants and 
+\begin_inset Formula $X_{i_{j}}$
+\end_inset
+
+ is a variable of the constraint problem.
+\end_layout
+
+\begin_layout Enumerate
+Add an 
+\emph on
+elastic variable
+\emph default
+ 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ to each constreaint 
+\begin_inset Formula $q_{i}\in Q$
+\end_inset
+
+ such that - 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}+e_{i}\ge c_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Limit the elastic variables to accept non-negative values, and set the goal
+ of the linear problem to minimize the sum of the elastic variables - 
+\begin_inset Formula $Goal=-\sum e_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+While the problem is feasible - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Solve the linear problem, for each elastic variable 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+If 
+\begin_inset Formula $e_{i}>0$
+\end_inset
+
+ - 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+\begin_inset Formula $S=S\cup\left\{ q_{i}\right\} $
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Enumerate
+remove 
+\begin_inset Formula $e_{i}$
+\end_inset
+
+ (
+\begin_inset Formula $q_{i}:\sum_{j=1}^{n_{i}}a_{i_{j}}X_{i_{j}}\ge c_{i}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Formula $S$
+\end_inset
+
+ is an IIS
+\end_layout
+
+\begin_layout Standard
+The elastic filtering algorithm based on 
 \end_layout
 
 \begin_layout Subsection
 Blame system
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Blame-system"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -332,7 +720,146 @@ Implementation
 \end_layout
 
 \begin_layout Chapter
--To be named-
+Development Process
+\end_layout
+
+\begin_layout Section
+Initial Requirements
+\end_layout
+
+\begin_layout Standard
+We set out to develop Boa by first defining a preliminary set of requirements:
+\end_layout
+
+\begin_layout Itemize
+Provide analysis over any valid
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+We define 
+\size normal
+\emph on
+Valid C
+\emph default
+ code as any code that is compiled by 
+\emph on
+gcc
+\emph default
+ with the 
+\emph on
+-Wall
+\emph default
+ flag without any warnings.
+\end_layout
+
+\end_inset
+
+ C code as is, without requiring the programmer to provide any meta information.
+\end_layout
+
+\begin_layout Itemize
+Provide 
+\emph on
+Soundness
+\emph default
+: Report 100% of the buffer overruns in the code, with no 
+\emph on
+False Negatives
+\emph default
+ reported.
+\end_layout
+
+\begin_layout Section
+Lenient Assumptions
+\end_layout
+
+\begin_layout Standard
+In order to achieve these requirements we also defined lenient assumption
+ on the input code:
+\end_layout
+
+\begin_layout Itemize
+The programmer knows that the C string library requires that a string must
+ end with the NUL terminating character '
+\backslash
+0', and will never mutate the last byte of a buffer in a way that will cause
+ an overrun.
+\end_layout
+
+\begin_layout Itemize
+The programmer never uses an uninitialized value.
+\end_layout
+
+\begin_layout Itemize
+TODO(tzafrir): Find more assumptions we used, if any.
+\end_layout
+
+\begin_layout Section
+Research and Technology Survey
+\end_layout
+
+\begin_layout Standard
+After defining the initial requirements we began researching past work on
+ the subject of buffer overrun static analysis, and set out to find which
+ tools already exist that can be used to build Boa.
+\end_layout
+
+\begin_layout Standard
+Our research reached the conclusion of using a linear problem solver, solving
+ a set of linear constraints generated from each instruction in the source
+ code, in order to find buffer overruns, as described in chapter 2.
+ TODO: Reference.
+\end_layout
+
+\begin_layout Standard
+We set a goal of using only open source tools which are publically available
+ for free use under an Open-Source compatible license, and converged towards
+ the use of the following tools:
+\end_layout
+
+\begin_layout Itemize
+GLPK - the GNU Linear Programming Kit [
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.gnu.org/software/glpk/glpk.html"
+
+\end_inset
+
+], available under version 3 of the GNU Public License.
+ Used to solve the linear constraints using the Simplex Algorithm.
+\end_layout
+
+\begin_layout Itemize
+The Clang C Front-End [
+\begin_inset CommandInset href
+LatexCommand href
+name "http://clang.llvm.org/"
+target "http://clang.llvm.org/"
+
+\end_inset
+
+], available under the University of Illinois/NCSA Open Source License.
+ We planned on using Clang's plug-in system in order to go over the code's
+ Abstract Syntax Tree and generate linear constraints according to the instructi
+ons in the code.
+\end_layout
+
+\begin_layout Standard
+We then set out to create prototypes.
+ First we created example, 
+\begin_inset Quotes eld
+\end_inset
+
+
+\emph on
+Hello World
+\begin_inset Quotes erd
+\end_inset
+
+
+\emph default
+ style, programs that make use of Clang and GLPK's interfaces separately,
 \end_layout
 
 \begin_layout Section
@@ -349,10 +876,683 @@ Code reviews
 
 \begin_layout Chapter
 Results
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:Results"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We tested boa on several widespread real world programs.
+ We tested to see whether boa discovers real buffer overruns, and also to
+ evaluate the number of false alarms and their main causes.
+ The source files used in all of the experiments are availble in boa git
+ repository
+\begin_inset CommandInset citation
+LatexCommand cite
+key "git repository"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Performance"
+
+\end_inset
+
+ summarizes the performance of boa on the programs we present in this document,
+ the reported running times are the results of experiments ran on a Dell
+ Vostro 1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
+ Debian GNU/Linux Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
+ On this humble configuration boa can analyze few thousands lines of code
+ within seconds, thus the use of elastic filter did pay off and boa can
+ be used to efficiently analyze any reasonable piece of C code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+fingerd
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+flex
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+syslog
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Source lines
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+230
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+332
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Constraints
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2894
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1206
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Running time
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.508s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.304s
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Buffers
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Overruns reported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Real overruns
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+boa performance on various real world examples
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Performance"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
 fingerd
+\end_layout
+
+\begin_layout Standard
+We tested boa using 
+\emph on
+fingerd
+\emph default
+, unix finger deamon.
+ We altered the current source code to reflect the well known buffer overrun,
+ used by the Internet worm in 1988.
+ The overrun is caused by using the unsafe function 
+\emph on
+gets
+\emph default
+ to read data into the 1024
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Back in 1988 
+\emph on
+line
+\emph default
+ was 512 bytes, but it does not matter for the analysis.
+\end_layout
+
+\end_inset
+
+ bytes buffer 
+\emph on
+line
+\emph default
+.
+ As far as we know, this is the only real buffer overrun in the 230 lines
+ of source code.
+\end_layout
+
+\begin_layout Standard
+Running on 
+\emph on
+fingerd
+\emph default
+ source, boa reported overruns on 6 out of the 34 buffers.
+ Next we present boa's blame for three of them, and analyze the reason for
+ the reported overrun -
+\end_layout
+
+\begin_layout Paragraph
+line
+\end_layout
+
+\begin_layout Standard
+is the only real overrun in 
+\emph on
+fingerd
+\emph default
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\color red
+line
+\color inherit
+ tests/realworld/fingerd/fingerd.c:85 
+\end_layout
+
+\begin_layout Standard
+- unsafe function call gets [tests/realworld/fingerd/fingerd.c:121] 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- memchr call might read beyond the buffer [tests/realworld/fingerd/fingerd.c:139
+] 
+\end_layout
+
+\begin_layout Standard
+[ ...
+ 10 more lines ...
+ ]
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+The overrun discovered by boa, and the real cause reported briefly.
+ Note another result of 
+\emph on
+gets
+\emph default
+ - every other buffer access based on 
+\emph on
+line
+\emph default
+'s length will be reported as an overrun.
+\end_layout
+
+\begin_layout Paragraph
+rhost
+\end_layout
+
+\begin_layout Standard
+is a char buffer meant to hold the host name
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\color red
+rhost
+\color inherit
+ tests/realworld/fingerd/fingerd.c:86 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- unknown function call realhostname_sa [tests/realworld/fingerd/fingerd.c:128]
+ 
+\end_layout
+
+\begin_layout Standard
+- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias with offset [tests/realworld/fingerd/fingerd.c:128]
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+This false alarm is caused by the use of 
+\emph on
+realhostname_sa
+\emph default
+, from 
+\emph on
+socket.h
+\emph default
+.
+ This false alarm could be avoided if boa would model 
+\emph on
+socket.h
+\emph default
+ functions, but even now the output let the user identify the cause immediatly
+ and decide manually wether this call is safe or not.
+\end_layout
+
+\begin_layout Paragraph
+malloc
+\end_layout
+
+\begin_layout Standard
+is a generic name for any buffer created by a malloc call, one can distinguish
+ between two malloc calls by their source location (filename and line number)
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\color red
+malloc
+\color inherit
+ tests/realworld/fingerd/fingerd.c:141 
+\end_layout
+
+\begin_layout Standard
+- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias [tests/realworld/fingerd/fingerd.c:141] 
+\end_layout
+
+\begin_layout Standard
+- buffer alias [tests/realworld/fingerd/fingerd.c:149] 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+This blame might seem wierd at a first look, how comes buffer alias alone
+ cause an overrun? But the solution appears quickly by looking at the source
+ lines (141, 149) reffered by the blame -
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=141,lastline=141, firstnumber=141]{../tests/realworld/fi
+ngerd/fingerd.c}
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=149,lastline=151, firstnumber=149]{../tests/realworld/fi
+ngerd/fingerd.c}
+\end_layout
+
+\end_inset
+
+The programmer allocates a buffer large enough to include 
+\emph on
+line
+\emph default
+, and then iterates through the array using the 
+\family typewriter
+++
+\family default
+ operator on a pointer.
+ Since boa is a flow-insensitive analyzing tool, we can not assure that
+ the inceremental pointer aliasing will be limited to the buffer size -
+ and therefore boa reports a possible buffer overrun.
 \end_layout
 
 \begin_layout Section
@@ -376,6 +1576,44 @@ key "הודים"
 LatexCommand href
 name "Buffer Overrun Detection using Linear Programming and Static Analysis"
 target "www.cs.wisc.edu/wisa/papers/ccs03/p351-ganapathy.pdf "
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\labelwidthstring References
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "git repository"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "boa git repository - https://github.com/tzafrir/boa/"
+target "https://github.com/tzafrir/boa/"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\labelwidthstring References
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "Elastic IIS"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "Locating Minimal Infeasible Constraint Sets in Linear Programs"
+target "http://www.sce.carleton.ca/faculty/chinneck/docs/ChinneckDravnieks.pdf"
 
 \end_inset
 

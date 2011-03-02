@@ -19,4 +19,7 @@ TEST(HelpersTest, StringReplaceTest) {
   ASSERT_EQ("Lorem ipsum bcd", c) << "character a should expand to a long string";
   ReplaceInString(d, 'c', "");
   ASSERT_EQ("abd", d) << "character c should be removed";
+  string selfContaining("aba");
+  ReplaceInString(selfContaining, 'a', "aa");
+  ASSERT_EQ(selfContaining, "aabaa");
 }

@@ -1,0 +1,2 @@
+NOT ByLocation tests/testcases/strerror2.c:4
+HAS ByLocation tests/testcases/strerror2.c:5

@@ -14,9 +14,12 @@ namespace boa {
 
   class VarLiteral {
    protected:
-    const Value* ValueNode_;
+    const void* ValueNode_;
+    // isTmp allows a temporary buffer to be aliased with llvm node without being used later when
+    // reffering the same node by generating two different buffer names
+    bool isTmp_;
 
-    VarLiteral(const Value* ValueNode) : ValueNode_(ValueNode) {}
+    VarLiteral(const void* ValueNode, bool isTmp = false) : ValueNode_(ValueNode), isTmp_(isTmp) {}
 
   public:
     enum ExpressionDir  {MIN, MAX};
@@ -52,17 +55,24 @@ namespace boa {
 
     virtual string getUniqueName() const {
       stringstream ss;
-      ss << "v@" << ValueNode_;
+      if (isTmp_) {
+        ss << "temp@" << ValueNode_;
+      } else {      
+        ss << "v@" << ValueNode_;
+      }
       return ss.str();
     }
 
     virtual string NameExpression(ExpressionDir dir, ExpressionType type) const {
       return getUniqueName() + "!" + TypeToString(type) + "!" + DirToString(dir);
     }
-    
+
     virtual bool IsBuffer() const { return false; }
 
-    bool operator<(const VarLiteral& other) const {
+    virtual bool operator<(const VarLiteral& other) const {
+      if (this->ValueNode_ == other.ValueNode_) {
+        return this->isTmp_ < other.isTmp_;
+      }
       return this->ValueNode_ < other.ValueNode_;
     }
   };

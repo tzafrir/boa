@@ -89,9 +89,15 @@ LinearProblem ConstraintProblem::MakeFeasableProblem() const {
       }     
     }
     lp.structuralRows_ = row - 1;
-    LOG << " !!! " << lp.structuralRows_ << endl;
     for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
-      if (c->GetType() != Constraint::STRUCTURAL) {
+      if (c->GetType() == Constraint::ALIASING) {
+        c->AddToLPP(lp.lp_, row, lp.varToCol_);
+        ++row;
+      }     
+    }    
+    lp.aliasingRows_ = (row - 1) - lp.structuralRows_;
+    for (vector<Constraint>::const_iterator c = constraints_.begin(); c != constraints_.end(); ++c) {
+      if (c->GetType() == Constraint::NORMAL) {
         c->AddToLPP(lp.lp_, row, lp.varToCol_);
         ++row;
       }     
@@ -173,6 +179,8 @@ vector<Buffer> ConstraintProblem::SolveProblem(LinearProblem lp) const {
 }
 
 vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const {
+  vector<string> result;
+
   double minAlloc = glp_get_col_prim(lp.lp_, 
                        lp.varToCol_[buffer.NameExpression(VarLiteral::MIN, VarLiteral::ALLOC)]) - 1;
   glp_set_col_bnds(lp.lp_, lp.varToCol_[buffer.NameExpression(VarLiteral::MAX, VarLiteral::USED)],
@@ -181,13 +189,26 @@ vector<string> ConstraintProblem::Blame(LinearProblem lp, Buffer &buffer) const 
                    GLP_LO, 0.0, 0.0);
    
   lp.Solve();
+
+  // blame the interesting rows first
+  lp.structuralRows_ += lp.aliasingRows_;
   lp.realRows_ = glp_get_num_rows(lp.lp_) - lp.structuralRows_;
   vector<int> rows = lp.ElasticFilter();
-  vector<string> result;
   for (size_t i = 0; i < rows.size(); ++i) {
     char const *row = glp_get_row_name(lp.lp_, rows[i]);
     if (row) {
-      result.push_back(Constraint::StripPrefix(row));
+      result.push_back(row);
+    }
+  }
+  
+  // then aliasing rows too
+  lp.structuralRows_ -= lp.aliasingRows_;
+  lp.realRows_ = lp.aliasingRows_;
+  rows = lp.ElasticFilter();
+  for (size_t i = 0; i < rows.size(); ++i) {
+    char const *row = glp_get_row_name(lp.lp_, rows[i]);
+    if (row) {
+      result.push_back(row);
     }
   }
   return result;

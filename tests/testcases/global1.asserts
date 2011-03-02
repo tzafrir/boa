@@ -1,0 +1,2 @@
+HAS ByName global2
+NOT ByName global1

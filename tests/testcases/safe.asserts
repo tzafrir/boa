@@ -1,3 +1,4 @@
 HAS ByName overflow
 NOT ByName cString
-BLAME overflow unsafe function call gets
+BLAME ByName overflow unsafe function call gets
+BLAME ByLocation tests/testcases/safe.c:7 gets

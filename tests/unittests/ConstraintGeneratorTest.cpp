@@ -26,7 +26,7 @@ class MockConstraintProblem : public ConstraintProblem {
 
   virtual void AddConstraint(const Constraint& constraint) {
     EXPECT_DOUBLE_EQ(left_, constraint.left_);
-    EXPECT_EQ(Constraint::TypeToChar(type_) + blame_ + " [" + location_ + "]", constraint.blame_);
+    EXPECT_EQ(blame_ + " [" + location_ + "]", constraint.blame_);
     EXPECT_EQ(type_, constraint.type_);
   }
 };
@@ -45,7 +45,7 @@ class ConstraintGeneratorTest : public ::testing::Test {
     delete cg;
     delete cp;
     cp = new MockConstraintProblem();
-    cg = new ConstraintGenerator(*cp);
+    cg = new ConstraintGenerator(*cp, false);
   }
 };
 
@@ -63,8 +63,8 @@ TEST_F(ConstraintGeneratorTest, UnsafeFunctionTest) {
 
 TEST_F(ConstraintGeneratorTest, GenerateConstraintMax) {
   string s = "_Max";
-  cp->SetExpectedConstraintParams(10.0 - 12.7, blame+s, location+s, Constraint::INTERESTING);
-  cg->GenerateConstraint(10.0, 12.7, VarLiteral::MAX, blame+s, location+s, Constraint::INTERESTING);
+  cp->SetExpectedConstraintParams(10.0 - 12.7, blame+s, location+s, Constraint::NORMAL);
+  cg->GenerateConstraint(10.0, 12.7, VarLiteral::MAX, blame+s, location+s, Constraint::NORMAL);
 }
 
 TEST_F(ConstraintGeneratorTest, GenerateConstraintMin) {

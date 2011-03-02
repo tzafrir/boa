@@ -21,9 +21,12 @@ using namespace llvm;
 
 namespace boa {
 
-void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location) {
-  cp_.AddBuffer(buf);
-  buffers_.insert(buf);
+void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location, bool literal) {
+  if (!(IgnoreLiterals_ && literal)) {
+    // add buffer to problem unless it is a string literal and we ignore literals
+    cp_.AddBuffer(buf);
+    buffers_.insert(buf);
+  }
 
   GenerateConstraint(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ),
                      buf.NameExpression(VarLiteral::MAX, VarLiteral::USED),
@@ -88,7 +91,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   case Instruction::Xor:
     GenerateOrXorConstraint(I);
     break;
-    
+
   // Memory instructions...
   case Instruction::Alloca:
     GenerateAllocaConstraint(dyn_cast<const AllocaInst>(I));
@@ -100,7 +103,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
     break;
   case Instruction::GetElementPtr:
-    GenerateArraySubscriptConstraint(dyn_cast<const GetElementPtrInst>(I));
+    GenerateGetElementPtrConstraint(dyn_cast<const GetElementPtrInst>(I));
     break;
 
   // Convert instructions...
@@ -173,27 +176,30 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     return;
   }
   if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
-    // string literals are global arrays
-    unsigned len = ar->getNumElements() - 1;
-    string s;
     if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
-          s = CA->getAsString();
+          // string literals are global arrays
+          unsigned len = ar->getNumElements() - 1;
+          string s;
+          s = CA->getAsString().c_str();
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
           Helpers::ReplaceInString(s, '\r', "");
+          Helpers::ReplaceInString(s, '[', "\\[");
+          Helpers::ReplaceInString(s, ']', "\\]");
+          s = "string literal \"" + s + "\"";
+          Buffer buf(G, s, ""); // TODO - file? line?
+          LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
+
+          GenerateAllocConstraint(G, ar, "(literal)");
+          GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
+          GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
+          AddBuffer(buf, "(literal)", true);
+          return;
         }
       }
     }
-    s = "string literal \"" + s + "\"";
-    Buffer buf(G, s, ""); // TODO - file? line?
-    LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
-
-    GenerateAllocConstraint(G, ar, "(literal)");
-    GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MAX, s, "(literal)");
-    GenerateConstraint(buf, len, VarLiteral::LEN_WRITE, VarLiteral::MIN, s, "(literal)");
-    AddBuffer(buf, "(literal)");
   }
 }
 
@@ -204,7 +210,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
       GenerateBufferAliasConstraint(from, to, GetInstructionFilename(I));
     } else {
       Integer intLiteral(F);
-      GenerateGenericConstraint(intLiteral, I->getReturnValue(), VarLiteral::USED, "return value", 
+      GenerateGenericConstraint(intLiteral, I->getReturnValue(), VarLiteral::USED, "return value",
                                 GetInstructionFilename(I));
     }
   }
@@ -212,7 +218,7 @@ void ConstraintGenerator::GenerateReturnConstraint(const ReturnInst* I, const Fu
 
 void ConstraintGenerator::GenerateAndConstraint(const BinaryOperator* I) {
   Integer res(I);
-  GenerateGenericConstraint(res, I->getOperand(0), VarLiteral::USED, "bitwise and", 
+  GenerateGenericConstraint(res, I->getOperand(0), VarLiteral::USED, "bitwise and",
                             GetInstructionFilename(I));
   GenerateGenericConstraint(res, I->getOperand(1), VarLiteral::USED, "bitwise and",
                             GetInstructionFilename(I));
@@ -230,7 +236,7 @@ void ConstraintGenerator::GenerateAddConstraint(const BinaryOperator* I) {
   Integer intLiteral(I);
   GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame,
                      GetInstructionFilename(I));
-  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame, 
+  GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame,
                      GetInstructionFilename(I));
 }
 
@@ -244,7 +250,7 @@ void ConstraintGenerator::GenerateSubConstraint(const BinaryOperator* I) {
   minResult.sub(GenerateIntegerExpression(I->getOperand(1), VarLiteral::MAX));
 
   Integer intLiteral(I);
-  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame, 
+  GenerateConstraint(intLiteral, maxResult, VarLiteral::USED, VarLiteral::MAX, blame,
                      GetInstructionFilename(I));
   GenerateConstraint(intLiteral, minResult, VarLiteral::USED, VarLiteral::MIN, blame,
                      GetInstructionFilename(I));
@@ -310,13 +316,15 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
 
 void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string& blame) {
   Integer intLiteral(I);
-  GenerateGenericConstraint(intLiteral, I->getOperand(0), VarLiteral::USED, blame, 
+  GenerateGenericConstraint(intLiteral, I->getOperand(0), VarLiteral::USED, blame,
                             GetInstructionFilename(I));
 }
 
 void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I, const string &location) {
+  // TODO(tzafrir): Use GenerateConstraint here.
   Buffer buf(I);
-  Constraint cMax("Pointer Dereference", location), cMin("Pointer Dereference", location);
+  string blame("Pointer Dereference [" + location + "]");
+  Constraint cMax(blame, location), cMin(blame, location);
 
   cMax.addBig(buf.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE));
   cp_.AddConstraint(cMax);
@@ -334,7 +342,7 @@ void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
       Integer intLiteral(I->getPointerOperand());
-      GenerateGenericConstraint(intLiteral, I->getValueOperand(), VarLiteral::USED, 
+      GenerateGenericConstraint(intLiteral, I->getValueOperand(), VarLiteral::USED,
                                 "store instruction", loc);
       GeneratePointerDerefConstraint(I->getPointerOperand(), loc);
     } else {
@@ -365,13 +373,13 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
     if (!(pType->getElementType()->isPointerTy())) {
       // load from a pointer - load int value
       Integer intLiteral(I);
-      GenerateGenericConstraint(intLiteral, I->getPointerOperand(),VarLiteral::USED, 
+      GenerateGenericConstraint(intLiteral, I->getPointerOperand(),VarLiteral::USED,
                                 "load instruction", loc);
       GeneratePointerDerefConstraint(I->getPointerOperand(), loc);
     } else {
       Pointer pFrom(I->getPointerOperand()), pTo(I);
       GenerateBufferAliasConstraint(pFrom, pTo, loc);
-  
+
       if (const PointerType *ppType = dyn_cast<const PointerType>(pType->getElementType())) {
         if (ppType->getElementType()->isPointerTy()) {
           unknownPointers_.insert(pTo);
@@ -384,30 +392,49 @@ void ConstraintGenerator::GenerateLoadConstraint(const LoadInst* I) {
 }
 
 void ConstraintGenerator::GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to,
-                                                        const string& location, 
-                                                        const Value *offset) {
-  static const VarLiteral::ExpressionDir dirs[2] = {VarLiteral::MIN, VarLiteral::MAX};
-  static const int dirCoef[2] = {1, -1};
-  static const VarLiteral::ExpressionType types[2] = {VarLiteral::LEN_READ, VarLiteral::LEN_WRITE};
-  static const int typeCoef[2] = {-1, 1};
-
-  for (int type = 0; type < 2; ++type) {
-    Constraint::Expression offsets[2];
-    if (offset) {
-      offsets[0] = GenerateIntegerExpression(offset, dirs[0]);
-      offsets[0].mul(dirCoef[0] * typeCoef[type]);
-      offsets[1] = GenerateIntegerExpression(offset, dirs[1]);
-      offsets[1].mul(dirCoef[1] * typeCoef[type]);
-    }
-
-    for (int dir = 0; dir < 2; ++ dir) {
-      Expression bigExp, smallExp;
-      bigExp.add(to.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      bigExp.add(offsets[dir]);
-      smallExp.add(from.NameExpression(dirs[dir], types[type]), dirCoef[dir] * typeCoef[type]);
-      GenerateConstraint(bigExp, smallExp, VarLiteral::MAX, "buffer alias", location);
-    }
+                                                        const string& location,
+                                                        const Value *offset,
+                                                        const Constraint::Expression *offsetExp,
+                                                        const string& blame) {
+  if ((offset != NULL) && (offsetExp != NULL)) {
+    // only one type of offset allowed
+    LOG << "Error - GenerateBufferAliasConstraint got both offset and offsetExp" << endl;
+    return;
   }
+
+  Constraint::Type type = Constraint::ALIASING;
+  string aliasBlame = "buffer alias";
+  if (offset != NULL || offsetExp != NULL) {
+    aliasBlame += " with offset";
+  }
+  if (blame != "") {
+    aliasBlame += " - " + blame;
+  }
+
+  Constraint::Expression ToReadMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression ToReadMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression ToWriteMax = to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression ToWriteMin = to.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromReadMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ);
+  Constraint::Expression FromReadMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_READ);
+  Constraint::Expression FromWriteMax = from.NameExpression(VarLiteral::MAX, VarLiteral::LEN_WRITE);
+  Constraint::Expression FromWriteMin = from.NameExpression(VarLiteral::MIN, VarLiteral::LEN_WRITE);
+  if (offset != NULL) {
+    FromReadMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));
+    FromReadMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
+    FromWriteMax.sub(GenerateIntegerExpression(offset, VarLiteral::MAX));  
+    FromWriteMin.sub(GenerateIntegerExpression(offset, VarLiteral::MIN));
+  } else if (offsetExp != NULL) {
+    FromReadMax.sub(*offsetExp);
+    FromReadMin.sub(*offsetExp);
+    FromWriteMax.sub(*offsetExp);
+    FromWriteMin.sub(*offsetExp);
+  }
+  
+  GenerateConstraint(ToReadMax,  FromReadMax,  VarLiteral::MAX, aliasBlame, location, type);
+  GenerateConstraint(ToWriteMax, FromWriteMax, VarLiteral::MIN, aliasBlame, location, type);
+  GenerateConstraint(ToReadMin,  FromReadMin,  VarLiteral::MIN, aliasBlame, location, type);
+  GenerateConstraint(ToWriteMin, FromWriteMin, VarLiteral::MAX, aliasBlame, location, type);
 }
 
 
@@ -421,7 +448,7 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
   double shiftFactor = 1 << (int)operand1.GetConst();
   Expression maxOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MAX);
   Expression minOperand = GenerateIntegerExpression(I->getOperand(0), VarLiteral::MIN);
-  
+
   switch (I->getOpcode()) {
     case Instruction::Shl:
       minOperand.mul(shiftFactor);
@@ -435,9 +462,9 @@ void ConstraintGenerator::GenerateShiftConstraint(const BinaryOperator* I) {
       GenerateUnboundConstraint(intLiteral, "Logical Shr - unbound.", GetInstructionFilename(I));
       return;
   }
-  
+
   string blame = "Shift operation", loc = GetInstructionFilename(I);
-  
+
   GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
   GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
   GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
@@ -451,6 +478,14 @@ void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   // FIXME - magic numbers!
+  if (const PointerType *pType = dyn_cast<const PointerType>(D->getAddress()->getType())) {
+    if (const StructType *sType = dyn_cast<const StructType>(pType->getElementType())) {
+      if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(5))) {
+        AddContainedBuffers(sType, node);
+        return;
+      }
+    }
+  }
   if (const MDString *S = dyn_cast<const MDString>(D->getVariable()->getOperand(2))) {
     if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(3))) {
       if (const MDString *file = dyn_cast<const MDString>(node->getOperand(1))) {
@@ -473,7 +508,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   LOG << "Can't extract debug info\n";
 }
 
-void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType, 
+void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayType *aType,
                                                   const string& location) {
   Buffer buf(I);
   double allocSize = aType->getNumElements();
@@ -486,20 +521,69 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
   GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MIN, blame, location);
 }
 
-void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
-  if (const PointerType *pType = dyn_cast<const PointerType>(I->getType())) {
-    if (const ArrayType *aType = dyn_cast<const ArrayType>(pType->getElementType())) {
-      GenerateAllocConstraint(I, aType, GetInstructionFilename(I));
+void ConstraintGenerator::AddContainedBuffers(const StructType *structType, const MDNode *node) {
+  if (this->structsVisited.insert(structType).second)  {
+    while (node->getNumOperands() == 10) {
+      node = dyn_cast<MDNode>(node->getOperand(9));
+      if (node == NULL) return;
+    }
+    string structName;
+    const MDNode* memberNode;
+    if (const MDString* structNameNode = dyn_cast<const MDString>(node->getOperand(2))) {
+      structName = structNameNode->getString().str();
+    }
+    if ((memberNode = dyn_cast<const MDNode>(node->getOperand(10)))) {
+      for (size_t typeIt = 0; typeIt < structType->getNumElements(); typeIt++) {
+        if (const ArrayType *aType = dyn_cast<const ArrayType>(structType->getTypeAtIndex(typeIt))) {
+          if (const MDNode* arrayNode = dyn_cast<const MDNode>(memberNode->getOperand(typeIt))) {
+            if (const MDString* memberNameNode = dyn_cast<const MDString>(arrayNode->getOperand(2))) {
+              string memberName = structName + "." + memberNameNode->getString().str();
+              Buffer buf(structType, memberName, "", false, typeIt);
+              double allocSize = aType->getNumElements();
+              GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MAX, "Struct alloc", "");
+              GenerateConstraint(buf, allocSize, VarLiteral::ALLOC, VarLiteral::MIN, "Struct alloc", "");
+              AddBuffer(buf, "");
+            }
+          }
+        }
+        if (const StructType *sType = dyn_cast<const StructType>(structType->getTypeAtIndex(typeIt))) {
+          AddContainedBuffers(sType, dyn_cast<const MDNode>(memberNode->getOperand(typeIt)));
+        }
+      }
     }
   }
 }
 
-void ConstraintGenerator::GenerateArraySubscriptConstraint(const GetElementPtrInst *I) {
-  Buffer b(I->getPointerOperand());
+void ConstraintGenerator::GenerateAllocaConstraint(const AllocaInst *I) {
+  if (const PointerType *pType = dyn_cast<const PointerType>(I->getType())) {
+    if (const ArrayType *aType = dyn_cast<const ArrayType>(pType->getElementType())) {
+      GenerateAllocConstraint(I, aType, GetInstructionFilename(I));
+      return;
+    }
+  }
+}
 
-  Pointer ptr(I);
-  GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I),
-      I->getOperand(I->getNumOperands()-1));
+void ConstraintGenerator::GenerateGetElementPtrConstraint(const GetElementPtrInst *I) {
+  const Value *pointerOp = I->getPointerOperand();
+  const Value *accessIdx = I->getOperand(I->getNumOperands()-1);
+
+  if (const PointerType *pType = dyn_cast<const PointerType>(pointerOp->getType())) {
+    const Type *elementType = pType->getElementType();
+    if (const StructType *sType = dyn_cast<const StructType>(elementType)) {
+      if (const PointerType *retType = dyn_cast<const PointerType>(I->getType())) {
+        if (/*const ArrayType *aType = */dyn_cast<const ArrayType>(retType->getElementType())) {
+          int offset = (int)dyn_cast<ConstantInt>(accessIdx)->getSExtValue();
+          Buffer b(sType, offset);
+          Pointer ptr(I);
+          GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I));
+          return;
+        }
+      }
+    }
+    Pointer b(pointerOp), ptr(I);
+    GenerateBufferAliasConstraint(b, ptr, GetInstructionFilename(I), accessIdx);
+    return;
+  }
 }
 
 void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
@@ -540,20 +624,28 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-  const static string memcpyStr("llvm.memcpy.");
-  if (functionName.substr(0, memcpyStr.length()) == memcpyStr) {
+  if (functionName == "memchr") {
+    GenerateMemchrConstraint(I);
+    return;
+  }
+
+  static const string memcpyStr("llvm.memcpy.");
+  if (functionName.find(memcpyStr) == 0) {
     Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
     Pointer to(makePointer(I));
-    
+
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
     minExp.add(-1.0);
     Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
     maxExp.add(-1.0);
 
-    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
-    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
-    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, "memcpy", location);
-    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, "memcpy", location);
+    static const string blameDest = "memcpy write to destination buffer",
+                        blameSrc  = "memcpy read from source buffer";
+
+    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameDest, location);
+    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameDest, location);
+    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameSrc, location);
+    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameSrc, location);
     GenerateBufferAliasConstraint(dest, to, location);
     return;
   }
@@ -561,13 +653,13 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
   if (functionName == "pipe") {
     Expression one(1.0);
     Pointer arr(makePointer(I->getArgOperand(0)));
-    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MAX, "pipe call", 
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MAX, "pipe call",
                        GetInstructionFilename(I));
-    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MIN, "pipe call", 
+    GenerateConstraint(arr, one, VarLiteral::LEN_WRITE, VarLiteral::MIN, "pipe call",
                        GetInstructionFilename(I));
     return;
   }
-  
+
   if (functionName == "sprintf") {
     if (I->getNumOperands() != 3) {
       Pointer to(makePointer(I->getArgOperand(0)));
@@ -579,6 +671,32 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
   
+  if ((functionName == "strchr") || (functionName == "strrchr") || (functionName == "strpbrk")) {
+    Pointer to = makePointer(I->getArgOperand(0)), retval = makePointer(I);
+    Constraint::Expression end(to.NameExpression(VarLiteral::MAX, VarLiteral::LEN_READ));
+    
+    // worst case - strchr/strrchr return a pointer to the end of the buffer
+    GenerateBufferAliasConstraint(to, retval, location, NULL, &end);
+    return;
+  }
+
+  if (functionName == "strerror") {
+    // strerror return a read only buffer. Since we can't create a buffer of size 0 (this kind 
+    // of buffer will always result in overrun) 
+    // We model it by a temporary buffer of length 1, and the returned buffer is aliased both to
+    // the 0th and 1st place of the buffer. This way any write access to the buffer will result
+    // in buffer overrun, but read access won't.
+    Buffer buf(I, "strerror", GetInstructionFilename(I), true);
+    AddBuffer(buf, location);
+
+    Expression one(1.0);
+    GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MAX, "strerror call", location);
+    GenerateConstraint(buf, one, VarLiteral::ALLOC, VarLiteral::MIN, "strerror call", location);
+    GenerateBufferAliasConstraint(buf, makePointer(I), location, NULL, &one);
+    GenerateBufferAliasConstraint(buf, makePointer(I), location, NULL);
+    return;
+  }
+
   if (functionName == "write") {
     Pointer to(makePointer(I->getArgOperand(0)));
     Expression minExp = GenerateIntegerExpression(I->getArgOperand(1), VarLiteral::MIN);
@@ -603,7 +721,6 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     // A function can be either safe, not safe, or unsafe.
     if (IsUnsafeFunction(functionName)) {
       blame = "unsafe function call " + functionName;
-      priority = Constraint::INTERESTING;
     } else if (IsSafeFunction(functionName)) {
       blame = "safe function call " + functionName;
     } else {
@@ -671,11 +788,15 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "openlog",
                                     "puts",
                                     "setenv",
+                                    "strcmp",
+                                    "strcoll",
+                                    "strcspn",
+                                    "strncmp",
+                                    "strspn",
+                                    "strstr",
                                     "strtok",
                                     "syslog",
-                                    "vsyslog",
-                                    "strstr",
-                                    "strspn" };
+                                    "vsyslog" };
   for (size_t i = 0; i < (sizeof(safeFunctions) / sizeof(string)); ++i) {
     if (name == safeFunctions[i]) {
       return true;
@@ -687,7 +808,8 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
 bool ConstraintGenerator::IsUnsafeFunction(const string& name) {
   static string unsafeFunctions[] = { "gets",
                                       "scanf",
-                                      "strcat" };
+                                      "strcat",
+                                      "strncat" };
   for (size_t i = 0; i < (sizeof(unsafeFunctions) / sizeof(string)); ++i) {
     if (name == unsafeFunctions[i]) {
       return true;
@@ -766,7 +888,7 @@ void ConstraintGenerator::GenerateConstraint(const VarLiteral &var,
 
 void ConstraintGenerator::GenerateConstraint(const Expression &lhs, const Expression &rhs,
                                              VarLiteral::ExpressionDir direction,
-                                             const string &blame, const string &location, 
+                                             const string &blame, const string &location,
                                              Constraint::Type prio) {
   Constraint constraint(lhs, rhs, direction);
   constraint.SetBlame(blame, location, prio);
@@ -779,7 +901,7 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
   // Assuming result is of type i1, not [N x i1].
   Integer boolean(I);
   string loc = GetInstructionFilename(I);
-  
+
   GenerateConstraint(boolean, 1.0, VarLiteral::USED,
                      VarLiteral::MAX, "Boolean Operation", loc);
   GenerateConstraint(boolean, 0.0, VarLiteral::USED,
@@ -847,6 +969,22 @@ void ConstraintGenerator::GenerateStrlenConstraint(const CallInst* I, const stri
 
   GenerateConstraint(var, pMax, VarLiteral::LEN_READ, VarLiteral::MAX, blame, location);
   GenerateConstraint(var, pMin, VarLiteral::LEN_READ, VarLiteral::MIN, blame, location);
+}
+
+void ConstraintGenerator::GenerateMemchrConstraint(const CallInst* I) {
+  static const string readBlame("memchr call might read beyond the buffer");
+  static string returnBlame("use of memchr return value");
+  string location(GetInstructionFilename(I));
+
+  Pointer s(makePointer(I->getOperand(0)));
+  Pointer retval(makePointer(I));
+
+  // Generate constraints for the reading operation of memchr.
+  const Value* n = I->getOperand(2);
+  GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, readBlame, location);
+
+  // Mark the return value as an alias.
+  GenerateBufferAliasConstraint(s, retval, location, n, NULL, returnBlame);
 }
 
 // Static.

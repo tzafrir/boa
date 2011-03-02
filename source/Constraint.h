@@ -1,6 +1,8 @@
 #ifndef __BOA_CONSTRAINT_H
 #define __BOA_CONSTRAINT_H /* */
 
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <set>
@@ -11,12 +13,11 @@
 #include "Buffer.h"
 #include "Helpers.h"
 
+using std::cerr;
+using std::endl;
+using std::map;
 using std::string;
 using std::set;
-using std::map;
-
-// DEBUG
-#include <sstream>
 
 namespace boa {
 /**
@@ -39,12 +40,12 @@ class Constraint {
   /**
    * STRUCTURAL - Created as part of boa's internal operation and not because of user code.
    *
-   * INTERESTING - An <i>intersting</i> constraint has a high probability of being the cause for
-   *               a buffer overrun.
+   * ALIASING   - A constraint for buffer aliasing, less important in boa's output
    *
-   * NORMAL - A constraint that doesn't fit in the above categories.
+   * NORMAL     - Any other constraint, these constraints has a high probability of being the cause
+   *              for a buffer overrun.
    */
-  enum Type {STRUCTURAL, NORMAL, INTERESTING};
+  enum Type {STRUCTURAL, ALIASING, NORMAL};
 
  private:
   const static int MAX_SIZE = 100;
@@ -65,23 +66,6 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  static char TypeToChar(Type t) {
-    switch (t) {
-    case STRUCTURAL : return '0';
-    case NORMAL     : return '1';
-    case INTERESTING: return '2';
-    default         : return '1';
-    }
-  }
-
-  static Type CharToType(char c) {
-    switch (c) {
-    case '0' : return STRUCTURAL;
-    case '1' : return NORMAL;
-    case '2' : return INTERESTING;
-    default  : return NORMAL;
-    }
-  }
 
   class Expression {
     double val_;
@@ -160,11 +144,13 @@ class Constraint {
     }
   };
 
-  Constraint() : left_(0.0), blame_(""), type_(NORMAL) {}
-  Constraint(const string &blame, const string &location) : left_(0.0), blame_(blame), type_(NORMAL) {}
+  Constraint() : left_(0.0), blame_("[]"), type_(NORMAL) {}
+  Constraint(const string &blame, const string &location) : left_(0.0), blame_(blame), type_(NORMAL) {
+    EnforceBlameLocation(blame);
+  }
 
   Constraint(const Expression &varExpr, const Expression &valueExpr,
-             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("") {
+             VarLiteral::ExpressionDir direction) : left_(0.0), blame_("[]") {
   switch (direction) {
     case VarLiteral::MAX:
       addBig(varExpr);
@@ -178,19 +164,12 @@ class Constraint {
   }
 
   void SetBlame(const string &blame) {
+    EnforceBlameLocation(blame);
     blame_ = blame;
   }
 
-  static string StripPrefix(const string& blame) {
-    if (blame.empty()) {
-      return blame;
-    }
-    return blame.substr(1);
-  }
-
   void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
-    blame_ = TypeToChar(T);
-    blame_ += blame + " [" + location + "]";
+    blame_ = blame + " [" + location + "]";
     type_ = T;
   }
 
@@ -263,6 +242,15 @@ class Constraint {
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
     glp_set_mat_row(lp, row, literals_.size(), indices, values);
     glp_set_row_name(lp, row, blame_.c_str());
+  }
+
+ private:
+
+  static void EnforceBlameLocation(const string& blame) {
+    if (blame.find('[') == string::npos || blame.find(']') == string::npos) {
+      cerr << "Invalid blame string " << blame << endl;
+      exit(1);
+    }
   }
 
   // Enable white-box inspection by the unit tests.

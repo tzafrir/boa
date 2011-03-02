@@ -33,9 +33,11 @@ class ConstraintGenerator {
     Mark buffers that was allocated, so they can be added to the constraint problem once the debug
     info is availble.
   */
-  map<const Value*, bool> allocedBuffers;
+  map<const Value *, bool> allocedBuffers;
+  set<const StructType*> structsVisited;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
+  bool IgnoreLiterals_;
 
   /**
     Set the bounds of an integer variable to be [-infinity , infinity]
@@ -64,8 +66,10 @@ class ConstraintGenerator {
   /**
     Generate buffer aliasing constraint - "to" is aliased to "from" + "offset"
   */
-  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location, 
-                                     const Value *offset = NULL);
+  void GenerateBufferAliasConstraint(VarLiteral from, VarLiteral to, const string& location,
+                                     const Value *offset = NULL,
+                                     const Constraint::Expression *offsetExp = NULL,
+                                     const string& blame = "");
 
   /**
     Make a boa::Pointer instance out of an instruction parameter. This function should be used in
@@ -88,7 +92,7 @@ class ConstraintGenerator {
     Add a buffer to the constraint problem, together with the nessesary constraints. This method
     should be used instead of adding buffer directly to the constraintProblem.
   */
-  void AddBuffer(const Buffer& buf, const string& location);
+  void AddBuffer(const Buffer& buf, const string& location, bool literal = false);
 
   /**
     Generate the Constraint::Expression reflected by "expr". The result will be a number in a case
@@ -97,9 +101,9 @@ class ConstraintGenerator {
   Constraint::Expression GenerateIntegerExpression(const Value *expr, VarLiteral::ExpressionDir dir);
 
   /**
-    Generate the aliasing reflected by getElementPtr instruction
-  */
-  void GenerateArraySubscriptConstraint(const GetElementPtrInst *I);
+      Generate the aliasing reflected by getElementPtr instruction
+    */
+  void GenerateGetElementPtrConstraint(const GetElementPtrInst *I);
 
   /**
     Generate the constraints reflecting defreference of a pointer (usually accesing a buffer through
@@ -111,6 +115,12 @@ class ConstraintGenerator {
     Generate buffer allocation constraints and register the buffer as allocated
   */
   void GenerateAllocConstraint(const Value *I, const ArrayType *aType, const string& location);
+
+  /**
+   * Generate buffer allocation constraints and register buffers as allocated
+   * for all buffers contained in the struct tree
+   */
+  void AddContainedBuffers(const StructType *structType, const MDNode *node);
 
   /**
     Generate a constraint for the result of a boolean comparison.
@@ -132,6 +142,7 @@ class ConstraintGenerator {
   void GenerateMallocConstraint(const CallInst* I, const string &location);
   void GenerateStrdupConstraint(const CallInst* I, const string &location);
   void GenerateStrlenConstraint(const CallInst* I, const string &location);
+  void GenerateMemchrConstraint(const CallInst* I);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
@@ -154,7 +165,8 @@ class ConstraintGenerator {
   static bool IsUnsafeFunction(const string& name);
 
  public:
-  ConstraintGenerator(ConstraintProblem &CP) : cp_(CP) {}
+  ConstraintGenerator(ConstraintProblem &CP, bool ignoreLiterals) : cp_(CP), 
+                                                                  IgnoreLiterals_(ignoreLiterals) {}
 
   void AnalyzePointers();
 
