@@ -406,7 +406,7 @@ Handling infeasible problems
 \end_layout
 
 \begin_layout Standard
-In many cases, the constraints we generate create an infeasable linear problem.
+In many cases, the constraints we generate create an infeasible linear problem.
  The simplest example of such case is - 
 \end_layout
 
@@ -500,7 +500,7 @@ Test whether
 \begin_inset Formula $Q\backslash q_{i}$
 \end_inset
 
- is feasable -
+ is feasible -
 \end_layout
 
 \begin_deeper
@@ -525,7 +525,7 @@ If infeasible - set
 After one iteration the algorithm return an IIS, which can be removed from
  the original problem.
  In case there are several IISs in the original problem - the algorithm
- should repeat until the problem become feasable.
+ should repeat until the problem become feasible.
  We have implemented this approch at first, and it did woked well on small
  pieces of code, but naturally did not scale well - on the same testing
  system described in chapter 
