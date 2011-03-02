@@ -51,7 +51,7 @@ class ConstraintGenerator {
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  VarLiteral::ExpressionType type, const string &blame,
-                                 const string &location);
+                                 const string &location, const Expression &offset = 0.0);
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
                           VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
@@ -143,6 +143,10 @@ class ConstraintGenerator {
   void GenerateStrdupConstraint(const CallInst* I, const string &location);
   void GenerateStrlenConstraint(const CallInst* I, const string &location);
   void GenerateMemchrConstraint(const CallInst* I);
+  void GenerateMemmoveConstraint(const CallInst* I);
+  void GenerateMemcmpConstraint(const CallInst* I);
+  void GenerateMemsetConstraint(const CallInst* I);
+  void GenerateMemcpyConstraint(const CallInst* I);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions

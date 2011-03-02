@@ -237,10 +237,6 @@ Given a C program that performs buffer manipulations, statically identify
  whether the program may perform array access out of the array bounds.
 \end_layout
 
-\begin_layout Section
-Previous work
-\end_layout
-
 \begin_layout Chapter
 boa
 \end_layout
@@ -789,10 +785,16 @@ The programmer knows that the C string library requires that a string must
 
 \begin_layout Itemize
 The programmer never uses an uninitialized value.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+TODO(tzafrir): Find more assumptions we used, if any.
 \end_layout
 
-\begin_layout Itemize
-TODO(tzafrir): Find more assumptions we used, if any.
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section

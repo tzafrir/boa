@@ -1,0 +1,3 @@
+NOT ByName safe
+HAS ByName unsafe
+BLAME ByName unsafe memset

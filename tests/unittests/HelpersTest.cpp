@@ -5,6 +5,7 @@
 
 using std::string;
 using boa::Helpers::ReplaceInString;
+using boa::Helpers::IsPrefix;
 
 TEST(HelpersTest, StringReplaceTest) {
   string a = "Hello World";
@@ -22,4 +23,9 @@ TEST(HelpersTest, StringReplaceTest) {
   string selfContaining("aba");
   ReplaceInString(selfContaining, 'a', "aa");
   ASSERT_EQ(selfContaining, "aabaa");
+}
+
+TEST(HelpersTest, IsPrefixTest) {
+  ASSERT_TRUE(IsPrefix("ab", "abcd"));
+  ASSERT_FALSE(IsPrefix("ab", "cabd"));
 }
