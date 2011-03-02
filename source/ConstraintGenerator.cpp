@@ -644,26 +644,8 @@ void ConstraintGenerator::GenerateCallConstraint(const CallInst* I) {
     return;
   }
 
-
-
-  static const string memcpyStr("llvm.memcpy.");
-  if (Helpers::IsPrefix(memcpyStr, functionName)) {
-    Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
-    Pointer to(makePointer(I));
-
-    Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
-    minExp.add(-1.0);
-    Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
-    maxExp.add(-1.0);
-
-    static const string blameDest = "memcpy write to destination buffer",
-                        blameSrc  = "memcpy read from source buffer";
-
-    GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameDest, location);
-    GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameDest, location);
-    GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameSrc, location);
-    GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameSrc, location);
-    GenerateBufferAliasConstraint(dest, to, location);
+  if (Helpers::IsPrefix("llvm.memcpy", functionName)) {
+    GenerateMemcpyConstraint(I);
     return;
   }
 
@@ -1053,6 +1035,26 @@ void ConstraintGenerator::GenerateMemsetConstraint(const CallInst* I) {
   // Generate constraints for the reading operation of memchr.
   const Value* n = I->getOperand(2);
   GenerateGenericConstraint(s, n, VarLiteral::LEN_WRITE, blame, location, -1.0);
+}
+
+void ConstraintGenerator::GenerateMemcpyConstraint(const CallInst* I) {
+  string location = GetInstructionFilename(I);
+  Pointer dest(makePointer(I->getArgOperand(0))), src(makePointer(I->getArgOperand(1)));
+  Pointer to(makePointer(I));
+
+  Expression minExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MIN);
+  minExp.add(-1.0);
+  Expression maxExp = GenerateIntegerExpression(I->getArgOperand(2), VarLiteral::MAX);
+  maxExp.add(-1.0);
+
+  static const string blameDest = "memcpy write to destination buffer",
+                      blameSrc  = "memcpy read from source buffer";
+
+  GenerateConstraint(dest, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameDest, location);
+  GenerateConstraint(dest, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameDest, location);
+  GenerateConstraint(src, maxExp, VarLiteral::LEN_WRITE, VarLiteral::MAX, blameSrc, location);
+  GenerateConstraint(src, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blameSrc, location);
+  GenerateBufferAliasConstraint(dest, to, location);
 }
 
 // Static.
