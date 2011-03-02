@@ -13,6 +13,9 @@ On a Ubuntu 10.10 system, those can be installed by running:
 To run unit tests, the `googletest` testing suite is also required,
 see instructions in the bottom of this document.
 
+Usage
+-----
+
 In order to compile simply run
     $ make
 
