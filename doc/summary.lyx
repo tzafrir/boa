@@ -233,8 +233,8 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Given a C program that performs buffer manipulations, statically identify whether the program may perform array access out of the
- array bounds.
+Given a C program that performs buffer manipulations, statically identify
+ whether the program may perform array access out of the array bounds.
 \end_layout
 
 \begin_layout Section
@@ -339,8 +339,8 @@ Linear Solver
 The constraints generated represent a linear problem, and each solution
  of the problem suggests a set of ranges for the values each integer may
  recieve and the allocation and usage of each buffer.
- As we aim to find the tightest ranges, we direct our linear
- solver to find a solution maximizing -
+ As we aim to find the tightest ranges, we direct our linear solver to find
+ a solution maximizing -
 \begin_inset Formula 
 \[
 Goal=\sum_{\mathbf{Buffers}}\left[\left\{ \mbox{buf!used!min}\right\} \stackrel{\phantom{+}}{+}\left\{ \mbox{buf!alloc!min}\right\} -\left\{ \mbox{buf!used!max}\right\} -\left\{ \mbox{buf!alloc!max}\right\} \right]
@@ -454,8 +454,8 @@ Which is obviously an infeasible set of constraints.
 \emph on
 strcat
 \emph default
- (which concatenates one string to the end of another, and therefore implies an equivalent
- set of constraints to the string used length).
+ (which concatenates one string to the end of another, and therefore implies
+ an equivalent set of constraints to the string used length).
 \end_layout
 
 \begin_layout Standard
@@ -528,7 +528,7 @@ We're not defining a loop here -- Tzafrir 2.3 11:17
 \begin_inset Formula $Q$
 \end_inset
 
- is an IIS.
+ is an IIS
 \end_layout
 
 \begin_layout Standard
@@ -550,9 +550,30 @@ reference "chap:Results"
 \emph on
 md5
 \emph default
- library, and more than 8 hours to find the blames as well.
- Therefore we read further and implemented an elastic filter for eliminating
- IIS -
+ library, and more than 8 hours to find the blames (section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Blame-system"
+
+\end_inset
+
+) as well.
+ Therefore we read furthr and implemented an elastic filter for eliminating
+ IIS.
+ The main idea behind elastic filtering is adding a new 
+\emph on
+elastic variable
+\emph default
+ to each constraint, allowing it to 
+\emph on
+strech
+\emph default
+ and therefore the infeasibility removed, than we solve the new problem,
+ trying to minimize effect of the 
+\emph on
+elastic variables
+\emph default
+ 
 \end_layout
 
 \begin_layout Enumerate
@@ -679,8 +700,19 @@ remove
  is an IIS
 \end_layout
 
+\begin_layout Standard
+The elastic filtering algorithm based on 
+\end_layout
+
 \begin_layout Subsection
 Blame system
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Blame-system"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -877,8 +909,8 @@ reference "tab:Performance"
 \end_inset
 
  summarizes the performance of boa on the programs we present in this document,
- the reported running times are the results of experiments ran on a Dell Vostro
- 1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
+ the reported running times are the results of experiments ran on a Dell
+ Vostro 1310 laptop, with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running
  Debian GNU/Linux Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
  On this humble configuration boa can analyze few thousands lines of code
  within seconds, thus the use of elastic filter did pay off and boa can
@@ -1236,8 +1268,8 @@ line
 line
 \emph default
 .
- As far as we know, this is the only real buffer overrun in the 230 lines of
- source code.
+ As far as we know, this is the only real buffer overrun in the 230 lines
+ of source code.
 \end_layout
 
 \begin_layout Standard
@@ -1246,8 +1278,8 @@ Running on
 fingerd
 \emph default
  source, boa reported overruns on 6 out of the 34 buffers.
- Next we present boa's blame for three of them, and analyze the reason for the
- reported overrun -
+ Next we present boa's blame for three of them, and analyze the reason for
+ the reported overrun -
 \end_layout
 
 \begin_layout Paragraph
