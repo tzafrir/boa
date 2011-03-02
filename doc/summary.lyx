@@ -688,7 +688,146 @@ Implementation
 \end_layout
 
 \begin_layout Chapter
--To be named-
+Development Process
+\end_layout
+
+\begin_layout Section
+Initial Requirements
+\end_layout
+
+\begin_layout Standard
+We set out to develop Boa by first defining a preliminary set of requirements:
+\end_layout
+
+\begin_layout Itemize
+Provide analysis over any valid
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+We define 
+\size normal
+\emph on
+Valid C
+\emph default
+ code as any code that is compiled by 
+\emph on
+gcc
+\emph default
+ with the 
+\emph on
+-Wall
+\emph default
+ flag without any warnings.
+\end_layout
+
+\end_inset
+
+ C code as is, without requiring the programmer to provide any meta information.
+\end_layout
+
+\begin_layout Itemize
+Provide 
+\emph on
+Soundness
+\emph default
+: Report 100% of the buffer overruns in the code, with no 
+\emph on
+False Negatives
+\emph default
+ reported.
+\end_layout
+
+\begin_layout Section
+Lenient Assumptions
+\end_layout
+
+\begin_layout Standard
+In order to achieve these requirements we also defined lenient assumption
+ on the input code:
+\end_layout
+
+\begin_layout Itemize
+The programmer knows that the C string library requires that a string must
+ end with the NUL terminating character '
+\backslash
+0', and will never mutate the last byte of a buffer in a way that will cause
+ an overrun.
+\end_layout
+
+\begin_layout Itemize
+The programmer never uses an uninitialized value.
+\end_layout
+
+\begin_layout Itemize
+TODO(tzafrir): Find more assumptions we used, if any.
+\end_layout
+
+\begin_layout Section
+Research and Technology Survey
+\end_layout
+
+\begin_layout Standard
+After defining the initial requirements we began researching past work on
+ the subject of buffer overrun static analysis, and set out to find which
+ tools already exist that can be used to build Boa.
+\end_layout
+
+\begin_layout Standard
+Our research reached the conclusion of using a linear problem solver, solving
+ a set of linear constraints generated from each instruction in the source
+ code, in order to find buffer overruns, as described in chapter 2.
+ TODO: Reference.
+\end_layout
+
+\begin_layout Standard
+We set a goal of using only open source tools which are publically available
+ for free use under an Open-Source compatible license, and converged towards
+ the use of the following tools:
+\end_layout
+
+\begin_layout Itemize
+GLPK - the GNU Linear Programming Kit [
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.gnu.org/software/glpk/glpk.html"
+
+\end_inset
+
+], available under version 3 of the GNU Public License.
+ Used to solve the linear constraints using the Simplex Algorithm.
+\end_layout
+
+\begin_layout Itemize
+The Clang C Front-End [
+\begin_inset CommandInset href
+LatexCommand href
+name "http://clang.llvm.org/"
+target "http://clang.llvm.org/"
+
+\end_inset
+
+], available under the University of Illinois/NCSA Open Source License.
+ We planned on using Clang's plug-in system in order to go over the code's
+ Abstract Syntax Tree and generate linear constraints according to the instructi
+ons in the code.
+\end_layout
+
+\begin_layout Standard
+We then set out to create prototypes.
+ First we created example, 
+\begin_inset Quotes eld
+\end_inset
+
+
+\emph on
+Hello World
+\begin_inset Quotes erd
+\end_inset
+
+
+\emph default
+ style, programs that make use of Clang and GLPK's interfaces separately,
 \end_layout
 
 \begin_layout Section
