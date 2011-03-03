@@ -1,6 +1,7 @@
 #ifndef __BOA_CONSTRAINT_H
 #define __BOA_CONSTRAINT_H /* */
 
+#include <cctype>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -54,6 +55,16 @@ class Constraint {
   string blame_;
   Type type_;
 
+
+  static string safeString(const string& str) {
+    string result = str.substr(0, 255);
+    for (size_t i = 0; i < result.length(); ++i) {
+      if (!isgraph(result[i])) {
+        result[i] = ' ';
+      }
+    }
+    return result;
+  }
 
   void addLiteral(double num, string var) {
     literals_[var] += num;
@@ -241,7 +252,7 @@ class Constraint {
     }
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
     glp_set_mat_row(lp, row, literals_.size(), indices, values);
-    glp_set_row_name(lp, row, blame_.c_str());
+    glp_set_row_name(lp, row, safeString(blame_).c_str());
   }
 
  private:
