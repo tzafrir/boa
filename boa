@@ -5,8 +5,8 @@ BOADIR=`dirname $0`
 files=""
 args=""
 BOA_SO="$BOADIR/build/boa.so"
-CLANG="$BOADIR/../llvm/Debug+Asserts/bin/clang"
-OPT="$BOADIR/../llvm/Debug+Asserts/bin/opt"
+CLANG="clang"
+OPT="opt-2.8"
 
 FLAGS=""
 

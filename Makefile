@@ -5,8 +5,8 @@ CFLAGS=-Wall -g -fno-exceptions -fno-rtti -fPIC -Woverloaded-virtual -Wcast-qual
 GTEST_DIR=../gtest-1.5.0
 TFLAGS=-I ${GTEST_DIR}/include -I source -c ${DFLAGS} -g
 TMAINFLAGS=${GTEST_DIR}/lib/.libs/libgtest.a ../gtest-1.5.0/lib/.libs/libgtest_main.a -g
-LINKFLAGS=-lpthread -lglpk -ldl -lm -L${LLVM_DIR}/Debug+Asserts/lib
-LLVM_DIR=../llvm
+LINKFLAGS=-lpthread -lglpk -ldl -lm -L${LLVM_DIR}/lib
+LLVM_DIR=/usr/lib/llvm-2.8
 BUILD=build
 SOURCE=source
 UNITTESTS=tests/unittests
@@ -59,10 +59,10 @@ ALLTESTS=$(subst tests/unittests,build,$(subst cpp,o,$(wildcard tests/unittests/
 ALLOFILES=$(subst Test,,${ALLTESTS}) ${BUILD}/log.o ${BUILD}/Constraint.o
 
 tests/rununittests: ${BUILD} ${ALLTESTS} ${ALLOFILES}
-	g++ ${ALLOFILES} ${ALLTESTS} ${TMAINFLAGS} ${LINKFLAGS} -L ../llvm/Release+Asserts/lib/ -lLLVMCore -lLLVMSupport -o tests/rununittests
+	g++ ${ALLOFILES} ${ALLTESTS} ${TMAINFLAGS} ${LINKFLAGS} -lLLVMCBackend -lLLVMSupport -lEnhancedDisassembly -o tests/rununittests
 
 unittests: tests/rununittests FORCE
-	tests/rununittests
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/llvm-2.8/lib" tests/rununittests
 
 tests: boatestsblame unittests FORCE
 
