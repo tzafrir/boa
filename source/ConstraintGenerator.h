@@ -33,7 +33,7 @@ class ConstraintGenerator {
     Mark buffers that was allocated, so they can be added to the constraint problem once the debug
     info is availble.
   */
-  map<const Value *, bool> allocedBuffers;
+  map<const Value *, bool> allocedBuffers_;
   set<const StructType*> structsVisited;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;

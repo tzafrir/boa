@@ -496,7 +496,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         ss << file->getString().str() << ":" << D->getDebugLoc().getLine();
         Buffer b(D->getAddress(), S->getString().str(), ss.str());
 
-        if (allocedBuffers[D->getAddress()]) {
+        if (allocedBuffers_[D->getAddress()]) {
           AddBuffer(b, ss.str());
         }
 
@@ -513,7 +513,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
   Buffer buf(I);
   double allocSize = aType->getNumElements();
   Constraint allocMax, allocMin;
-  allocedBuffers[I] = true;
+  allocedBuffers_[I] = true;
 
   string blame = "Buffer allocation";
 
