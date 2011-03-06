@@ -12,13 +12,15 @@
 
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <unistd.h>
+#include <vector>
+#include <set>
 
-using std::vector;
 using std::cerr;
-using std::ofstream;
 using std::ios_base;
+using std::ofstream;
+using std::set;
+using std::vector;
 
 using namespace llvm;
 
@@ -47,6 +49,7 @@ namespace Colors {
 class boa : public ModulePass {
  private:
   ConstraintProblem constraintProblem_;
+  set<string> safeFunctions, unsafeFunctions;
 
  public:
   static char ID;
@@ -65,7 +68,8 @@ class boa : public ModulePass {
    }
 
   virtual bool runOnModule(Module &M) {
-    ConstraintGenerator constraintGenerator(constraintProblem_, IgnoreLiterals);
+    ConstraintGenerator constraintGenerator(constraintProblem_, IgnoreLiterals, safeFunctions,
+                                            unsafeFunctions);
 
     for (Module::const_global_iterator it = M.global_begin(); it != M.global_end(); ++it) {
       const GlobalValue *g = it;
