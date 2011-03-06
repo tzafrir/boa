@@ -34,7 +34,7 @@ class ConstraintGenerator {
     info is availble.
   */
   map<const Value *, bool> allocedBuffers_;
-  set<const StructType*> structsVisited;
+  set<const StructType*> structsVisited_;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
   bool IgnoreLiterals_;

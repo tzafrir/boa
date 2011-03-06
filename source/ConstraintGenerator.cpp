@@ -522,7 +522,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
 }
 
 void ConstraintGenerator::AddContainedBuffers(const StructType *structType, const MDNode *node) {
-  if (this->structsVisited.insert(structType).second)  {
+  if (this->structsVisited_.insert(structType).second)  {
     while (node->getNumOperands() == 10) {
       node = dyn_cast<MDNode>(node->getOperand(9));
       if (node == NULL) return;
