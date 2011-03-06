@@ -783,9 +783,17 @@ void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const st
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
   static string safeFunctions[] = { "execv",
                                     "fdopen",
+                                    "fopen",
+                                    "fprintf",
+                                    "fputc",
+                                    "fputs",
+                                    "fwrite",
                                     "getopt",
                                     "openlog",
+                                    "putc",
+                                    "putchar",
                                     "puts",
+                                    "printf",
                                     "setenv",
                                     "strcmp",
                                     "strcoll",
@@ -795,6 +803,8 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "strstr",
                                     "strtok",
                                     "syslog",
+                                    "vfprintf",
+                                    "vprintf",
                                     "vsyslog" };
   for (size_t i = 0; i < (sizeof(safeFunctions) / sizeof(string)); ++i) {
     if (name == safeFunctions[i]) {
