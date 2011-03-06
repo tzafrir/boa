@@ -2,8 +2,10 @@
 
 #include "ConstraintGenerator.h"
 
+#include <set>
 #include <string>
 
+using std::set;
 using std::string;
 
 namespace boa {
@@ -42,10 +44,12 @@ class ConstraintGeneratorTest : public ::testing::Test {
 
   // Runs before each test.
   void SetUp() {
+    set<string> safeFunctions;
+    set<string> unsafeFunctions;
     delete cg;
     delete cp;
     cp = new MockConstraintProblem();
-    cg = new ConstraintGenerator(*cp, false);
+    cg = new ConstraintGenerator(*cp, false, safeFunctions, unsafeFunctions);
   }
 };
 
