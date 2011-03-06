@@ -779,7 +779,6 @@ void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const st
   GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
 }
 
-
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
   static string safeFunctions[] = { "execv",
                                     "fdopen",
@@ -811,6 +810,9 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
       return true;
     }
   }
+  if (safeFunctions_.count(name) == 1) {
+    return true;
+  }
   return false;
 }
 
@@ -823,6 +825,9 @@ bool ConstraintGenerator::IsUnsafeFunction(const string& name) {
     if (name == unsafeFunctions[i]) {
       return true;
     }
+  }
+  if (unsafeFunctions_.count(name) == 1) {
+    return true;
   }
   return false;
 }

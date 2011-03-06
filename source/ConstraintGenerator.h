@@ -35,8 +35,8 @@ class ConstraintGenerator {
   */
   map<const Value *, bool> allocedBuffers_;
   set<const StructType*> structsVisited_;
-  const set<string> &safeFunctions_;
-  const set<string> &unsafeFunctions_;
+  const set<string> safeFunctions_;
+  const set<string> unsafeFunctions_;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
   bool IgnoreLiterals_;
@@ -167,8 +167,8 @@ class ConstraintGenerator {
   void GeneratePhiConstraint(const PHINode* I);
   void GenerateSelectConstraint(const SelectInst* I);
 
-  static bool IsSafeFunction(const string& name);
-  static bool IsUnsafeFunction(const string& name);
+  bool IsSafeFunction(const string& name);
+  bool IsUnsafeFunction(const string& name);
 
  public:
   ConstraintGenerator(ConstraintProblem &CP, bool ignoreLiterals, const set<string> &safeFunctions,
