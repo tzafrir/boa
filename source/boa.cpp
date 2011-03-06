@@ -8,6 +8,7 @@
 #include "Buffer.h"
 #include "ConstraintGenerator.h"
 #include "ConstraintProblem.h"
+#include "Helpers.h"
 #include "log.h"
 
 #include <fstream>
@@ -32,6 +33,8 @@ cl::opt<bool> NoPointerAnalysis("no_pointer_analysis",
 cl::opt<bool> IgnoreLiterals("ignore_literals",
                    cl::desc("Don't report buffer overruns on string literals"), cl::value_desc(""));
 cl::opt<bool> Verbose("v", cl::desc("Verbose output format"), cl::value_desc(""));
+cl::opt<string> SafeFunctions("", cl::desc("Names of safe functions"), cl::value_desc(""));
+cl::opt<string> UnsafeFunctions("", cl::desc("Names of unsafe functions"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
