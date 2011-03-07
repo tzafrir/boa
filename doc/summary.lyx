@@ -7,6 +7,7 @@
 \usepackage{fullpage}
 %\usepackage{framed}
 \usepackage{listings}
+\usepackage{fix-cm}
 
 % bold ttfonts
 \usepackage{courier}
@@ -81,8 +82,8 @@ tabsize=2 %
 \paragraph_indentation default
 \quotes_language english
 \papercolumns 1
-\papersides 1
-\paperpagestyle default
+\papersides 2
+\paperpagestyle headings
 \tracking_changes false
 \output_changes false
 \html_math_output 0
@@ -92,46 +93,33 @@ tabsize=2 %
 \begin_body
 
 \begin_layout Title
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
 
 \series bold
 \size giant
-boa
-\series default
-\size default
+
+\backslash
+fontsize{40}{40}
+\backslash
+selectfont boa
+\backslash
+
+\backslash
+
+\end_layout
+
+\end_inset
+
  
-\begin_inset ERT
-status open
 
-\begin_layout Plain Layout
-
-
-\backslash
-
-\backslash
-
-\end_layout
-
+\begin_inset VSpace bigskip
 \end_inset
 
 
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-
-\backslash
-
-\end_layout
-
-\end_inset
-
+\lang english
 
 \begin_inset Graphics
 	filename ../boa.png
@@ -141,11 +129,16 @@ status open
 \end_inset
 
 
+\series bold
+\size giant
+
 \begin_inset ERT
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
+\series bold
+\size giant
 
 \backslash
 
@@ -155,6 +148,15 @@ status open
 
 \end_inset
 
+
+\series default
+\size default
+
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\lang english
 Buffer Overrun Analyzer
 \end_layout
 
@@ -224,8 +226,19 @@ status collapsed
 \end_layout
 
 \begin_layout Date
+
+\size larger
+\begin_inset VSpace 5pheight%
+\end_inset
+
 Project in advanced programming - program analysis (236503)
 \begin_inset Newline newline
+\end_inset
+
+
+\size default
+
+\begin_inset VSpace medskip
 \end_inset
 
 Computer science department, Technion - Israel institute of technology
@@ -303,7 +316,7 @@ Direct array access
 
 \begin_layout Standard
 \begin_inset ERT
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -1069,8 +1082,9 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Tabular
-<lyxtabular version="3" rows="8" columns="5">
+<lyxtabular version="3" rows="8" columns="6">
 <features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
@@ -1113,11 +1127,20 @@ syslog
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 ssh
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+md5
 \end_layout
 
 \end_inset
@@ -1160,11 +1183,20 @@ Source lines
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 3483
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+432
 \end_layout
 
 \end_inset
@@ -1207,11 +1239,20 @@ Constraints
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 7642
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \end_inset
@@ -1254,11 +1295,20 @@ Running time
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 2.608s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \end_inset
@@ -1301,11 +1351,20 @@ Running time (blame)
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 20.049s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \end_inset
@@ -1348,11 +1407,20 @@ Buffers
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 92
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
 \end_layout
 
 \end_inset
@@ -1395,11 +1463,20 @@ Overruns reported
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
 \end_layout
 
 \end_inset
@@ -1438,6 +1515,15 @@ Real overruns
 
 \begin_layout Plain Layout
 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
 \end_layout
 
 \end_inset
@@ -1887,6 +1973,25 @@ line
 
 \begin_layout Section
 flex
+\end_layout
+
+\begin_layout Section
+MD5
+\end_layout
+
+\begin_layout Standard
+We have tested boa against 
+\emph on
+RSA Data Security, Inc.
+
+\emph default
+ implementation of
+\emph on
+ MD5
+\emph default
+, the a well known cryptographic hash function.
+ Since MD5 is a cryptographic algorithm, the implementation consist of a
+ lot of bitwise operations on 
 \end_layout
 
 \begin_layout --Separator--
