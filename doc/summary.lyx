@@ -98,13 +98,13 @@ status collapsed
 
 \begin_layout Plain Layout
 
-\series bold
-\size giant
-
+{
 \backslash
 fontsize{40}{40}
 \backslash
-selectfont boa
+selectfont 
+\backslash
+bfseries boa}
 \backslash
 
 \backslash
@@ -114,12 +114,9 @@ selectfont boa
 \end_inset
 
  
-
 \begin_inset VSpace bigskip
 \end_inset
 
-
-\lang english
 
 \begin_inset Graphics
 	filename ../boa.png
@@ -137,8 +134,6 @@ status collapsed
 
 \begin_layout Plain Layout
 
-\series bold
-\size giant
 
 \backslash
 
@@ -155,8 +150,6 @@ status collapsed
 \begin_inset VSpace bigskip
 \end_inset
 
-
-\lang english
 Buffer Overrun Analyzer
 \end_layout
 
@@ -1090,6 +1083,23 @@ lstinputlisting{../tests/testcases/integer03.c}
 \end_inset
 
 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+(Gai)
+\end_layout
+
+\begin_layout Plain Layout
+This is not a good example, the reader won't see the overrun caused by i++
+ (executed once!).
+ Since we do not aim to explain this behaviour here - we should choose another
+ test (or set i=9 at the begining).
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1318,15 +1328,24 @@ LLVM Pass
 We first prototyped an LLVM pass in the same manner we prototyped Clang,
  and then rebased Boa to use LLVM instead of clang in its architecture.
  All of our test cases were still valid (and at this stage, failing), so
- we continued our Construction cycle, iterating until all existing test
+ we continued our construction cycle, iterating until all existing test
  cases pass, usually using the previously written code as a reference as
  to how to handle a certain instruction (e.g., the constraints generated for
  a multiplication of two integers).
 \end_layout
 
 \begin_layout Standard
-Within two weeks all our existing test cases passed, and we could refocus
- on further reducing false positives.
+Within two weeks all our existing test cases passed
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+(Gai) mention uninitialize?
+\end_layout
+
+\end_inset
+
+, and we could refocus on further reducing false positives.
 \end_layout
 
 \begin_layout Standard
@@ -1857,14 +1876,13 @@ Real overruns
 \begin_inset Caption
 
 \begin_layout Plain Layout
-boa performance on various real world examples
 \begin_inset CommandInset label
 LatexCommand label
 name "tab:Performance"
 
 \end_inset
 
-
+boa performance on various real world examples
 \end_layout
 
 \end_inset
