@@ -520,16 +520,6 @@ IF infeasible - set
 \end_inset
 
 
-\begin_inset Note Comment
-status open
-
-\begin_layout Plain Layout
-We're not defining a loop here -- Tzafrir 2.3 11:17
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_deeper
