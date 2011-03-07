@@ -533,16 +533,6 @@ IF infeasible - set
 \end_inset
 
 
-\begin_inset Note Comment
-status open
-
-\begin_layout Plain Layout
-We're not defining a loop here -- Tzafrir 2.3 11:17
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_deeper
@@ -914,6 +904,11 @@ False Negatives
  reported.
 \end_layout
 
+\begin_layout Standard
+We also had a goal of minimizing false positives, for which we couldn't
+ define a measurable requirement at the initial stage.
+\end_layout
+
 \begin_layout Section
 Lenient Assumptions
 \end_layout
@@ -1016,18 +1011,331 @@ Hello World
 
 \emph default
  style, programs that make use of Clang and GLPK's interfaces separately,
+ and then combined the two prototypes to a single system that works according
+ to our system design, produces constraints by traversing the source code,
+ solves the constraints system and reports buffer overruns accordingly.
+\end_layout
+
+\begin_layout Standard
+At this stage we created constraints such that any buffer access and use
+ and any function call created an overrun on all buffers involved.
+ This trivial handling already meets our well defined requirements of handling
+ any C source code and being 
+\emph on
+Sound
+\emph default
+, and from this point we began iterating on reducing false positives.
+\end_layout
+
+\begin_layout Standard
+This methodology allowed us to have at any given point a sound working system
+ which gained quality as the construction progressed.
 \end_layout
 
 \begin_layout Section
 Test system
 \end_layout
 
+\begin_layout Standard
+To facilitate the construction of Boa, we worked using 
+\emph on
+Test Driven Development
+\emph default
+.
+ Since our entire system is hosted as a Clang plugin, for most purposes
+ 
+\emph on
+White Box
+\emph default
+ testing was not reasonable for our purposes.
+\end_layout
+
+\begin_layout Standard
+We therefore created a 
+\emph on
+Black Box
+\emph default
+ testing system which allowed us to write tests for the full system behaviour.
+\end_layout
+
+\begin_layout Standard
+A test case is comprised of a source code (.c file) and assertions (.asserts
+ file), which define which buffers should be marked as having overruns,
+ and which buffers should be marked as safe.
+ Buffers may be defined by their name, by their source code location, or
+ by both.
+\end_layout
+
+\begin_layout Standard
+Example:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+integer03.c:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting{../tests/testcases/integer03.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+integer03.asserts:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting{../tests/testcases/integer03.asserts}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We then wrapped this testing system with scripts that run the tests over
+ all available test cases and indicate failure if any test case failed,
+ and incorporated this script into our makefile, such that running 
+\emph on
+make tests
+\emph default
+ compiles binaries as necessary and runs the tests on the result.
+ This allows us to run all our tests after every change in the code, thus
+ giving us confidence that old behaviour is not broken, and allowing us
+ to start developing a feature by first defining a failing test case, then
+ writing code until the test passes.
+\end_layout
+
 \begin_layout Section
-Version control
+Version Control
+\end_layout
+
+\begin_layout Standard
+We used 
+\emph on
+git
+\emph default
+ as our versioning control system.
+ We leveraged the distributed nature of git and the cheap branching of git
+ to create a workflow based on 
+\emph on
+feature branches
+\emph default
+, where each of us worked on a feature on a separate branch of the code,
+ which was later merged into our integration branch, 
+\emph on
+
+\begin_inset Quotes eld
+\end_inset
+
+master
+\begin_inset Quotes erd
+\end_inset
+
+
+\emph default
+.
 \end_layout
 
 \begin_layout Subsection
-Code reviews
+Online Hosting
+\end_layout
+
+\begin_layout Standard
+We used Github as an online code repository.
+ This also gave us basic project management tools such as issue tracking
+ and code reviews.
+\end_layout
+
+\begin_layout Subsection
+Code Reviews
+\end_layout
+
+\begin_layout Standard
+Github allows developers to send each other code reviews (named 
+\emph on
+Pull Requests
+\emph default
+ in git terminology).
+ We embraced this feature into our work flow such that all of the code that
+ goes into 
+\emph on
+master
+\emph default
+ has to be reviewed by a team member.
+\end_layout
+
+\begin_layout Standard
+For each code review, one of the team members which did not write the code
+ would read the code and a discussion would start, where the reviewer requested
+ improvement to the code, tests or documentation such that the code is correct
+ and readable.
+ By using this workflow, we ensured that the final code is not only correct,
+ but also readable, since each code snippet had to be read by a programmer
+ that did not see the code being written before being integrated into 
+\emph on
+master
+\emph default
+.
+\end_layout
+
+\begin_layout Section
+Construction
+\end_layout
+
+\begin_layout Standard
+During the Construction phase we used the following workflow:
+\end_layout
+
+\begin_layout Itemize
+Create a local branch which is a copy of 
+\emph on
+master
+\emph default
+.
+\end_layout
+
+\begin_layout Itemize
+Write a failing test case.
+\end_layout
+
+\begin_layout Itemize
+Write code that handles the failures of the test case, detects all possible
+ overruns and does not report a false positive where not needed, until the
+ test passes.
+\end_layout
+
+\begin_layout Itemize
+Upload the branch to the online repository.
+\end_layout
+
+\begin_layout Itemize
+Send a 
+\emph on
+Pull Request
+\emph default
+ to the team.
+\end_layout
+
+\begin_layout Itemize
+Repeat.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Git
+\emph default
+'s distributed nature allowed us to use this workflow with minimal overhead
+ - On the one hand, orthogonal changes could be developed in parallel, with
+ one programmer usually working on more than one change simultaneously in
+ different branches.
+ On the other hand, when programmer A needed to base his changes on code
+ written by programmer B which was not yet reviewed and integrated, he could
+ pull the work-in-progress branch from A's repository and base his own work
+ without being blocked by the review process.
+ 
+\emph on
+Git
+\emph default
+ also makes it easy to later merge additional changes made by programmer
+ B (for example, as a result of the code review process).
+\end_layout
+
+\begin_layout Section
+Porting To LLVM
+\end_layout
+
+\begin_layout Standard
+After we developed some initial features such as generating constraints
+ according to integer arithmetic instructions, we began seeing some difficulties
+ with our use of the Clang front-end as our constraint generation mechanism:
+\end_layout
+
+\begin_layout Itemize
+The representation of various instructions are scattered across many nodes
+ in Clang's representation of the AST, which made it hard to write generalized
+ code that handles multiple cases.
+\end_layout
+
+\begin_layout Itemize
+Clang's 
+\emph on
+RecursiveASTVisitor
+\emph default
+ implementation has only been written recently, and as cutting edge code
+ it proved to be somewhat uncomfortable to work with.
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+TODO(tzafrir): Find examples for this
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Also, working directly on the AST of a high level language meant that the
+ space of instructions that Boa needs to handle is quite large.
+\end_layout
+
+\begin_layout Standard
+We therefore decided it would be best to first compile the code into LLVM
+ bitcode, and then generate constraints according to that bitcode using
+ an 
+\emph on
+LLVM Pass
+\emph default
+.
+\end_layout
+
+\begin_layout Standard
+We first prototyped an LLVM pass in the same manner we prototyped Clang,
+ and then rebased Boa to use LLVM instead of clang in its architecture.
+ All of our test cases were still valid (and at this stage, failing), so
+ we continued our Construction cycle, iterating until all existing test
+ cases pass, usually using the previously written code as a reference as
+ to how to handle a certain instruction (e.g., the constraints generated for
+ a multiplication of two integers).
+\end_layout
+
+\begin_layout Standard
+Within two weeks all our existing test cases passed, and we could refocus
+ on further reducing false positives.
+\end_layout
+
+\begin_layout Standard
+Having specific test cases defining the required handling of specific C
+ instructions, a modular design where the mathematical work surrounding
+ solving a linear constraint problem is separated from the handling of source
+ code instructions, and the encapsulation of our algorithmic code all allowed
+ us to very easily handle this major change in our system architecture,
+ without having to rewrite the entire system from scratch.
 \end_layout
 
 \begin_layout Chapter

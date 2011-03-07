@@ -85,6 +85,13 @@ class boa : public ModulePass {
   }
 
   virtual ~boa() {
+    if (constraintProblem_.BuffersCount() == 0) {
+      cerr << "no buffers detected" << endl;
+      cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
+      return;
+    }
     LOG << "Constraint solver output - " << endl;
     vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
     cerr << Colors::Bold << "boa" << Colors::Normal << " found "
