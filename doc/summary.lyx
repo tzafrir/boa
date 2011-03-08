@@ -831,9 +831,19 @@ unsafe buffers
 Note that the definition of this set resembles the definition of an IIS
  - in both cases we look for a minimal set of constraints which imply a
  global property of the constraints problem.
- Therefore we based or blaming system on reducing the blaming problem to
+ Therefore we based our blaming system on reducing the blaming problem to
  the problem of finding an IIS, and then using the existing algorithms to
  find the desired set of constraints.
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Let's also describe the priority method of showing the important blames
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -889,6 +899,11 @@ Soundness
 False Negatives
 \emph default
  reported.
+\end_layout
+
+\begin_layout Itemize
+Provide output in a machine readable format that is also easily readable
+ by humans.
 \end_layout
 
 \begin_layout Standard
@@ -1115,6 +1130,15 @@ make tests
  writing code until the test passes.
 \end_layout
 
+\begin_layout Standard
+We later expanded the testing system to verify the existence and content
+ of 
+\emph on
+Blame
+\emph default
+ information per a given buffer.
+\end_layout
+
 \begin_layout Section
 Version Control
 \end_layout
@@ -1323,6 +1347,69 @@ Having specific test cases defining the required handling of specific C
  code instructions, and the encapsulation of our algorithmic code all allowed
  us to very easily handle this major change in our system architecture,
  without having to rewrite the entire system from scratch.
+\end_layout
+
+\begin_layout Section
+Additional Requirements
+\end_layout
+
+\begin_layout Standard
+As work on Boa progressed and enough bitcode instructions were properly
+ handled, we could begin testing against code snippets from real world code.
+ It soon became clear that it is not enough to notify the programmer which
+ buffers are overrun, and Boa should also supply the programmer with information
+ as to which code-level statements caused the buffer to be overrun.
+\end_layout
+
+\begin_layout Standard
+Also, we noticed that most of the operations on character buffers in the
+ real world are using library functions from 
+\emph on
+string.h
+\emph default
+ and 
+\emph on
+stdio.h
+\emph default
+, and not direct array access, and that a common cause for buffer overruns
+ is the use of 
+\emph on
+unsafe
+\emph default
+ library functions which do not use information about the length of the
+ buffer, and may cause an overrun.
+\end_layout
+
+\begin_layout Standard
+We therefore defined the following additional requirements:
+\end_layout
+
+\begin_layout Itemize
+Provide machine readable 
+\emph on
+Blame
+\emph default
+ information which is also easily readable by humans.
+\end_layout
+
+\begin_layout Itemize
+Model 100% of the functions in 
+\emph on
+string.h
+\emph default
+ and 
+\emph on
+stdio.h
+\emph default
+ such that all safe accesses will not be marked as unsafe, and all unsafe
+ uses of library functions will mark the involved buffers as having overruns.
+\end_layout
+
+\begin_layout Itemize
+Provide blame information per unsafe library functions such that if an unsafe
+ function is used, the blame information will explicitly contain a warning
+ against that specific function and will provide the source location of
+ the unsafe function call.
 \end_layout
 
 \begin_layout Chapter
