@@ -1047,11 +1047,15 @@ Test system
 \begin_layout Standard
 To facilitate the construction of Boa, we worked using 
 \emph on
-Test Driven Development
-\emph default
-.
- Since our entire system is hosted as a Clang plugin, for most purposes
- 
+Test Driven Development.
+\end_layout
+
+\begin_layout Subsection
+Black Box Testing
+\end_layout
+
+\begin_layout Standard
+Since our entire system is hosted as a Clang plugin, for most purposes 
 \emph on
 White Box
 \emph default
@@ -1081,7 +1085,7 @@ Example:
 \begin_layout Standard
 
 \emph on
-integer03.c:
+safe.c:
 \end_layout
 
 \begin_layout Standard
@@ -1092,24 +1096,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/integer03.c}
-\end_layout
-
-\end_inset
-
-
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-(Gai)
-\end_layout
-
-\begin_layout Plain Layout
-This is not a good example, the reader won't see the overrun caused by i++
- (executed once!).
- Since we do not aim to explain this behaviour here - we should choose another
- test (or set i=9 at the begining).
+lstinputlisting{../tests/testcases/safe.c}
 \end_layout
 
 \end_inset
@@ -1120,7 +1107,7 @@ This is not a good example, the reader won't see the overrun caused by i++
 \begin_layout Standard
 
 \emph on
-integer03.asserts:
+safe.asserts:
 \end_layout
 
 \begin_layout Standard
@@ -1131,7 +1118,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/integer03.asserts}
+lstinputlisting{../tests/testcases/safe.asserts}
 \end_layout
 
 \end_inset
@@ -1162,6 +1149,34 @@ Blame
  information per a given buffer.
 \end_layout
 
+\begin_layout Subsection
+Unit Testing
+\end_layout
+
+\begin_layout Standard
+For those cases where we could generalize common behaviour, we also wrote
+ 
+\emph on
+White Box
+\emph default
+ unit tests.
+\end_layout
+
+\begin_layout Standard
+We used 
+\emph on
+Google C++ Testing Framework
+\emph default
+ (commonly known as 
+\emph on
+googletest
+\emph default
+) as the framework that runs the tests so we could focus on writing the
+ tests.
+ In some cases we made adjustments to our code so that internal Boa classes
+ could be subclassed.
+\end_layout
+
 \begin_layout Section
 Version Control
 \end_layout
@@ -1177,8 +1192,9 @@ git
 \emph on
 feature branches
 \emph default
-, where each of us worked on a feature on a separate branch of the code,
- which was later merged into our integration branch, 
+, where each of us worked on a feature on a separate branch of the code
+ (usually working on more than one feature at a time), which was later merged
+ into our integration branch, 
 \emph on
 
 \begin_inset Quotes eld
@@ -1364,7 +1380,8 @@ Within two weeks all our existing test cases passed
 status open
 
 \begin_layout Plain Layout
-(Gai) mention uninitialize?
+(Gai) mention uninitialize? (Tzafrir) No, it's irrelevant as it's a test
+ that isn't in our scope
 \end_layout
 
 \end_inset
