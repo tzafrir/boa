@@ -21,6 +21,9 @@ do
     -log)
       args="$args -logfile /dev/stderr"
     ;;
+    -mem2reg)
+      args="$args $arg"
+    ;;
     -output_glpk|-blame|-no_pointer_analysis|-ignore_literals|-v)
       FLAGS="$FLAGS $arg"
     ;;
