@@ -478,6 +478,9 @@ void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   // FIXME - magic numbers!
+  if ((!D) || (!(D->getAddress()))) {
+    return;
+  }
   if (const PointerType *pType = dyn_cast<const PointerType>(D->getAddress()->getType())) {
     if (const StructType *sType = dyn_cast<const StructType>(pType->getElementType())) {
       if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(5))) {
