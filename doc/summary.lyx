@@ -345,6 +345,13 @@ lstinputlisting[firstline=1,lastline=15]{../tests/testcases/string1.c}
 
 \begin_layout Subsection
 Buffer aliasing
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Buffer-aliasing"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -486,7 +493,7 @@ irreducibly inconsistent system
 ), and we follow the algorithms and terminology of Chinneck and Dravnieks
 \begin_inset CommandInset citation
 LatexCommand cite
-key "Elastic IIS"
+key "DBLP:journals/informs/ChinneckD91"
 
 \end_inset
 
@@ -535,6 +542,10 @@ IF infeasible - set
 \end_inset
 
  is an IIS
+\end_layout
+
+\begin_layout --Separator--
+
 \end_layout
 
 \begin_layout Standard
@@ -725,7 +736,7 @@ return
 The most time consuming part of the process is trying to solve the constraint
  problem (the linear solver use simplex
 \begin_inset Note Note
-status collapsed
+status open
 
 \begin_layout Plain Layout
 TODO (Gai) - simplex reference
@@ -805,7 +816,7 @@ As far as we know, previous works in this area did not deal with this issue
  (
 \begin_inset CommandInset citation
 LatexCommand cite
-key "BOON"
+key "citeulike:514510"
 
 \end_inset
 
@@ -813,7 +824,7 @@ key "BOON"
  code references to the suspect buffer (
 \begin_inset CommandInset citation
 LatexCommand cite
-key "הודים"
+key "Ganapathy:2003:BOD:948109.948155"
 
 \end_inset
 
@@ -840,16 +851,208 @@ Note that the definition of this set resembles the definition of an IIS
  Therefore we based our blaming system on reducing the blaming problem to
  the problem of finding an IIS, and then using the existing algorithms to
  find the desired set of constraints.
-\begin_inset Note Comment
-status open
-
-\begin_layout Plain Layout
-Let's also describe the priority method of showing the important blames
 \end_layout
+
+\begin_layout Standard
+The reduction itself simply involves adding two constraints to the problem
+ - 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!used!max}\right\}  & < & \left\{ \boldsymbol{buf!alloc!min}\right\} \\
+\left\{ \mbox{buf!used!min}\right\}  & \ge & 0
+\end{eqnarray*}
 
 \end_inset
 
+These are the two constraints we use to ensure that all of the buffer accesses
+ are safe, with one different - in this case the left hand expressions are
+ constraint variables, and the right hand are values - 
+\begin_inset Formula $0$
+\end_inset
 
+ in the second constraint and 
+\series bold
+the value
+\series default
+ assigned to 
+\begin_inset Formula $\left\{ \mbox{buf!alloc!min}\right\} $
+\end_inset
+
+ in the first solution of the constraint problem.
+ That way the problem become infeasible, and removing the infesibility will
+ ensure safe only accesses to the buffer left.
+\end_layout
+
+\begin_layout Standard
+During the constraint generation proccess we add each constraint a 
+\emph on
+blame string
+\emph default
+, which
+\emph on
+ 
+\emph default
+contain a brief explanation about the nature of the command caused this
+ constraint (e.g.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+malloc call
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+add instruction
+\begin_inset Quotes erd
+\end_inset
+
+ etc) and it's source location (source file name and line number).
+ Once the elastic filter return the set of constraints which cause the infeasibi
+lity (an therefore - cause the overrun) we print the 
+\emph on
+blame strings
+\emph default
+ of these constraints.
+\end_layout
+
+\begin_layout Subsection
+Constraint priorities
+\end_layout
+
+\begin_layout Standard
+In order to provide the user with the most relevant blame results, we introduce
+ three levels of constrainst - 
+\end_layout
+
+\begin_layout Description
+Structural
+\begin_inset space ~
+\end_inset
+
+constraints which model the relations between 
+\begin_inset Formula $\left\{ \mbox{buf!read}\right\} $
+\end_inset
+
+, 
+\begin_inset Formula $\left\{ \mbox{buf!used}\right\} $
+\end_inset
+
+ and 
+\begin_inset Formula $\left\{ \mbox{buf!write}\right\} $
+\end_inset
+
+.
+ These constraints are part of boa's internal implementation (disscused
+ in details on section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Buffer-aliasing"
+
+\end_inset
+
+), and does not supply the user with information about his possible buffer
+ overrun.
+\end_layout
+
+\begin_layout Description
+Buffer
+\begin_inset space ~
+\end_inset
+
+aliasing
+\begin_inset space ~
+\end_inset
+
+constraints disscussed in details on section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Buffer-aliasing"
+
+\end_inset
+
+, which usually does not cause an overrun by themselves, but might be very
+ important for the user to understand how does writing to a pointer 
+\begin_inset Formula $ptr$
+\end_inset
+
+ cause an overrun on buffer 
+\begin_inset Formula $buf$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+Normal
+\begin_inset space ~
+\end_inset
+
+constrainst are any other constraints, involving integer arithmetics, library
+ function calls etc.
+\end_layout
+
+\begin_layout --Separator--
+
+\end_layout
+
+\begin_layout Standard
+The cause of the overrun is usually a 
+\emph on
+normal constraint
+\emph default
+, while 
+\emph on
+buffer aliasing
+\emph default
+ constrains might be vital for the understanding the connection between
+ the line where the overrun actually happens and the buffer (decleration)
+ itself.
+ 
+\emph on
+Structural constraints
+\emph default
+, on the other hand, will always be part of an IIS, but the are irrelevant
+ for the user.
+ 
+\end_layout
+
+\begin_layout Standard
+When we run the elstic filter in order to discover the blaming set we first
+ allow the elstic filter to choose only 
+\emph on
+normal constraints
+\emph default
+, and than run the elastic filter again, allowing it to choose 
+\emph on
+aliasing constrainst
+\emph default
+ as well.
+ That way we ensure that the most relelvant blame results will appear first,
+ the aliasing blames will also appear, but the 
+\emph on
+structural constraints
+\emph default
+ will not distruct the user from the actual problem in his source code.
+ A similar approch is taken when we use the elstic filter to turn the initial
+ infeasible problem into a feasible problem - in that case we allow the
+ elastic filter to remove 
+\emph on
+normal
+\emph default
+ or 
+\emph on
+aliasing
+\emph default
+ constraints, but not 
+\emph on
+structural
+\emph default
+ constrains, since the latter reflect an internal structure we intend to
+ keep - and can not be the cause of the overrun.
 \end_layout
 
 \begin_layout Section
@@ -910,6 +1113,10 @@ False Negatives
 \begin_layout Itemize
 Provide output in a machine readable format that is also easily readable
  by humans.
+\end_layout
+
+\begin_layout --Separator--
+
 \end_layout
 
 \begin_layout Standard
@@ -978,19 +1185,34 @@ We set a goal of using only open source tools which are publically available
 \end_layout
 
 \begin_layout Itemize
-GLPK - the GNU Linear Programming Kit [
+GLPK - the GNU Linear Programming Kit
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+GLPK - 
 \begin_inset CommandInset href
 LatexCommand href
 target "http://www.gnu.org/software/glpk/glpk.html"
 
 \end_inset
 
-], available under version 3 of the GNU Public License.
+
+\end_layout
+
+\end_inset
+
+, available under version 3 of the GNU Public License.
  Used to solve the linear constraints using the Simplex Algorithm.
 \end_layout
 
 \begin_layout Itemize
-The Clang C Front-End [
+The Clang C Front-End
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Clang C Front-End - 
 \begin_inset CommandInset href
 LatexCommand href
 name "http://clang.llvm.org/"
@@ -998,10 +1220,19 @@ target "http://clang.llvm.org/"
 
 \end_inset
 
-], available under the University of Illinois/NCSA Open Source License.
+
+\end_layout
+
+\end_inset
+
+, available under the University of Illinois/NCSA Open Source License.
  We planned on using Clang's plug-in system in order to go over the code's
  Abstract Syntax Tree and generate linear constraints according to the instructi
 ons in the code.
+\end_layout
+
+\begin_layout --Separator--
+
 \end_layout
 
 \begin_layout Standard
@@ -1293,6 +1524,10 @@ Pull Request
 Repeat.
 \end_layout
 
+\begin_layout --Separator--
+
+\end_layout
+
 \begin_layout Standard
 
 \emph on
@@ -1349,6 +1584,10 @@ TODO(tzafrir): Find examples for this
 
 \end_layout
 
+\begin_layout --Separator--
+
+\end_layout
+
 \begin_layout Standard
 Also, working directly on the AST of a high level language meant that the
  space of instructions that Boa needs to handle is quite large.
@@ -1375,18 +1614,8 @@ We first prototyped an LLVM pass in the same manner we prototyped Clang,
 \end_layout
 
 \begin_layout Standard
-Within two weeks all our existing test cases passed
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-(Gai) mention uninitialize? (Tzafrir) No, it's irrelevant as it's a test
- that isn't in our scope
-\end_layout
-
-\end_inset
-
-, and we could refocus on further reducing false positives.
+Within two weeks all our existing test cases passed, and we could refocus
+ on further reducing false positives.
 \end_layout
 
 \begin_layout Standard
@@ -1478,9 +1707,20 @@ We tested boa on several widespread real world programs.
  evaluate the number of false alarms and their main causes.
  The source files used in all of the experiments are availble in boa git
  repository
-\begin_inset CommandInset citation
-LatexCommand cite
-key "git repository"
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Boa's git repository - 
+\begin_inset CommandInset href
+LatexCommand href
+name "https://github.com/tzafrir/boa"
+target "https://github.com/tzafrir/boa"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -2368,7 +2608,7 @@ status open
 
 
 \backslash
-lstinputlisting[firstline=141,lastline=141, firstnumber=141]{../tests/realworld/fi
+lstinputlisting[firstline=141,lastline=142, firstnumber=141]{../tests/realworld/fi
 ngerd/fingerd.c}
 \end_layout
 
@@ -2428,76 +2668,11 @@ RSA Data Security, Inc.
 
 \end_layout
 
-\begin_layout Bibliography
-\labelwidthstring References
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "הודים"
-
-\end_inset
-
-
-\begin_inset CommandInset href
-LatexCommand href
-name "Buffer Overrun Detection using Linear Programming and Static Analysis"
-target "www.cs.wisc.edu/wisa/papers/ccs03/p351-ganapathy.pdf "
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Bibliography
-\labelwidthstring References
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "git repository"
-
-\end_inset
-
-
-\begin_inset CommandInset href
-LatexCommand href
-name "boa git repository - https://github.com/tzafrir/boa/"
-target "https://github.com/tzafrir/boa/"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Bibliography
-\labelwidthstring References
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "Elastic IIS"
-
-\end_inset
-
-
-\begin_inset CommandInset href
-LatexCommand href
-name "Locating Minimal Infeasible Constraint Sets in Linear Programs"
-target "http://www.sce.carleton.ca/faculty/chinneck/docs/ChinneckDravnieks.pdf"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Bibliography
-\labelwidthstring References
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "BOON"
-
-\end_inset
-
-
-\begin_inset CommandInset href
-LatexCommand href
-name "A First Step Towards Automated Detection of Buffer Overrun Vulnerabilities"
-target "http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.63.5348&rep=rep1&type=pdf"
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "boa"
+options "acm"
 
 \end_inset
 
