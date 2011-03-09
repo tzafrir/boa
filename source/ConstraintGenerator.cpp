@@ -786,6 +786,7 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "fprintf",
                                     "fputc",
                                     "fputs",
+                                    "free",
                                     "fwrite",
                                     "getopt",
                                     "openlog",
