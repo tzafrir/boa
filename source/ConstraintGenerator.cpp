@@ -496,7 +496,7 @@ void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
         ss << file->getString().str() << ":" << D->getDebugLoc().getLine();
         Buffer b(D->getAddress(), S->getString().str(), ss.str());
 
-        if (allocedBuffers[D->getAddress()]) {
+        if (allocedBuffers_[D->getAddress()]) {
           AddBuffer(b, ss.str());
         }
 
@@ -513,7 +513,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
   Buffer buf(I);
   double allocSize = aType->getNumElements();
   Constraint allocMax, allocMin;
-  allocedBuffers[I] = true;
+  allocedBuffers_[I] = true;
 
   string blame = "Buffer allocation";
 
@@ -522,7 +522,7 @@ void ConstraintGenerator::GenerateAllocConstraint(const Value *I, const ArrayTyp
 }
 
 void ConstraintGenerator::AddContainedBuffers(const StructType *structType, const MDNode *node) {
-  if (this->structsVisited.insert(structType).second)  {
+  if (this->structsVisited_.insert(structType).second)  {
     while (node->getNumOperands() == 10) {
       node = dyn_cast<MDNode>(node->getOperand(9));
       if (node == NULL) return;
@@ -779,7 +779,6 @@ void ConstraintGenerator::GenerateStrNCopyConstraint(const CallInst* I, const st
   GenerateConstraint(to, minExp, VarLiteral::LEN_WRITE, VarLiteral::MIN, blame, location);
 }
 
-
 bool ConstraintGenerator::IsSafeFunction(const string& name) {
   static string safeFunctions[] = { "execv",
                                     "fdopen",
@@ -811,6 +810,9 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
       return true;
     }
   }
+  if (safeFunctions_.count(name) == 1) {
+    return true;
+  }
   return false;
 }
 
@@ -823,6 +825,9 @@ bool ConstraintGenerator::IsUnsafeFunction(const string& name) {
     if (name == unsafeFunctions[i]) {
       return true;
     }
+  }
+  if (unsafeFunctions_.count(name) == 1) {
+    return true;
   }
   return false;
 }

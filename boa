@@ -12,6 +12,10 @@ FLAGS=""
 
 for arg in $@
 do
+  if [ "${arg:0:16}" == "-safe_functions=" -o "${arg:0:18}" == "-unsafe_functions=" ]; then
+    FLAGS="$FLAGS $arg"
+    continue
+  fi
   # Bash switch statement:
   case "$arg" in
     -log)
@@ -36,6 +40,8 @@ else
   echo -e "  \033[1m-v\033[0m                   - verbose output"
   echo -e "  \033[1m-blame\033[0m               - print a set of constraints that cause each overrun"
   echo -e "  \033[1m-glpk\033[0m                - pring glpk to log"
-  echo -e "  \033[1m-no_pointer_analysis\033[0m - do not generate pointer analysis constraints"  
-  echo -e "  \033[1m-ignore_literals\033[0m     - don't report buffer overruns on string literals"  
+  echo -e "  \033[1m-no_pointer_analysis\033[0m - do not generate pointer analysis constraints"
+  echo -e "  \033[1m-ignore_literals\033[0m     - don't report buffer overruns on string literals"
+  echo -e "  \033[1m-safe_functions\033[0m      - comma separated list of safe function names"
+  echo -e "  \033[1m-unsafe_functions\033[0m    - comma separated list of unsafe function names"
 fi

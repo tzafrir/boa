@@ -2,8 +2,10 @@
 
 #include "ConstraintGenerator.h"
 
+#include <set>
 #include <string>
 
+using std::set;
 using std::string;
 
 namespace boa {
@@ -42,23 +44,29 @@ class ConstraintGeneratorTest : public ::testing::Test {
 
   // Runs before each test.
   void SetUp() {
+    set<string> safeFunctions;
+    set<string> unsafeFunctions;
+    safeFunctions.insert("IMSafe");
+    unsafeFunctions.insert("IMUnsafe");
     delete cg;
     delete cp;
     cp = new MockConstraintProblem();
-    cg = new ConstraintGenerator(*cp, false);
+    cg = new ConstraintGenerator(*cp, false, safeFunctions, unsafeFunctions);
   }
 };
 
 TEST_F(ConstraintGeneratorTest, SafeFunctionTest) {
-  ASSERT_TRUE(ConstraintGenerator::IsSafeFunction("puts"));
-  ASSERT_TRUE(ConstraintGenerator::IsSafeFunction("strtok"));
-  ASSERT_FALSE(ConstraintGenerator::IsSafeFunction("gets"));
+  ASSERT_TRUE(cg->IsSafeFunction("puts"));
+  ASSERT_TRUE(cg->IsSafeFunction("strtok"));
+  ASSERT_TRUE(cg->IsSafeFunction("IMSafe"));
+  ASSERT_FALSE(cg->IsSafeFunction("gets"));
 }
 
 TEST_F(ConstraintGeneratorTest, UnsafeFunctionTest) {
-  ASSERT_TRUE(ConstraintGenerator::IsUnsafeFunction("gets"));
-  ASSERT_TRUE(ConstraintGenerator::IsUnsafeFunction("scanf"));
-  ASSERT_FALSE(ConstraintGenerator::IsUnsafeFunction("puts"));
+  ASSERT_TRUE(cg->IsUnsafeFunction("gets"));
+  ASSERT_TRUE(cg->IsUnsafeFunction("scanf"));
+  ASSERT_TRUE(cg->IsUnsafeFunction("IMUnsafe"));
+  ASSERT_FALSE(cg->IsUnsafeFunction("puts"));
 }
 
 TEST_F(ConstraintGeneratorTest, GenerateConstraintMax) {

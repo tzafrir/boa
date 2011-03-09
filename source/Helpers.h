@@ -1,7 +1,11 @@
 #ifndef __BOA_HELPERS_H
 #define __BOA_HELPERS_H
 
+#include <set>
+#include <sstream>
 #include <string>
+
+using std::set;
 using std::string;
 
 namespace boa {
@@ -27,6 +31,11 @@ namespace Helpers {
    * Return true iff str1 is a prefix of str2
    */
   bool IsPrefix(string str1, string str2);
+
+  /**
+   * Splits str by the character c.
+   */
+  set<string> SplitString(const string &str, char c);
 }  // namespace Helpers
 
 }  // namespace boa
