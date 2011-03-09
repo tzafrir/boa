@@ -736,7 +736,7 @@ return
 The most time consuming part of the process is trying to solve the constraint
  problem (the linear solver use simplex
 \begin_inset Note Note
-status open
+status collapsed
 
 \begin_layout Plain Layout
 TODO (Gai) - simplex reference
@@ -784,6 +784,82 @@ reference "chap:Results"
 
 \begin_layout Subsubsection
 Removing constraints
+\end_layout
+
+\begin_layout Standard
+Once we located the IIS we aim to remove the problematic constraints - in
+ order to make the problem feasible, but without changing much of the semantics
+ of the constriants.
+ More specifically, we must ensure we do not harm the soundness of our solution,
+ removing an IIS must not turn an infeasible problem which was created based
+ on a buffer overrun into a feasible problem with no overruns reported.
+\end_layout
+
+\begin_layout Standard
+In order to preserve the soundness of the solution we take the following
+ conservative approach - we remove all of the constraints in the IIS, but
+ introduce other constraints instead -
+\end_layout
+
+\begin_layout Itemize
+For each 
+\emph on
+max 
+\emph default
+variable in the removed constraints (e.g.
+ 
+\begin_inset Formula $\left\{ \mbox{buf!used!max}\right\} $
+\end_inset
+
+ or 
+\begin_inset Formula $\left\{ \mbox{i!max}\right\} $
+\end_inset
+
+) we introduce the constraint - 
+\begin_inset Formula 
+\[
+\left\{ \mbox{var!max}\right\} \ge\infty
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+For each 
+\emph on
+min
+\emph default
+ variable, we introduce - 
+\begin_inset Formula 
+\[
+\left\{ \mbox{var!min}\right\} \le-\infty
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout --Separator--
+
+\end_layout
+
+\begin_layout Standard
+These constraints ensure that all of the variables which appear in the IIS
+ accept thier worst case values, thus conserve the soundness of the problem.
+ This approch is not as aggesive as it might look in a first glance, since
+ most of the infeasibilities boa encounter indeed caused by the increment
+ operator (or similar cases such as 
+\emph on
+strcat
+\emph default
+).
+ This kind of statements, in flow insensitive analysis, means that the value
+ (of an integer) or length (of a string) goes to infinity - since we can
+ not tell how many times, and under what conditions the command will be
+ executed.
 \end_layout
 
 \begin_layout Section
