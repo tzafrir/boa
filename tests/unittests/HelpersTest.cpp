@@ -1,10 +1,16 @@
 #include "gtest/gtest.h"
 
 #include "Helpers.h"
+
+#include <set>
 #include <string>
 
+using std::set;
 using std::string;
+
+using boa::Helpers::IsPrefix;
 using boa::Helpers::ReplaceInString;
+using boa::Helpers::SplitString;
 
 TEST(HelpersTest, StringReplaceTest) {
   string a = "Hello World";
@@ -22,4 +28,18 @@ TEST(HelpersTest, StringReplaceTest) {
   string selfContaining("aba");
   ReplaceInString(selfContaining, 'a', "aa");
   ASSERT_EQ(selfContaining, "aabaa");
+}
+
+TEST(HelpersTest, IsPrefixTest) {
+  ASSERT_TRUE(IsPrefix("ab", "abcd"));
+  ASSERT_FALSE(IsPrefix("ab", "cabd"));
+}
+
+TEST(HelpersTest, SplitStringTest) {
+  string s("a,b,c");
+  set<string> split(SplitString(s, ','));
+  ASSERT_EQ(3, split.size());
+  ASSERT_EQ(1, split.count("a"));
+  ASSERT_EQ(1, split.count("b"));
+  ASSERT_EQ(1, split.count("c"));
 }

@@ -1,6 +1,7 @@
 #ifndef __BOA_CONSTRAINT_H
 #define __BOA_CONSTRAINT_H /* */
 
+#include <cctype>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -55,6 +56,16 @@ class Constraint {
   Type type_;
 
 
+  static string safeString(const string& str) {
+    string result = str.substr(0, 255);
+    for (size_t i = 0; i < result.length(); ++i) {
+      if (!isgraph(result[i])) {
+        result[i] = ' ';
+      }
+    }
+    return result;
+  }
+
   void addLiteral(double num, string var) {
     literals_[var] += num;
   }
@@ -66,23 +77,6 @@ class Constraint {
   // TODO(tzafrir): Disallow copying and assignment.
 
  public:
-  static char TypeToChar(Type t) {
-    switch (t) {
-    case STRUCTURAL : return '0';
-    case ALIASING   : return '1';
-    case NORMAL     : return '2';
-    default         : return '2';
-    }
-  }
-
-  static Type CharToType(char c) {
-    switch (c) {
-    case '0' : return STRUCTURAL;
-    case '1' : return ALIASING;
-    case '2' : return NORMAL;
-    default  : return NORMAL;
-    }
-  }
 
   class Expression {
     double val_;
@@ -185,16 +179,8 @@ class Constraint {
     blame_ = blame;
   }
 
-  static string StripPrefix(const string& blame) {
-    if (blame.empty()) {
-      return blame;
-    }
-    return blame.substr(1);
-  }
-
   void SetBlame(const string &blame, const string &location, Type T = NORMAL) {
-    blame_ = TypeToChar(T);
-    blame_ += blame + " [" + location + "]";
+    blame_ = blame + " [" + location + "]";
     type_ = T;
   }
 
@@ -266,7 +252,7 @@ class Constraint {
     }
     glp_set_row_bnds(lp, row, GLP_UP, 0.0, left_);
     glp_set_mat_row(lp, row, literals_.size(), indices, values);
-    glp_set_row_name(lp, row, blame_.c_str());
+    glp_set_row_name(lp, row, safeString(blame_).c_str());
   }
 
  private:

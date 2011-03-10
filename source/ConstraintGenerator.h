@@ -30,11 +30,13 @@ namespace boa {
 class ConstraintGenerator {
   ConstraintProblem &cp_;
   /**
-    Mark buffers that was allocated, so they can be added to the constraint problem once the debug
+    Mark buffers that were allocated, so they can be added to the constraint problem once the debug
     info is availble.
   */
-  map<const Value *, bool> allocedBuffers;
-  set<const StructType*> structsVisited;
+  map<const Value *, bool> allocedBuffers_;
+  set<const StructType*> structsVisited_;
+  const set<string> safeFunctions_;
+  const set<string> unsafeFunctions_;
   set<Buffer> buffers_;
   set<Pointer> unknownPointers_;
   bool IgnoreLiterals_;
@@ -51,7 +53,7 @@ class ConstraintGenerator {
   */
   void GenerateGenericConstraint(const VarLiteral &var, const Value *integerExpression,
                                  VarLiteral::ExpressionType type, const string &blame,
-                                 const string &location);
+                                 const string &location, const Expression &offset = 0.0);
 
   void GenerateConstraint(const VarLiteral &var, const Expression &integerExpression,
                           VarLiteral::ExpressionType type, VarLiteral::ExpressionDir direction,
@@ -143,6 +145,10 @@ class ConstraintGenerator {
   void GenerateStrdupConstraint(const CallInst* I, const string &location);
   void GenerateStrlenConstraint(const CallInst* I, const string &location);
   void GenerateMemchrConstraint(const CallInst* I);
+  void GenerateMemmoveConstraint(const CallInst* I);
+  void GenerateMemcmpConstraint(const CallInst* I);
+  void GenerateMemsetConstraint(const CallInst* I);
+  void GenerateMemcpyConstraint(const CallInst* I);
 
   /*
     Generate the constraints reflecting llvm arithmetic access instructions
@@ -161,12 +167,13 @@ class ConstraintGenerator {
   void GeneratePhiConstraint(const PHINode* I);
   void GenerateSelectConstraint(const SelectInst* I);
 
-  static bool IsSafeFunction(const string& name);
-  static bool IsUnsafeFunction(const string& name);
+  bool IsSafeFunction(const string& name);
+  bool IsUnsafeFunction(const string& name);
 
  public:
-  ConstraintGenerator(ConstraintProblem &CP, bool ignoreLiterals) : cp_(CP), 
-                                                                  IgnoreLiterals_(ignoreLiterals) {}
+  ConstraintGenerator(ConstraintProblem &CP, bool ignoreLiterals, const set<string> &safeFunctions,
+                      const set<string> &unsafeFunctions) : cp_(CP), safeFunctions_(safeFunctions),
+                      unsafeFunctions_(unsafeFunctions), IgnoreLiterals_(ignoreLiterals) {}
 
   void AnalyzePointers();
 

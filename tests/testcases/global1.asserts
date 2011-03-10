@@ -1,2 +1,3 @@
 HAS ByName global2
 NOT ByName global1
+NOT ByName lit
