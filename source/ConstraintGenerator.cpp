@@ -103,6 +103,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
     break;
   case Instruction::GetElementPtr:
+    LOG << "GetElementPtrInst" << endl;
     GenerateGetElementPtrConstraint(dyn_cast<const GetElementPtrInst>(I));
     break;
 
@@ -154,7 +155,9 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateShiftConstraint(dyn_cast<const BinaryOperator>(I));
     break;
 //  case Instruction::VAArg:
-//  case Instruction::ExtractElement:
+  case Instruction::ExtractElement:
+    LOG << "ExtractElement Instruction" << endl;
+    break;
 //  case Instruction::InsertElement:
 //  case Instruction::ShuffleVector:
 //  case Instruction::ExtractValue:
@@ -168,6 +171,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 }
 
 void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
+  // Verify that the type of the global is a pointer type (should always be true)
   const Type *t = G->getType();
   if (const PointerType *p = dyn_cast<const PointerType>(t)) {
     t = p->getElementType();
@@ -175,13 +179,13 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     LOG << "can't handle global variable" << endl;
     return;
   }
-  if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
-    if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
+  if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
+    if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {      
+      unsigned len = ar->getNumElements() - 1;
+      string s;
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
         if (CA->isCString()) {
-          // string literals are global arrays
-          unsigned len = ar->getNumElements() - 1;
-          string s;
+          // string literals are global arrays          
           s = CA->getAsString().c_str();
           Helpers::ReplaceInString(s, '\n', "\\n");
           Helpers::ReplaceInString(s, '\t', "\\t");
@@ -199,6 +203,12 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
           return;
         }
       }
+      // Otherwise this is a global array
+      s = GV->getNameStr();
+      Buffer buf1(G, s, "");
+      GenerateAllocConstraint(G, ar, "Global Array");
+      AddBuffer(buf1, "Global Array");
+      return;
     }
   }
 }
@@ -337,14 +347,13 @@ void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I, const s
 
 void ConstraintGenerator::GenerateStoreConstraint(const StoreInst* I) {
   string loc = GetInstructionFilename(I);
-
   if (const PointerType *pType = dyn_cast<const PointerType>(I->getPointerOperand()->getType())) {
     if (!(pType->getElementType()->isPointerTy())) {
       // store into a pointer - store int value
       Integer intLiteral(I->getPointerOperand());
       GenerateGenericConstraint(intLiteral, I->getValueOperand(), VarLiteral::USED,
                                 "store instruction", loc);
-      GeneratePointerDerefConstraint(I->getPointerOperand(), loc);
+      GeneratePointerDerefConstraint(makePointer(I->getPointerOperand()), loc);
     } else {
       Pointer pFrom(makePointer(I->getValueOperand())), pTo(makePointer(I->getPointerOperand()));
       GenerateBufferAliasConstraint(pFrom, pTo, loc);
@@ -1095,6 +1104,7 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
 
 //Static.
 Pointer ConstraintGenerator::makePointer(const Value *I) {
+  LOG << "Make pointer" << endl;
   if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
     return G->getOperand(0);
   }
