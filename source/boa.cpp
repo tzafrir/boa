@@ -8,17 +8,22 @@
 #include "Buffer.h"
 #include "ConstraintGenerator.h"
 #include "ConstraintProblem.h"
+#include "Helpers.h"
 #include "log.h"
 
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <unistd.h>
+#include <vector>
+#include <set>
 
-using std::vector;
 using std::cerr;
-using std::ofstream;
 using std::ios_base;
+using std::ofstream;
+using std::set;
+using std::vector;
+
+using boa::Helpers::SplitString;
 
 using namespace llvm;
 
@@ -30,6 +35,8 @@ cl::opt<bool> NoPointerAnalysis("no_pointer_analysis",
 cl::opt<bool> IgnoreLiterals("ignore_literals",
                    cl::desc("Don't report buffer overruns on string literals"), cl::value_desc(""));
 cl::opt<bool> Verbose("v", cl::desc("Verbose output format"), cl::value_desc(""));
+cl::opt<string> SafeFunctions("safe_functions", cl::desc("Names of safe functions"), cl::value_desc(""));
+cl::opt<string> UnsafeFunctions("unsafe_functions", cl::desc("Names of unsafe functions"), cl::value_desc(""));
 
 namespace boa {
 static const string SEPARATOR("---");
@@ -47,6 +54,7 @@ namespace Colors {
 class boa : public ModulePass {
  private:
   ConstraintProblem constraintProblem_;
+  set<string> safeFunctions_, unsafeFunctions_;
 
  public:
   static char ID;
@@ -62,10 +70,13 @@ class boa : public ModulePass {
       // use colors only if stderror is a tty
       Colors::Setup();
     }
+    safeFunctions_ = SplitString(SafeFunctions, ',');
+    unsafeFunctions_ = SplitString(UnsafeFunctions, ',');
    }
 
   virtual bool runOnModule(Module &M) {
-    ConstraintGenerator constraintGenerator(constraintProblem_, IgnoreLiterals);
+    ConstraintGenerator constraintGenerator(constraintProblem_, IgnoreLiterals, safeFunctions_,
+                                            unsafeFunctions_);
 
     for (Module::const_global_iterator it = M.global_begin(); it != M.global_end(); ++it) {
       const GlobalValue *g = it;
@@ -85,6 +96,13 @@ class boa : public ModulePass {
   }
 
   virtual ~boa() {
+    if (constraintProblem_.BuffersCount() == 0) {
+      cerr << "no buffers detected" << endl;
+      cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
+      cerr << SEPARATOR << endl;
+      return;
+    }
     LOG << "Constraint solver output - " << endl;
     vector<Buffer> unsafeBuffers = constraintProblem_.Solve();
     cerr << Colors::Bold << "boa" << Colors::Normal << " found "
@@ -112,8 +130,12 @@ class boa : public ModulePass {
              ++it) {
           cerr << Colors::Red << it->first.getReadableName() << Colors ::Normal << " " <<
               it->first.getSourceLocation() << endl;
+          string lastLine = "";
           for (size_t i = 0; i < it->second.size(); ++i) {
-            cerr << "  - " << it->second[i] << endl;
+            if (it->second[i] != lastLine) {
+              cerr << "  - " << it->second[i] << endl;
+              lastLine = it->second[i];
+            }
           }
         }
       }
