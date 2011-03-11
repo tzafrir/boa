@@ -330,9 +330,7 @@ void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string
                             GetInstructionFilename(I));
 }
 
-void ConstraintGenerator::GeneratePointerDerefConstraint(const Value* I, const string &location) {
-  // TODO(tzafrir): Use GenerateConstraint here.
-  Buffer buf(I);
+void ConstraintGenerator::GeneratePointerDerefConstraint(Pointer buf, const string &location) {
   string blame("Pointer Dereference [" + location + "]");
   Constraint cMax(blame, location), cMin(blame, location);
 
@@ -1103,10 +1101,22 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
 }
 
 Pointer ConstraintGenerator::makePointer(const Value *I, const string& location /* = "" */) {
-  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {  
-    const Value *accessIdx = G->getOperand(G->getNumOperands()-1);
+  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) { 
     Pointer b(G->getOperand(0)), ptr(I);
-    GenerateBufferAliasConstraint(b, ptr, location, accessIdx);
+    Expression offsetExp = GenerateIntegerExpression(G->getOperand(G->getNumOperands()-2), 
+                                                        VarLiteral::MAX);
+    if (!offsetExp.IsZero()) {
+      if (const PointerType *pType = dyn_cast<const PointerType>(G->getOperand(0)->getType())) {
+        if (const ArrayType *arr = dyn_cast<const ArrayType>(pType->getElementType())) {
+          double len = arr->getNumElements();
+          offsetExp.mul(len);
+          offsetExp.add(GenerateIntegerExpression(G->getOperand(G->getNumOperands()-1), VarLiteral::MAX));
+          GenerateBufferAliasConstraint(b, ptr, location, NULL, &offsetExp);
+          return ptr;
+        }
+      }
+    }   
+    GenerateBufferAliasConstraint(b, ptr, location, G->getOperand(G->getNumOperands()-1));
     return ptr;
   }
 

@@ -111,7 +111,7 @@ class ConstraintGenerator {
     Generate the constraints reflecting defreference of a pointer (usually accesing a buffer through
     alias)
   */
-  void GeneratePointerDerefConstraint(const Value* I, const string& location);
+  void GeneratePointerDerefConstraint(Pointer buf, const string &location);
 
   /**
     Generate buffer allocation constraints and register the buffer as allocated

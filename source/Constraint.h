@@ -136,6 +136,10 @@ class Constraint {
       }
       return true;
     }
+    
+    bool IsZero() {
+      return IsConst() && (GetConst() == 0);
+    }
 
     double GetConst() {
       return val_;
