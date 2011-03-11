@@ -49,6 +49,10 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     return;
   }
 
+  if (isa<DbgValueInst>(I)) {
+    return;
+  }
+
   switch (I->getOpcode()) {
   // Terminators
   case Instruction::Ret:
