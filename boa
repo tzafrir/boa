@@ -9,6 +9,7 @@ CLANG="$BOADIR/../llvm/Debug+Asserts/bin/clang"
 OPT="$BOADIR/../llvm/Debug+Asserts/bin/opt"
 
 FLAGS=""
+mem2reg="-mem2reg"
 
 for arg in $@
 do
@@ -21,8 +22,8 @@ do
     -log)
       args="$args -logfile /dev/stderr"
     ;;
-    -mem2reg)
-      args="$args $arg"
+    -nomem2reg)
+      mem2reg=""
     ;;
     -output_glpk|-blame|-no_pointer_analysis|-ignore_literals|-v)
       FLAGS="$FLAGS $arg"
@@ -34,7 +35,7 @@ do
 done
 
 if [ "$files" != "" ]; then
-  $CLANG -g -O0 -c -emit-llvm ${files} -o /dev/stdout | $OPT -load $BOA_SO $args -boa $FLAGS > /dev/null
+  $CLANG -g -O0 -c -emit-llvm ${files} -o /dev/stdout | $OPT -load $BOA_SO $args $mem2reg -boa $FLAGS > /dev/null
 else
   echo -e " usage : \033[1m./boa [flags] <source files>\033[0m"
   echo ""
