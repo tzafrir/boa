@@ -130,14 +130,14 @@ blamesDict is a dictionary in the form:
     else:
       errs.write("Invalid assertion type \"" + assertionTypeValue + "\" in line " +
           str(lineNumber) + "\n")
-      exit(1)
+      exit(2)
 
     if assertionKind == BLAME:
       if not testForBlame:
         continue
       if assertionType == BYBOTH:
         errs.write("Cannot specify blame string by name and location - invalid assertion type ByBoth in line " + lineNumber + '\n')
-        exit(1)
+        exit(2)
       target = values[2]
       # Remove first three words. Rebuild a string for the rest of the line.
       for i in range(3):
@@ -221,7 +221,7 @@ def main():
     errs.write("Usage: %s [testName]*\n" % sys.argv[0])
     errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
-    exit(1)
+    exit(2)
   testForBlame = False
   flags = list()
   for arg in sys.argv:
@@ -241,4 +241,4 @@ if __name__ == "__main__":
     if main():
       exit(0)
     else:
-      exit(1)
+      exit(2)
