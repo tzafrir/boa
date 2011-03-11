@@ -130,8 +130,12 @@ class boa : public ModulePass {
              ++it) {
           cerr << Colors::Red << it->first.getReadableName() << Colors ::Normal << " " <<
               it->first.getSourceLocation() << endl;
+          string lastLine = "";
           for (size_t i = 0; i < it->second.size(); ++i) {
-            cerr << "  - " << it->second[i] << endl;
+            if (it->second[i] != lastLine) {
+              cerr << "  - " << it->second[i] << endl;
+              lastLine = it->second[i];
+            }
           }
         }
       }
