@@ -10,8 +10,6 @@ passed=0
 for arg in $@; do
   if [ "$arg" == "-v" ]; then
     verbose=true
-  elif [ "$arg" == "-blame" ]; then
-    blame="-blame"
   else
     flags="$flags $arg"
   fi
