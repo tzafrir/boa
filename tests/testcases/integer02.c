@@ -7,8 +7,6 @@ int main() {
   buf1[2 * i - j] = c;
   buf1[4 + j] = c;
   buf2[i - j] = c; // write before the begining of buffer
-//  buf3[k] = c; // k uninitialized
-//  k = 1;
   l = j + 5;
   buf4[l] = c; // l == 10
 }

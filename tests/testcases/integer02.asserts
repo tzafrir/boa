@@ -3,4 +3,3 @@ NOT ByName buf1
 NOT ByName buf3
 HAS ByName buf4
 NOT ByName buf5
-BLAME ByName buf2 load instruction
