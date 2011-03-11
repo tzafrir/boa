@@ -934,11 +934,20 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
 }
 
 void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {
-  Integer phiNode(I);
-  string blame = "Phi Node", loc = GetInstructionFilename(I) ;
+  string blame = "Phi Node", loc = GetInstructionFilename(I);
   LOG << "Phi Node at " << I << " (" << blame << ")" << endl;
-  for (unsigned i = 0; i < I->getNumIncomingValues(); i++) {
-    GenerateGenericConstraint(phiNode, I->getIncomingValue(i), VarLiteral::USED, blame, loc);
+  const unsigned numVals = I->getNumIncomingValues();
+  if (I->getType()->isPointerTy()) {
+    Pointer phiNode(I);
+    for (unsigned i = 0; i < numVals; i++) {
+      Pointer from(I->getIncomingValue(i));
+      GenerateBufferAliasConstraint(from, phiNode, loc, NULL, NULL, blame);
+    }
+  } else {
+    Integer phiNode(I);
+    for (unsigned i = 0; i < numVals; i++) {
+      GenerateGenericConstraint(phiNode, I->getIncomingValue(i), VarLiteral::USED, blame, loc);
+    }
   }
 }
 
