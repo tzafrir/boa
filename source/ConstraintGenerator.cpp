@@ -931,7 +931,7 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
 
 void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {
   Integer phiNode(I);
-  string blame = "Ternary operator", loc = GetInstructionFilename(I) ;
+  string blame = "Phi Node", loc = GetInstructionFilename(I) ;
   LOG << "Phi Node at " << I << " (" << blame << ")" << endl;
   for (unsigned i = 0; i < I->getNumIncomingValues(); i++) {
     GenerateGenericConstraint(phiNode, I->getIncomingValue(i), VarLiteral::USED, blame, loc);
