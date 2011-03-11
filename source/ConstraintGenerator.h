@@ -78,7 +78,7 @@ class ConstraintGenerator {
     order to deal with getElementPtr that might appear as a constantExpr (and not a reference to
     another instruction) in an instruction parameter.
   */
-  static Pointer makePointer(const Value *I);
+  Pointer makePointer(const Value *I, const string& location = "");
 
   /**
     Extract variable declration data from debug information

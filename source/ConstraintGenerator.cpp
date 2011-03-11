@@ -1102,12 +1102,14 @@ string ConstraintGenerator::GetInstructionFilename(const Instruction* I) {
   return "";
 }
 
-//Static.
-Pointer ConstraintGenerator::makePointer(const Value *I) {
-  LOG << "Make pointer" << endl;
-  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {
-    return G->getOperand(0);
+Pointer ConstraintGenerator::makePointer(const Value *I, const string& location /* = "" */) {
+  if (const ConstantExpr* G = dyn_cast<const ConstantExpr>(I)) {  
+    const Value *accessIdx = G->getOperand(G->getNumOperands()-1);
+    Pointer b(G->getOperand(0)), ptr(I);
+    GenerateBufferAliasConstraint(b, ptr, location, accessIdx);
+    return ptr;
   }
+
   return I;
 }
 
