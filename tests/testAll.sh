@@ -12,12 +12,14 @@ for arg in $@; do
     verbose=true
   elif [ "$arg" == "-blame" ]; then
     blame="-blame"
+  else
+    flags="$flags $arg"
   fi
 done
 
 function run_testcase {
   (( tested++ ))
-  tests/testRunner.py $blame $1
+  tests/testRunner.py $blame $flags $1
   return $?
 }
 
