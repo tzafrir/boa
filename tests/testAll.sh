@@ -10,27 +10,30 @@ passed=0
 for arg in $@; do
   if [ "$arg" == "-v" ]; then
     verbose=true
-  elif [ "$arg" == "-blame" ]; then
-    blame="-blame"
+  else
+    flags="$flags $arg"
   fi
 done
 
 function run_testcase {
   (( tested++ ))
-  tests/testRunner.py $blame $1
+  tests/testRunner.py $blame $flags $1
   return $?
 }
 
 for file in $(ls tests/testcases/*.c); do
   TESTNAME=`echo $file | cut -d"." -f1`
   run_testcase $TESTNAME
-  if [ "$?" == "0" ]; then
+  retval=$?
+  if [ "$retval" == "0" ]; then
     (( passed++ ))
     if [ $verbose ]; then
       echo -e "$GREEN""Test Passed: $TESTNAME""$NO_COLOR"
     fi
-  else
+  elif [ "$retval" == "2" ]; then
     echo -e "$RED""Test Failed: $TESTNAME""$NO_COLOR"
+  else
+    break
   fi
 done
 

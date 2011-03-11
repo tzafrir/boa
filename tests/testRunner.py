@@ -30,17 +30,17 @@ Receives a list of tuples, returns a list of all n'th elements in the list.
 def printFailure(failedLine, lineNumber):
   errs.write("FAILED(" + str(lineNumber) + "): " + failedLine + "\n")
 
-def runTest(testName, testForBlame):
+def runTest(testName, flags):
   """\
 Runs BOA over testName.c, returns a list of tuples in the form
 (bufferName, bufferLocation)
 """
   results = list()
   blames = list()
-  blameFlag = ""
-  if (testForBlame):
-    blameFlag = "-blame"
-  p = Popen([boaExecutable, blameFlag, testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
+  argv = flags
+  argv.insert(0, boaExecutable)
+  argv.append(testName + '.c')
+  p = Popen(argv, stdout=PIPE, stderr=PIPE, stdin=None)
   separatorCount = 0
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
@@ -130,14 +130,14 @@ blamesDict is a dictionary in the form:
     else:
       errs.write("Invalid assertion type \"" + assertionTypeValue + "\" in line " +
           str(lineNumber) + "\n")
-      exit(1)
+      exit(2)
 
     if assertionKind == BLAME:
       if not testForBlame:
         continue
       if assertionType == BYBOTH:
         errs.write("Cannot specify blame string by name and location - invalid assertion type ByBoth in line " + lineNumber + '\n')
-        exit(1)
+        exit(2)
       target = values[2]
       # Remove first three words. Rebuild a string for the rest of the line.
       for i in range(3):
@@ -221,14 +221,18 @@ def main():
     errs.write("Usage: %s [testName]*\n" % sys.argv[0])
     errs.write("    For each testcase, runs boa on testName.c and checks the assertions " +
                      "in testName.asserts\n")
-    exit(1)
+    exit(2)
   testForBlame = False
+  flags = list()
   for arg in sys.argv:
     if (arg == '-blame'):
       testForBlame |= True
+      flags.append(arg)
+    elif [ '-mem2reg' ].__contains__(arg):
+      flags.append(arg)
     else:
       testName = arg
-  testOutput, blames = runTest(testName, testForBlame)
+  testOutput, blames = runTest(testName, flags)
   blamesDict = parseBlames(blames)
   val = applyAssertions(testName, testOutput, blamesDict, testForBlame)
   return val
@@ -237,4 +241,4 @@ if __name__ == "__main__":
     if main():
       exit(0)
     else:
-      exit(1)
+      exit(2)
