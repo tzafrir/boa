@@ -62,7 +62,7 @@ tests/rununittests: ${BUILD} ${ALLTESTS} ${ALLOFILES}
 	g++ ${ALLOFILES} ${ALLTESTS} ${TMAINFLAGS} ${LINKFLAGS} -lLLVMCBackend -lLLVMSupport -lEnhancedDisassembly -o tests/rununittests
 
 unittests: tests/rununittests FORCE
-	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/llvm-2.8/lib" tests/rununittests
+	LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/lib/llvm-2.8/lib" tests/rununittests
 
 tests: boatestsblame unittests FORCE
 
