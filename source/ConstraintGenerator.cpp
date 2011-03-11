@@ -103,7 +103,6 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateStoreConstraint(dyn_cast<const StoreInst>(I));
     break;
   case Instruction::GetElementPtr:
-    LOG << "GetElementPtrInst" << endl;
     GenerateGetElementPtrConstraint(dyn_cast<const GetElementPtrInst>(I));
     break;
 
@@ -209,6 +208,12 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
       GenerateAllocConstraint(G, ar, "Global Array");
       AddBuffer(buf1, "Global Array");
       return;
+    }
+    if (t->isIntegerTy()) {
+      Integer globalInt(GV);
+      GenerateGenericConstraint(globalInt, GV->getInitializer(), VarLiteral::USED,
+                                "global int", ""); //TODO: location
+      GeneratePointerDerefConstraint(GV, "");
     }
   }
 }
