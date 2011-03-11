@@ -50,10 +50,10 @@ clean:
 TESTCASES=$(patsubst tests/testcases/%.c,tests/testcases/build/%.out,$(wildcard tests/testcases/*.c))
 
 boatests: ${BUILD}/boa.so ${TESTCASES} FORCE
-	tests/testAll.sh
+	tests/testAll.sh ${TESTFLAGS}
 
 boatestsblame: ${BUILD}/boa.so ${TESTCASES} FORCE
-	tests/testAll.sh -blame
+	tests/testAll.sh -blame ${TESTFLAGS}
 
 ALLTESTS=$(subst tests/unittests,build,$(subst cpp,o,$(wildcard tests/unittests/*Test.cpp)))
 ALLOFILES=$(subst Test,,${ALLTESTS}) ${BUILD}/log.o ${BUILD}/Constraint.o

@@ -30,17 +30,17 @@ Receives a list of tuples, returns a list of all n'th elements in the list.
 def printFailure(failedLine, lineNumber):
   errs.write("FAILED(" + str(lineNumber) + "): " + failedLine + "\n")
 
-def runTest(testName, testForBlame):
+def runTest(testName, flags):
   """\
 Runs BOA over testName.c, returns a list of tuples in the form
 (bufferName, bufferLocation)
 """
   results = list()
   blames = list()
-  blameFlag = ""
-  if (testForBlame):
-    blameFlag = "-blame"
-  p = Popen([boaExecutable, blameFlag, testName + '.c'], stdout=PIPE, stderr=PIPE, stdin=None)
+  argv = flags
+  argv.insert(0, boaExecutable)
+  argv.append(testName + '.c')
+  p = Popen(argv, stdout=PIPE, stderr=PIPE, stdin=None)
   separatorCount = 0
   for lineWithBreak in p.stderr.readlines():
     line = lineWithBreak.split("\n")[0]
@@ -223,12 +223,16 @@ def main():
                      "in testName.asserts\n")
     exit(1)
   testForBlame = False
+  flags = list()
   for arg in sys.argv:
     if (arg == '-blame'):
       testForBlame |= True
+      flags.append(arg)
+    elif [ '-mem2reg' ].__contains__(arg):
+      flags.append(arg)
     else:
       testName = arg
-  testOutput, blames = runTest(testName, testForBlame)
+  testOutput, blames = runTest(testName, flags)
   blamesDict = parseBlames(blames)
   val = applyAssertions(testName, testOutput, blamesDict, testForBlame)
   return val
