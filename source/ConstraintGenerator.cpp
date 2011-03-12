@@ -296,6 +296,12 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
     GenerateUnboundConstraint(intLiteral, "Unconst multiplication.", GetInstructionFilename(I));
     return;
   }
+  if (constOperand < 0.0) {
+    // Multiply by a negative swaps the bounds
+    Expression * t = minOperand;
+    minOperand = maxOperand;
+    maxOperand = t;
+  }
 
   minOperand->mul(constOperand);
   maxOperand->mul(constOperand);
@@ -303,8 +309,6 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
   string loc = GetInstructionFilename(I);
 
   GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
-  GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
-  GenerateConstraint(intLiteral, *maxOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
   GenerateConstraint(intLiteral, *minOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
 }
 
@@ -323,11 +327,16 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
   minOperand.div(constOperand);
   maxOperand.div(constOperand);
 
+  if (constOperand < 0.0) {
+    // Divide by a negative swaps the bounds
+    Expression * t = minOperand;
+    minOperand = maxOperand;
+    maxOperand = t;
+  }
+
   string loc = GetInstructionFilename(I);
 
   GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
-  GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MAX, blame, loc);
-  GenerateConstraint(intLiteral, maxOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
   GenerateConstraint(intLiteral, minOperand, VarLiteral::USED, VarLiteral::MIN, blame, loc);
 }
 
