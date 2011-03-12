@@ -49,6 +49,10 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     return;
   }
 
+  if (isa<DbgValueInst>(I)) {
+    return;
+  }
+
   switch (I->getOpcode()) {
   // Terminators
   case Instruction::Ret:
@@ -490,6 +494,9 @@ void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
   // FIXME - magic numbers!
+  if ((!D) || (!(D->getAddress()))) {
+    return;
+  }
   if (const PointerType *pType = dyn_cast<const PointerType>(D->getAddress()->getType())) {
     if (const StructType *sType = dyn_cast<const StructType>(pType->getElementType())) {
       if (const MDNode *node = dyn_cast<const MDNode>(D->getVariable()->getOperand(5))) {
@@ -798,6 +805,7 @@ bool ConstraintGenerator::IsSafeFunction(const string& name) {
                                     "fprintf",
                                     "fputc",
                                     "fputs",
+                                    "free",
                                     "fwrite",
                                     "getopt",
                                     "openlog",
@@ -861,8 +869,8 @@ void ConstraintGenerator::GenerateGenericConstraint(const VarLiteral &var,
                                                     const Value *integerExpression,
                                                     VarLiteral::ExpressionType type,
                                                     const string &blame,
-                                                    const string &location,
-                                                    const Expression &offset) {
+                                                    const string &location /* = "" */,
+                                                    const Expression &offset /* = NULL */) {
   Expression maxExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MAX);
   maxExpr.add(offset);
   Expression minExpr = GenerateIntegerExpression(integerExpression, VarLiteral::MIN);
@@ -938,11 +946,20 @@ void ConstraintGenerator::GenerateBooleanConstraint(const Instruction *I) {
 }
 
 void ConstraintGenerator::GeneratePhiConstraint(const PHINode *I) {
-  Integer phiNode(I);
-  string blame = "Ternary operator", loc = GetInstructionFilename(I) ;
+  string blame = "Phi Node", loc = GetInstructionFilename(I);
   LOG << "Phi Node at " << I << " (" << blame << ")" << endl;
-  for (unsigned i = 0; i < I->getNumIncomingValues(); i++) {
-    GenerateGenericConstraint(phiNode, I->getIncomingValue(i), VarLiteral::USED, blame, loc);
+  const unsigned numVals = I->getNumIncomingValues();
+  if (I->getType()->isPointerTy()) {
+    Pointer phiNode(I);
+    for (unsigned i = 0; i < numVals; i++) {
+      Pointer from(I->getIncomingValue(i));
+      GenerateBufferAliasConstraint(from, phiNode, loc, NULL, NULL, blame);
+    }
+  } else {
+    Integer phiNode(I);
+    for (unsigned i = 0; i < numVals; i++) {
+      GenerateGenericConstraint(phiNode, I->getIncomingValue(i), VarLiteral::USED, blame, loc);
+    }
   }
 }
 
