@@ -158,9 +158,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
     GenerateShiftConstraint(dyn_cast<const BinaryOperator>(I));
     break;
 //  case Instruction::VAArg:
-  case Instruction::ExtractElement:
-    LOG << "ExtractElement Instruction" << endl;
-    break;
+//  case Instruction::ExtractElement:
 //  case Instruction::InsertElement:
 //  case Instruction::ShuffleVector:
 //  case Instruction::ExtractValue:
