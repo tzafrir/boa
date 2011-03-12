@@ -2554,8 +2554,6 @@ malloc
 - 
 \series bold
 buffer alias - Phi Node
-\series default
- [] 
 \end_layout
 
 \begin_layout Standard
@@ -2571,7 +2569,7 @@ buffer alias with offset
 \series bold
 buffer alias - Phi Node
 \series default
- [] 
+
 \begin_inset Note Note
 status open
 
@@ -2736,6 +2734,178 @@ Nevertheless, we bring MD5 as an example in order to demonstrate the limitations
 
 \begin_layout Subsection
 syslog
+\end_layout
+
+\begin_layout Standard
+Syslog is a simple application that write meaasges into unix system log,
+ and yet another example of a widespread application with a buffer overrun
+ vulnerability in it's history.
+ The syslog vulnerability was first reported on 1995, since syslog is a
+ basic unix subroutine - the vulnerability affected not only syslog itself
+ but many other applications, including 
+\emph on
+sendmail
+\emph default
+, 
+\emph on
+super
+\emph default
+ and many other applications.
+\end_layout
+
+\begin_layout Standard
+The buffer overrun in syslog happens when the log string to be printed is
+ longer than 
+\emph on
+tbuf
+\emph default
+ (a buffer used by syslog in order to format and print the message), syslog
+ calls 
+\emph on
+vsprintf
+\emph default
+ in order to write into the buffer, but does not verify that 
+\emph on
+tbuf
+\emph default
+ can hold the number of bytes to be copied.
+ The solution to the overrun is even more interesting - in order to write
+ such messages nevertheless, syslog mentain the buffer overrun - and check
+ the length of the written string after the hazardous call - 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=198,lastline=204, firstnumber=198]{../tests/realworld/sy
+slog/syslog.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If an overrun have occoured, syslog set the flag 
+\emph on
+panic
+\emph default
+ and then after printing the message to log it will abort instead of returning,
+ as the comment briefly explain - 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=253,lastline=260, firstnumber=253]{../tests/realworld/sy
+slog/syslog.c}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When boa run on syslog's source code it identifies the possible overrun
+ on tbuf, but also report 7 other possible overruns, all of them seems to
+ be false alarms.
+ Most of the false alarms happen simply because syslog call POSIX library
+ functions which boa does not model, for example - 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "127.0.0.1" 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call inet_addr
+\series default
+ [tests/realworld/syslog/syslog.c:290] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "%h %e %T " 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call strftime
+\series default
+ [tests/realworld/syslog/syslog.c:160] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have already disscussed this kind of false alarms, and the means to analyze
+ and prevent them previously as we disscussed 
+\emph on
+fingerd
+\emph default
+.
 \end_layout
 
 \begin_layout Subsection
