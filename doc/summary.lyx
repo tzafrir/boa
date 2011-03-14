@@ -1221,8 +1221,33 @@ The basic relationships between Boa's classes can be seen in this simplified
 \end_layout
 
 \begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
 \begin_inset Graphics
 	filename ClassDiagram.png
+	width 95text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Class diagram
+\end_layout
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -1305,7 +1330,7 @@ In order to achieve these requirements we also defined lenient assumption
 
 \begin_layout Itemize
 The programmer knows that the C string library requires that a string must
- end with the NUL terminating character '
+ end with the NULL terminating character '
 \backslash
 0', and will never mutate the last byte of a buffer in a way that will cause
  an overrun.
