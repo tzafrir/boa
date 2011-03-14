@@ -33,6 +33,7 @@ tabsize=2 %
 {% This is the end code
   %  \end{framed}
   \end{minipage}
+\medskip{}
 }
 \end_preamble
 \use_default_options true
@@ -2900,6 +2901,7 @@ end{boa}
 \end_layout
 
 \begin_layout Standard
+\noindent
 We have already disscussed this kind of false alarms, and the means to analyze
  and prevent them previously as we disscussed 
 \emph on
