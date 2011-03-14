@@ -1180,11 +1180,52 @@ ConstraintProblem
 \end_layout
 
 \begin_layout Standard
-A constraint is a representation of an expression of the form [
+A Constraint instance is a representation of an expression of the form [
 \begin_inset Formula $C\geq a_{1}x_{1}+...+a_{n}x_{n}$
 \end_inset
 
-] with some attributes such as source code location
+] with some attributes such as source code location.
+\end_layout
+
+\begin_layout Standard
+While analyzing the source code instructions, instances of concrete implementati
+ons of the abstract class 
+\emph on
+VarLiteral
+\emph default
+ are created.
+ The concrete implementations are 
+\emph on
+Integer, Pointer
+\emph default
+ and
+\emph on
+ Buffer
+\emph default
+, and are used to represent the source code variables modeled by Boa.
+\end_layout
+
+\begin_layout Standard
+After analyzing all instructions in the program, the method 
+\emph on
+Solve
+\emph default
+ of the constraint problem is called, and the solution of the problem is
+ analyzed to find buffer overruns, which are then displayed to the user.
+\end_layout
+
+\begin_layout Standard
+The basic relationships between Boa's classes can be seen in this simplified
+ class diagram:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ClassDiagram.png
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Chapter
