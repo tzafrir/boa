@@ -1126,6 +1126,109 @@ structural
 Implementation
 \end_layout
 
+\begin_layout Standard
+Boa is realized as a LLVM optimizer plugin, and is compiled into a shared
+ object file which is dynamically loaded by 
+\emph on
+opt
+\emph default
+, the LLVM optimizer.
+\end_layout
+
+\begin_layout Standard
+The interface provided by LLVM for our purposes is a use of the 
+\emph on
+Visitor
+\emph default
+ design pattern.
+ We created a class named 
+\emph on
+boa
+\emph default
+ that subclasses LLVM's 
+\emph on
+ModulePass
+\emph default
+ class, and implements the method 
+\emph on
+runOnModule
+\emph default
+.
+ LLVM passes a 
+\emph on
+Module
+\emph default
+ (LLVM's representation of a whole program) to this method, which then runs
+ Boa's full analysis on the module and exits.
+\end_layout
+
+\begin_layout Standard
+Almost all of Boa's work is done in the class 
+\emph on
+ConstraintGenerator
+\emph default
+.
+ This class is responsible for analyzing every code instruction in the module,
+ and adding instances of the class 
+\emph on
+Constraint
+\emph default
+ to an instance of the class 
+\emph on
+ConstraintProblem
+\emph default
+.
+\end_layout
+
+\begin_layout Standard
+A Constraint instance is a representation of an expression of the form [
+\begin_inset Formula $C\geq a_{1}x_{1}+...+a_{n}x_{n}$
+\end_inset
+
+] with some attributes such as source code location.
+\end_layout
+
+\begin_layout Standard
+While analyzing the source code instructions, instances of concrete implementati
+ons of the abstract class 
+\emph on
+VarLiteral
+\emph default
+ are created.
+ The concrete implementations are 
+\emph on
+Integer, Pointer
+\emph default
+ and
+\emph on
+ Buffer
+\emph default
+, and are used to represent the source code variables modeled by Boa.
+\end_layout
+
+\begin_layout Standard
+After analyzing all instructions in the program, the method 
+\emph on
+Solve
+\emph default
+ of the constraint problem is called, and the solution of the problem is
+ analyzed to find buffer overruns, which are then displayed to the user.
+\end_layout
+
+\begin_layout Standard
+The basic relationships between Boa's classes can be seen in this simplified
+ class diagram:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ClassDiagram.png
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Chapter
 Development Process
 \end_layout
@@ -1324,18 +1427,9 @@ Hello World
 
 \begin_layout Standard
 At this stage we created constraints such that any buffer access and use
- and any function call created an overrun on all buffers involved.
- This trivial handling already meets our well defined requirements of handling
- any C source code and being 
-\emph on
-Sound
-\emph default
-, and from this point we began iterating on reducing false positives.
-\end_layout
-
-\begin_layout Standard
-This methodology allowed us to have at any given point a sound working system
- which gained quality as the construction progressed.
+ and any function call created an overrun on all buffers involved, and from
+ this point on we could work on detecting all buffers in the program and
+ reducing false positives.
 \end_layout
 
 \begin_layout Section
@@ -1464,6 +1558,18 @@ White Box
 We used 
 \emph on
 Google C++ Testing Framework
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\emph on
+http://code.google.com/p/googletest/
+\end_layout
+
+\end_inset
+
+
 \emph default
  (commonly known as 
 \emph on
@@ -1483,6 +1589,18 @@ Version Control
 We used 
 \emph on
 git
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\emph on
+http://git-scm.com/
+\end_layout
+
+\end_inset
+
+
 \emph default
  as our versioning control system.
  We leveraged the distributed nature of git and the cheap branching of git
@@ -1512,7 +1630,17 @@ Online Hosting
 \end_layout
 
 \begin_layout Standard
-We used Github as an online code repository.
+We used Github
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://github.com
+\end_layout
+
+\end_inset
+
+ as an online code repository.
  This also gave us basic project management tools such as issue tracking
  and code reviews.
 \end_layout
@@ -1661,9 +1789,23 @@ Also, working directly on the AST of a high level language meant that the
 \end_layout
 
 \begin_layout Standard
-We therefore decided it would be best to first compile the code into LLVM
- bitcode, and then generate constraints according to that bitcode using
- an 
+We therefore decided it would be best to use the LLVM
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://llvm.org/
+\end_layout
+
+\end_inset
+
+ (
+\emph on
+Low Level Virtual Machine
+\emph default
+) infratructure.
+ Boa would first compile the code into LLVM bitcode, and then generate constrain
+ts according to that bitcode using an 
 \emph on
 LLVM Pass
 \emph default
@@ -1769,10 +1911,10 @@ name "chap:Results"
 \end_layout
 
 \begin_layout Standard
-We tested boa on several widespread real world programs.
- We tested to see whether boa discovers real buffer overruns, and also to
+We tested Boa on several widespread real world programs.
+ We tested to see whether Boa discovers real buffer overruns, and also to
  evaluate the number of false alarms and their main causes.
- The source files used in all of the experiments are availble in boa git
+ The source files used in all of the experiments are availble in Boa git
  repository
 \begin_inset Foot
 status collapsed
@@ -1806,13 +1948,13 @@ reference "tab:Performance"
 
 \end_inset
 
- summarizes the performance of boa on several programs, the reported running
+ summarizes the performance of Boa on several programs, the reported running
  times are the results of experiments ran on a Dell Vostro 1310 laptop,
  with Intel Core2 Duo CPU T8100 2.10GHz and 2GB RAM running Debian GNU/Linux
  Wheezy (7.0.0), clang 2.9, llvm 2.9 and GLPK 4.43.
- On this humble configuration boa can analyze few thousands lines of code
+ On this humble configuration Boa can analyze few thousands lines of code
  within seconds, proving that the use of elastic filter did pay off and
- boa can be used to efficiently analyze any reasonable piece of C code.
+ Boa can be used to efficiently analyze any reasonable piece of C code.
 \end_layout
 
 \begin_layout Standard
@@ -2224,7 +2366,7 @@ name "tab:Performance"
 
 \end_inset
 
-boa performance on various real world examples
+Boa performance on various real world examples
 \end_layout
 
 \end_inset
@@ -2242,7 +2384,7 @@ Running time
 \end_layout
 
 \begin_layout Standard
-The main factor affecting boa's runtime is the number of generated constraints,
+The main factor affecting Boa's runtime is the number of generated constraints,
  which is proportional to the number of source lines manipulating integers,
  buffers or strings.
  The implementation of md5 is just 100 lines of source code longer than
@@ -2256,7 +2398,7 @@ The main factor affecting boa's runtime is the number of generated constraints,
 Another important factor is the amount of infeasible constraint sets have
  to be removed, but this measure can hardly be predicted simply by looking
  at the source code.
- When boa run the blame algorithm, another important factor emerge - the
+ When Boa run the blame algorithm, another important factor emerge - the
  number of overruns reported, each overrun cause the blame algotihm to solve
  an infeasible problem again, and thus the running time is approximatly
  multiplied by the number of overruns detected.
@@ -2278,10 +2420,10 @@ Better name? (Gai)
 
 \begin_layout Standard
 Over the next sections we will present and describe in details some of the
- possible overruns boa detected in the programs menthioned above.
- We will use these examples to demonstrate how boa can be used to detect
+ possible overruns Boa detected in the programs menthioned above.
+ We will use these examples to demonstrate how Boa can be used to detect
  overruns and how one can the blame feature to understand the behaviour
- of boa and analyze false alarms.
+ of Boa and analyze false alarms.
 \end_layout
 
 \begin_layout Subsection
@@ -2289,7 +2431,7 @@ fingerd
 \end_layout
 
 \begin_layout Standard
-We tested boa using 
+We tested Boa using 
 \emph on
 fingerd
 \emph default
@@ -2332,8 +2474,8 @@ Running on
 \emph on
 fingerd
 \emph default
- source, boa reported overruns on 6 out of the 34 buffers.
- Next we present boa's blame for three of them, and analyze the reason for
+ source, Boa reported overruns on 6 out of the 34 buffers.
+ Next we present Boa's blame for three of them, and analyze the reason for
  the reported overrun -
 \end_layout
 
@@ -2409,7 +2551,7 @@ end{boa}
 
 \begin_layout Standard
 \noindent
-The overrun discovered by boa, and the real cause reported briefly.
+The overrun discovered by Boa, and the real cause reported briefly.
  Note another result of 
 \emph on
 gets
@@ -2498,7 +2640,7 @@ realhostname_sa
 socket.h
 \emph default
 .
- This false alarm could be avoided if boa would model 
+ This false alarm could be avoided if Boa would model 
 \emph on
 socket.h
 \emph default
@@ -2642,9 +2784,9 @@ line
 ++
 \family default
  operator on a pointer.
- Since boa is a flow-insensitive analyzing tool, we can not assure that
+ Since Boa is a flow-insensitive analyzing tool, we can not assure that
  the inceremental pointer aliasing will be limited to the buffer size -
- and therefore boa reports a possible buffer overrun.
+ and therefore Boa reports a possible buffer overrun.
 \begin_inset Note Note
 status open
 
@@ -2691,7 +2833,7 @@ ex/regex_unsafe.c}
 \end_layout
 
 \begin_layout Plain Layout
-Running boa on the altered code results in one false alarm, and a 
+Running Boa on the altered code results in one false alarm, and a 
 \end_layout
 
 \end_inset
@@ -2704,7 +2846,7 @@ MD5
 \end_layout
 
 \begin_layout Standard
-Since the early working prototypes of boa we have tested boa against 
+Since the early working prototypes of Boa we have tested Boa against 
 \emph on
 RSA Data Security, Inc.
 
@@ -2718,7 +2860,7 @@ RSA Data Security, Inc.
  lot of bitwise operations on the input string as well as on the predefined
  constant tables.
  Modelling of repeating bitwise operetions precisely using linear equations
- is somewhat impossible, therefore boa takes the safe (sound) side and declare
+ is somewhat impossible, therefore Boa takes the safe (sound) side and declares
  buffer accesses based on such operations as unsafe.
  
 \end_layout
@@ -2726,11 +2868,11 @@ RSA Data Security, Inc.
 \begin_layout Standard
 Nevertheless, we bring MD5 as an example in order to demonstrate the limitations
  of the linear equations approch for static analysis, and also as an example
- for a code which cause boa to generate a big amount of constraints per
+ for a code which causes Boa to generate a big amount of constraints per
  source line, and a large number of infeasible constraits sets.
- These challenges caused early prototypes of boa to run hours before reporting
- a possible overruns in MD5, while the current version fully analyze and
- blame MD5's possible overruns withing seconds.
+ These challenges caused early prototypes of Boa to run hours before reporting
+ a possible overruns in MD5, while the current version fully analyzes and
+ blames MD5's possible overruns within seconds.
 \end_layout
 
 \begin_layout Subsection
@@ -2819,11 +2961,11 @@ slog/syslog.c}
 \end_layout
 
 \begin_layout Standard
-When boa run on syslog's source code it identifies the possible overrun
+When Boa run on syslog's source code it identifies the possible overrun
  on tbuf, but also report 7 other possible overruns, all of them seems to
  be false alarms.
  Most of the false alarms happen simply because syslog call POSIX library
- functions which boa does not model, for example - 
+ functions which Boa does not model, for example - 
 \end_layout
 
 \begin_layout Standard
