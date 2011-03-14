@@ -1125,6 +1125,68 @@ structural
 Implementation
 \end_layout
 
+\begin_layout Standard
+Boa is realized as a LLVM optimizer plugin, and is compiled into a shared
+ object file which is dynamically loaded by 
+\emph on
+opt
+\emph default
+, the LLVM optimizer.
+\end_layout
+
+\begin_layout Standard
+The interface provided by LLVM for our purposes is a use of the 
+\emph on
+Visitor
+\emph default
+ design pattern.
+ We created a class named 
+\emph on
+boa
+\emph default
+ that subclasses LLVM's 
+\emph on
+ModulePass
+\emph default
+ class, and implements the method 
+\emph on
+runOnModule
+\emph default
+.
+ LLVM passes a 
+\emph on
+Module
+\emph default
+ (LLVM's representation of a whole program) to this method, which then runs
+ Boa's full analysis on the module and exits.
+\end_layout
+
+\begin_layout Standard
+Almost all of Boa's work is done in the class 
+\emph on
+ConstraintGenerator
+\emph default
+.
+ This class is responsible for analyzing every code instruction in the module,
+ and adding instances of the class 
+\emph on
+Constraint
+\emph default
+ to an instance of the class 
+\emph on
+ConstraintProblem
+\emph default
+.
+\end_layout
+
+\begin_layout Standard
+A constraint is a representation of an expression of the form [
+\begin_inset Formula $C\geq a_{1}x_{1}+...+a_{n}x_{n}$
+\end_inset
+
+] with some attributes such as source code location
+\end_layout
+
 \begin_layout Chapter
 Development Process
 \end_layout
