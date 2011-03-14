@@ -50,21 +50,22 @@ namespace boa {
           return "";
       }
     }
+   protected:
 
-   public:
-
-    virtual string getUniqueName() const {
+    virtual string GetUniqueName() const {
       stringstream ss;
       if (isTmp_) {
         ss << "temp@" << ValueNode_;
-      } else {      
+      } else {
         ss << "v@" << ValueNode_;
       }
       return ss.str();
     }
 
+   public:
+
     virtual string NameExpression(ExpressionDir dir, ExpressionType type) const {
-      return getUniqueName() + "!" + TypeToString(type) + "!" + DirToString(dir);
+      return GetUniqueName() + "!" + TypeToString(type) + "!" + DirToString(dir);
     }
 
     virtual bool IsBuffer() const { return false; }

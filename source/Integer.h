@@ -13,7 +13,7 @@ namespace boa {
     Integer(const Value* node) : VarLiteral(node) {}
 
     string NameExpression(ExpressionDir dir, ExpressionType type = USED) const {
-      return getUniqueName() + "!" + DirToString(dir);
+      return GetUniqueName() + "!" + DirToString(dir);
     }
   };
 }
