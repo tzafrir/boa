@@ -2133,7 +2133,7 @@ Constraints
 \begin_inset Text
 
 \begin_layout Plain Layout
-3246
+3418
 \end_layout
 
 \end_inset
@@ -2274,7 +2274,7 @@ Buffers
 \begin_inset Text
 
 \begin_layout Plain Layout
-92
+94
 \end_layout
 
 \end_inset
@@ -2321,7 +2321,7 @@ Overruns reported
 \begin_inset Text
 
 \begin_layout Plain Layout
-15
+17
 \end_layout
 
 \end_inset
@@ -3079,6 +3079,276 @@ fingerd
 
 \begin_layout Subsection
 ssh
+\end_layout
+
+\begin_layout Standard
+Ssh (Secure Shell) is a program to log into another computer over a network,
+ to execute commands in a remote machine.
+ Here we will present the results reported by boa upon the major source
+ code module of Tatu Yloen's implementation of ssh.
+ 
+\end_layout
+
+\begin_layout Standard
+When we first tried to analyze ssh using boa, we got 41 possible buffer
+ overruns reported, out of 94 buffers in the source code.
+ Most of these buffers where string literals, which seemed as errors, warnings
+ or log messages.
+ Using the blame feature quickly revealed the reason for this massive amount
+ of false alarms - 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "Too many identity files specified (max %d)"
+\series default
+\color inherit
+ 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call fatal
+\series default
+ [tests/realworld/ssh/ssh.c:362] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "Using rsh.
+ WARNING: Connection will not be encrypted." 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call log
+\series default
+ [tests/realworld/ssh/ssh.c:185] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "setuid: %s" 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call fatal
+\series default
+ [tests/realworld/ssh/ssh.c:189] 
+\end_layout
+
+\begin_layout Standard
+-
+\series bold
+ buffer alias with offset
+\series default
+ 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "rsh_connect returned"
+\series default
+\color inherit
+ 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call fatal
+\series default
+ [tests/realworld/ssh/ssh.c:566] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call fatal
+\series default
+ [tests/realworld/ssh/ssh.c:592] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\color red
+string literal "Secure connection to %.100s on port %d refused%s." 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+unknown function call log
+\series default
+ [tests/realworld/ssh/ssh.c:582] 
+\end_layout
+
+\begin_layout Standard
+- 
+\series bold
+buffer alias with offset
+\series default
+ 
+\end_layout
+
+\begin_layout Standard
+...
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{boa}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+The reason boa generate these false alarms is simple - this implementation
+ of ssh uses four functions for errors, log and debug - 
+\emph on
+fatal, log, error 
+\emph default
+and 
+\emph on
+debug
+\emph default
+.
+ The implementation of these functions is not part of ssh main source module,
+ and therefore boa could not scan the implementation of these functions
+ and forced to treat them as unsafe - functions that generate overrun on
+ each of the buffers they accept.
+\end_layout
+
+\begin_layout Standard
+Luckily, boa provide the -safe_functions flag, which allows us to declare
+ specific functions as safe, although the source code is not availble to
+ boa.
+ Running boa with -safe_functions=log,error,fatal,debug reduce the number
+ of reported overruns to 17 out of 94.
+\end_layout
+
+\begin_layout Standard
+Whithin the remaining 17 buffer overruns, there still are other false alarms
+ generated because of ssh functions which are implemented different modules
+ (e.g.
+ 
+\emph on
+process_config_line, perror
+\emph default
+) but each of these functions appear only once or twice, thus locating and
+ removing them from boa's output is equivalent to analyzing any other false
+ alarm manually - and therefore we did count these on the table above.
+\end_layout
+
+\begin_layout Section
+Conclusins
+\end_layout
+
+\begin_layout Standard
+We have presented boa's abilities to analyze decent amount of real, wide
+ spread C source code within seconds.
+ In all of these cases boa were able to detect and briefly explain the real
+ possible overruns in the source code.
+ On the other hand - boa do suffer from neglectable amount of false alarms,
+ this is part of the nature of sound static analysis as a whole
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+One can think of a reduction from the halting probelm to almost any static
+ analysis taskOne can think of a reduction from the halting probelm to almost
+ any static analysis task
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Do we want to menthion this? (Gai)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+, and more specifically - the nature of flow&context insensitive analysis,
+ and the use of integer ranges and other techniques that allows boa's solution
+ to scale well.
+\end_layout
+
+\begin_layout Standard
+We have also presented several examples to how boa's blame output can be
+ efficeintly used to analyze the false alarms, and how repeating false alarms
+ caused by the same reason (e.g.
+ - unknown function) can be easlily eliminated.
+\end_layout
+
+\begin_layout Standard
+We did not present here some more interesting buffer overrun detections
+ - such as off by one (mainly because the programmer did not count C's '
+\backslash
+0') or buffer overruns caused by integer arithmetics.
+ This kind of overruns seems to be much more rear in the real sofware world,
+ but boa does cope well with this examples as can be seen by running boa
+ upon the specific ultra-short test cases we have produced for such cases.
 \end_layout
 
 \begin_layout --Separator--
