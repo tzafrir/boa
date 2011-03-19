@@ -165,8 +165,7 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
 //  case Instruction::InsertValue:
 
   default :
-    LOG << "unhandled instruction " << I->getOpcodeName() << ":" << endl;
-    I->dump();
+    LOG << "unhandled instruction " << I->getOpcodeName() << endl;
     break;
   }
 }
