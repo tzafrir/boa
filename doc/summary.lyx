@@ -1223,7 +1223,17 @@ The basic relationships between Boa's classes can be seen in the attached
 status open
 
 \begin_layout Plain Layout
-http://tzafrir.github.com/boa/
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://boateam.github.com
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
