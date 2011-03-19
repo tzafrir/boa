@@ -181,7 +181,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
     return;
   }
   if (const GlobalVariable *GV = dyn_cast<const GlobalVariable>(G)) {
-    if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {      
+    if (const ArrayType *ar = dyn_cast<const ArrayType>(t)) {
       unsigned len = ar->getNumElements() - 1;
       string s;
       if (const ConstantArray *CA = dyn_cast<const ConstantArray>(GV->getInitializer())) {
@@ -194,7 +194,7 @@ void ConstraintGenerator::VisitGlobal(const GlobalValue *G) {
           Helpers::ReplaceInString(s, '[', "\\[");
           Helpers::ReplaceInString(s, ']', "\\]");
           s = "string literal \"" + s + "\"";
-          Buffer buf(G, s, ""); // TODO - file? line?
+          Buffer buf(G, s, "");
           LOG << "Adding string literal. Len - " << len <<  " at " << (void*)G << endl;
 
           GenerateAllocConstraint(G, ar, "(literal)");
