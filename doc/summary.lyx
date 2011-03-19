@@ -1216,8 +1216,19 @@ Solve
 \end_layout
 
 \begin_layout Standard
-The basic relationships between Boa's classes can be seen in this simplified
- class diagram:
+The basic relationships between Boa's classes can be seen in the attached
+ class diagram, and more detailed documentation can be found in Boa's doxygen
+ documentation
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://tzafrir.github.com/boa/
+\end_layout
+
+\end_inset
+
+ and inlined in the code.
 \end_layout
 
 \begin_layout Standard
