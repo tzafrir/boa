@@ -74,8 +74,6 @@ class Constraint {
     left_ += left;
   }
 
-  // TODO(tzafrir): Disallow copying and assignment.
-
  public:
 
   class Expression {
