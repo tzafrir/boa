@@ -243,8 +243,6 @@ class Constraint {
     int indices[MAX_SIZE + 1];
     double values[MAX_SIZE + 1];
 
-    // TODO if size > MAX_SIZE...
-
     int count = 1;
     for (map<string, double>::const_iterator it = literals_.begin();
          it != literals_.end();

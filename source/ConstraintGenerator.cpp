@@ -490,7 +490,6 @@ void ConstraintGenerator::GenerateOrXorConstraint(const Instruction* I) {
 }
 
 void ConstraintGenerator::SaveDbgDeclare(const DbgDeclareInst* D) {
-  // FIXME - magic numbers!
   if ((!D) || (!(D->getAddress()))) {
     return;
   }
