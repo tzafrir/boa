@@ -74,8 +74,6 @@ class Constraint {
     left_ += left;
   }
 
-  // TODO(tzafrir): Disallow copying and assignment.
-
  public:
 
   class Expression {
@@ -244,8 +242,6 @@ class Constraint {
   void AddToLPP(glp_prob *lp, int row, map<string, int>& colNumbers) const {
     int indices[MAX_SIZE + 1];
     double values[MAX_SIZE + 1];
-
-    // TODO if size > MAX_SIZE...
 
     int count = 1;
     for (map<string, double>::const_iterator it = literals_.begin();
