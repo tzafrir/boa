@@ -128,7 +128,7 @@ class Constraint {
     /**
       Does the expression contain only a free element (no literals)?
     */
-    bool IsConst() {
+    bool IsConst() const {
       for (map<string, double>::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
         if (it->second != 0) {
           return false;
@@ -137,11 +137,11 @@ class Constraint {
       return true;
     }
     
-    bool IsZero() {
+    bool IsZero() const {
       return IsConst() && (GetConst() == 0);
     }
 
-    double GetConst() {
+    double GetConst() const {
       return val_;
     }
 

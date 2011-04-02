@@ -299,12 +299,40 @@ Main components and stages
 Constraint Generator
 \end_layout
 
+\begin_layout Standard
+Constraint generation is the process whereby LLVM operations are translated into a set of linear constraints. Constraint generation is performed in a flow-insensitive manner - meaning that the order of statements is not reflected in the constraints. This approach has several limitations, some as elementary as handling the statement 'i++' (this is elaborated in Section 2.3). Unfortunately, flow sensitivity does not scale well on even medium-sized programs. Some limitations of flow insensitivity are alieviated by LLVM's inherent SSA (Single Static Assignment) representation.
+Boa applies a limited form of context sensitivity. String manipulation functions from the string.h and stdio.h libraries are individually modeled according to their effects on parameters and return value. User functions are modeled in a constext-insensitive manner - constraints for the function body are generated once for the formal parameters. On encountering a function call, boa generates constraints between the actual parameters and the formal parameters.
+Constraints are generated based on the approach outlined in <Ganpathy et Al.>, <Wagner et Al.>, with a few differences. Each integer 'i' is modeled using a single pair of constraint variables 'i!max' and 'i!min', denoting the possible range of values for it. Each buffer 'buf' is modeled using 3 pairs of linear constraint variables: 'buf!alloc!min' and 'buf!alloc!max' - which denote the possible range for the buffer's allocated size;  'buf!read!min' and 'buf!read!max' - which denote the possible range for read operations from the buffer; 'buf!write!min' and 'buf!write!max' - which denote the possible range for write operations to the buffer. Read and write operations must be modeled separately, to avoid adding implicit constraints between buffers (elaborated in section 2.2.3).
+A fourth constraint variable pair, 'buf!used!min' and 'buf!used!max', is added for each buffer before passing the constraints to the linear solver. These variables are added with the following constraints:
+buf!write!max <= buf!used!max <= buf!read!max
+buf!write!min >= buf!used!min >= buf!read!min
+This creates a simple variable denoting the possible range of access to the buffer.
+The next sections describe the constraints generated for the different statements.
+\end_layout
+
 \begin_layout Subsection
 Integers 
 \end_layout
 
+\begin_layout Standard
+Integer assignments generate constraints on their values. Consider the C-statement "int i = 12;". The constraint generated from this assignment should reflect that i is in the range containing [12,12]. Therefore, the constraints 'i!max >= 12', 'i!min <= 12' are generated and added to the constraint problem.
+However, this case is a simple one. Consider the following code:
+
+int a = 10, b = 20;
+int sum, prod, quotient;
+sum = a + b;
+prod = -3 * sum;
+q = prod / a;
+
+The constraints generated for 'sum' are still relatively simple: 'sum!max >= a!max + b!max', 'sum!min <= a!min + b!min'. Note that the range for sum is not immediately apparent, but is dependent on the value of two other constraint variables. The constraints generated for 'prod' are not as simple, since a negative factor flips the min and max values. Also, any multiplication between two variables or division by a variable results in a non-linear constraint, which our linear solver is incapable of handling. Therefore, results of such operations are considered unbounded, and the constraints q!min <= \inf and q!max >= \inf are created for example<x>. 
+\end_layout
+
 \begin_layout Subsection
 Direct array access
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Standard
