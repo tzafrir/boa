@@ -695,7 +695,7 @@ prod = -3 * sum;
 
 \begin_layout Plain Layout
 
-q = 2 / a;
+quotient = 2 / a;
 \end_layout
 
 \begin_layout Plain Layout
