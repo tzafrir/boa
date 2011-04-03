@@ -1313,7 +1313,7 @@ end{lstlisting}
 
 \end_inset
 
-The constraint generated from the second line will be - 
+The constraints generated from the second line will be - 
 \begin_inset Formula 
 \begin{eqnarray*}
 \left\{ \mbox{tmp!max}\right\}  & \ge & \left\{ \mbox{i!max}\right\} +1\\
@@ -1333,7 +1333,7 @@ strcat
 
 \begin_layout Standard
 When our linear solver discovers that the constraints problem we have generated
- is infeasible, we wish make the smallest change to the problem and make
+ is infeasible, we wish to make the smallest change to the problem and make
  it feasible once again.
  There is a great body of work in the area of finding and eliminating IIS
  (
@@ -1399,7 +1399,7 @@ IF infeasible - set
 \end_layout
 
 \begin_layout Standard
-After one iteration the algorithm return an IIS, which can be removed from
+After one iteration the algorithm returns an IIS, which can be removed from
  the original problem.
  In case there are several IISs in the original problem - the algorithm
  should repeat until the problem become feasible.
@@ -1425,7 +1425,7 @@ reference "sub:Blame-system"
 \end_inset
 
 ) as well.
- Therefore we read furthr and implemented an elastic filter for eliminating
+ Therefore we read further and implemented an elastic filter for eliminating
  IIS.
  
 \end_layout
