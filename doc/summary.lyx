@@ -1,5 +1,5 @@
-#LyX 2.0.0beta4 created this file. For more info see http://www.lyx.org/
-\lyxformat 412
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
 \begin_document
 \begin_header
 \textclass report
@@ -88,6 +88,7 @@ tabsize=2 %
 \tracking_changes false
 \output_changes false
 \html_math_output 0
+\html_css_as_file 0
 \html_be_strict false
 \end_header
 
@@ -243,9 +244,30 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-The C programming language is riddled with security vulnerablitilies, the most prominent of which is the risk of buffer overruns. Programs written in C are widely used today, many of them with legacy code. There are two possible methods to try and detect buffer overruns - static and dynamic analysis.
-Dynamic analysis attempts to intercept access outside the bounds of an array during runtime. While this can be effective with the use of rigorous testing with high coverage to discover potential overruns, this method does not supply a sound analysis, and some buffer overruns may be undetected. In addition, runtime checking of array boundaries may be used to prevent buffer overruns, but incurs a performance cost.
-Static analysis attempts to detect overruns by analyzing the source code. This does not require any changes to the code or runtime environment, and can be implemented soundly (no false negatives). However, a precise analysis is not scalable, and some simplifications must be made, at the cost of possible false positives (false overrun indication). 
+The C programming language is riddled with security vulnerablitilies, the
+ most prominent of which is the risk of buffer overruns.
+ Programs written in C are widely used today, many of them with legacy code.
+ There are two possible methods to try and detect buffer overruns - static
+ and dynamic analysis.
+\end_layout
+
+\begin_layout Standard
+Dynamic analysis attempts to intercept access outside the bounds of an array
+ during runtime.
+ While this can be effective with the use of rigorous testing with high
+ coverage to discover potential overruns, this method does not supply a
+ sound analysis, and some buffer overruns may be undetected.
+ In addition, runtime checking of array boundaries may be used to prevent
+ buffer overruns, but incurs a performance cost.
+\end_layout
+
+\begin_layout Standard
+Static analysis attempts to detect overruns by analyzing the source code.
+ This does not require any changes to the code or runtime environment, and
+ can be implemented soundly (no false negatives).
+ However, a precise analysis is not scalable, and some simplifications must
+ be made, at the cost of possible false positives (false overrun indication).
+ 
 \end_layout
 
 \begin_layout Section
@@ -253,7 +275,9 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Implement a static buffer overrun analyzer for the C programming language. The tool must conform to the following requirements:
+Implement a static buffer overrun analyzer for the C programming language.
+ The tool must conform to the following requirements:
+\end_layout
 
 \begin_layout Itemize
 Provide analysis over any valid
@@ -322,12 +346,7 @@ The programmer knows that the C string library requires that a string must
 
 \begin_layout Itemize
 The programmer never uses an uninitialized value.
-\begin_inset Note Note
-status open
-
-\end_inset
 \end_layout
-
 
 \begin_layout Chapter
 boa
@@ -342,6 +361,64 @@ name "chap:boa"
 
 \begin_layout Section
 Tool Overview
+\end_layout
+
+\begin_layout Standard
+Boa is designed as a series of modular components.
+ Each component receives input from the previous component, and passes on
+ its analysis to the next one.
+\end_layout
+
+\begin_layout Itemize
+A C compilation module is compiled using the Clang open-source compiler.
+ Clang outputs LLVM bytecode, which provides the benefits of SSA (Single
+ Static Assignment) and a manageable intruction set.
+\end_layout
+
+\begin_layout Itemize
+The constraint generator performs a single LLVM pass over the bytecode.
+ During this pass, program statements are translated into linear constraints
+ over constraint variables (section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Constraint-Generator"
+
+\end_inset
+
+).
+ In addition, the constraint generator collects a set of the buffers in
+ the code, for use by the following components.
+\end_layout
+
+\begin_layout Itemize
+The linear solver performs
+\emph on
+ taint analysis
+\emph default
+ on the set of constraints, removing any illegal constraints (section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Handling-infeasible-problems"
+
+\end_inset
+
+).
+ Then the constraints are solved, and buffers with potential overruns are
+ reported.
+\end_layout
+
+\begin_layout Itemize
+The linear solver also offers a blame system (section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Blame-system"
+
+\end_inset
+
+), through which reported overruns may be root-caused.
+ By reporting the set of statements which caused the overrun to be reported,
+ the report may be validated as a possible overrun, or dismissed as a false
+ positive.
 \end_layout
 
 \begin_layout Standard
@@ -371,40 +448,162 @@ Main components and stages
 
 \end_inset
 
-Boa is designed as a series of modular components. Each component receives input from the previous component, and passes on its analysis to the next one.
-\begin_layout Itemize
-A C compilation module is compiled using the Clang open-source compiler. Clang outputs LLVM bytecode, which provides the benefits of SSA (Single Static Assignment) and a manageable intruction set.
-\end_layout
-\begin_layout Itemize
-The constraint generator performs a single LLVM pass over the bytecode. During this pass, program statements are translated into linear constraints over constraint variables (section 2.2). In addition, the constraint generator collects a set of the buffers in the code, for use by the following components.
-\end_layout
-\begin_layout Itemize
-The linear solver performs
-\emph on
- taint analysis
-\emph default
- on the set of constraints, removing any illegal constraints (section 2.3.1). Then the constraints are solved, and buffers with potential overruns are reported.
-\end_layout
-\begin_layout Itemize
-The linear solver also offers a blame system, through which reported overruns may be root-caused. By reporting the set of statements which caused the overrun to be reported, the report may be validated as a possible overrun, or dismissed as a false positive.
-\end_layout
 
-The following sections describe the components in more detail.
 \end_layout
 
 \begin_layout Section
 Constraint Generator
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Constraint-Generator"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-Constraint generation is the process whereby LLVM operations are translated into a set of linear constraints. Constraint generation is performed in a flow-insensitive manner - meaning that the order of statements is not reflected in the constraints. This approach has several limitations, some as elementary as handling the statement 'i++' (this is elaborated in Section 2.3). Unfortunately, flow sensitivity does not scale well on even medium-sized programs. Some limitations of flow insensitivity are alieviated by LLVM's inherent SSA (Single Static Assignment) representation.
-Boa applies a limited form of context sensitivity. String manipulation functions from the string.h and stdio.h libraries are individually modeled according to their effects on parameters and return value. User functions are modeled in a constext-insensitive manner - constraints for the function body are generated once for the formal parameters. On encountering a function call, boa generates constraints between the actual parameters and the formal parameters.
-Constraints are generated based on the approach outlined in <Ganpathy et Al.>, <Wagner et Al.>, with a few differences. Each integer 'i' is modeled using a single pair of constraint variables 'i!max' and 'i!min', denoting the possible range of values for it. Each buffer 'buf' is modeled using 3 pairs of linear constraint variables: 'buf!alloc!min' and 'buf!alloc!max' - which denote the possible range for the buffer's allocated size;  'buf!read!min' and 'buf!read!max' - which denote the possible range for read operations from the buffer; 'buf!write!min' and 'buf!write!max' - which denote the possible range for write operations to the buffer. Read and write operations must be modeled separately, to avoid adding implicit constraints between buffers (elaborated in section 2.2.3).
-A fourth constraint variable pair, 'buf!used!min' and 'buf!used!max', is added for each buffer before passing the constraints to the linear solver. These variables are added with the following constraints:
-buf!write!max <= buf!used!max <= buf!read!max
-buf!write!min >= buf!used!min >= buf!read!min
-This creates a simple variable denoting the possible range of access to the buffer.
-The next sections describe the constraints generated for the different statements.
+Constraint generation is the process whereby LLVM operations are translated
+ into a set of linear constraints.
+ Constraint generation is performed in a flow-insensitive manner - meaning
+ that the order of statements is not reflected in the constraints.
+ This approach has several limitations, some as elementary as handling the
+ statement '
+\family typewriter
+i++
+\family default
+' (this is elaborated in Section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Constraint-Generator"
+
+\end_inset
+
+).
+ Unfortunately, flow sensitivity does not scale well on even medium-sized
+ programs.
+ Some limitations of flow insensitivity are alieviated by LLVM's inherent
+ SSA (Single Static Assignment) representation.
+\end_layout
+
+\begin_layout Standard
+Boa applies a limited form of context sensitivity.
+ String manipulation functions from the 
+\family typewriter
+string.h
+\family default
+ and 
+\family typewriter
+stdio.h
+\family default
+ libraries are individually modeled according to their effects on parameters
+ and return value.
+ User functions are modeled in a constext-insensitive manner - constraints
+ for the function body are generated once for the formal parameters.
+ On encountering a function call, boa generates constraints between the
+ actual parameters and the formal parameters.
+\end_layout
+
+\begin_layout Standard
+Constraints are generated based on the approach outlined in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ganapathy:2003:BOD:948109.948155,citeulike:514510"
+
+\end_inset
+
+, with a few differences.
+ Each integer '
+\family typewriter
+i
+\family default
+' is modeled using a single pair of constraint variables '
+\family typewriter
+i!max
+\family default
+' and '
+\family typewriter
+i!min
+\family default
+', denoting the possible range of values for it.
+ Each buffer '
+\family typewriter
+buf
+\family default
+' is modeled using 3 pairs of linear constraint variables: '
+\family typewriter
+buf!alloc!min
+\family default
+' and '
+\family typewriter
+buf!alloc!max
+\family default
+' - which denote the possible range for the buffer's allocated size;  '
+\family typewriter
+buf!read!min
+\family default
+' and '
+\family typewriter
+buf!read!max
+\family default
+' - which denote the possible range for read operations from the buffer;
+ '
+\family typewriter
+buf!write!min
+\family default
+' and '
+\family typewriter
+buf!write!max
+\family default
+' - which denote the possible range for write operations to the buffer.
+ Read and write operations must be modeled separately, to avoid adding implicit
+ constraints between buffers (elaborated in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Buffer-aliasing"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+A fourth constraint variable pair, '
+\family typewriter
+buf!used!min
+\family default
+' and '
+\family typewriter
+buf!used!max
+\family default
+', is added for each buffer before passing the constraints to the linear
+ solver.
+ These variables are added with the following constraints:
+\begin_inset Formula 
+\[
+\left\{ \mathbf{\mbox{buf!write!max}}\right\} \le\left\{ \mathbf{\mbox{buf!used!max}}\right\} \le\left\{ \mathbf{\mbox{buf!read!max}}\right\} 
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left\{ \mathbf{\mbox{buf!write!min}}\right\} \ge\mathbf{\left\{ \mbox{buf!used!min}\right\} }\ge\left\{ \mathbf{\mbox{buf!read!min}}\right\} 
+\]
+
+\end_inset
+
+This creates a simple variable denoting the possible range of access to
+ the buffer.
+\end_layout
+
+\begin_layout Standard
+The next sections describe the constraints generated for the different statement
+s.
 \end_layout
 
 \begin_layout Subsection
@@ -412,16 +611,147 @@ Integers
 \end_layout
 
 \begin_layout Standard
-Integer assignments generate constraints on their values. Consider the C-statement "int i = 12;". The constraint generated from this assignment should reflect that i is in the range containing [12,12]. Therefore, the constraints 'i!max >= 12', 'i!min <= 12' are generated and added to the constraint problem.
-However, this case is a simple one. Consider the following code:
+Integer assignments generate constraints on their values.
+ Consider the C-statement
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[caption=integer assignment]
+\end_layout
+
+\begin_layout Plain Layout
+
+int i = 12;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+The constraint generated from this assignment should reflect that i is in
+ the range containing 
+\begin_inset Formula $\left[12,12\right]$
+\end_inset
+
+.
+ Therefore, the constraints '
+\begin_inset Formula $\left\{ \mbox{i!max}\right\} \ge12$
+\end_inset
+
+', '
+\begin_inset Formula $\left\{ \mathbf{\mbox{i!min}}\right\} \le12$
+\end_inset
+
+' are generated and added to the constraint problem.
+\end_layout
+
+\begin_layout Standard
+However, this case is a simple one.
+ Consider the following code:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[caption=integer manipulation]
+\end_layout
+
+\begin_layout Plain Layout
 
 int a = 10, b = 20;
-int sum, prod, quotient;
-sum = a + b;
-prod = -3 * sum;
-q = 2 / a;
+\end_layout
 
-The constraints generated for 'sum' are still relatively simple: 'sum!max >= a!max + b!max', 'sum!min <= a!min + b!min'. Note that the range for sum is not immediately apparent, but is dependent on the value of two other constraint variables. The constraints generated for 'prod' are not as simple, since a negative factor flips the min and max values. Also, any multiplication between two variables or division by a variable results in a non-linear constraint, which our linear solver is incapable of handling. Therefore, results of such operations are considered unbounded, and the constraints q!min <= -\inf and q!max >= \inf are created for example<x>. 
+\begin_layout Plain Layout
+
+int sum, prod, quotient;
+\end_layout
+
+\begin_layout Plain Layout
+
+sum = a + b;
+\end_layout
+
+\begin_layout Plain Layout
+
+prod = -3 * sum;
+\end_layout
+
+\begin_layout Plain Layout
+
+q = 2 / a;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+The constraints generated for '
+\family typewriter
+sum
+\family default
+' are still relatively simple: 
+\begin_inset Formula 
+\[
+\left\{ \mbox{sum!max}\right\} \ge\left\{ \mbox{a!max}\right\} +\left\{ \mbox{b!max}\right\} 
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\left\{ \mbox{sum!min}\right\} \le\left\{ \mbox{a!min}\right\} +\left\{ \mbox{b!min}\right\} 
+\]
+
+\end_inset
+
+Note that the range for sum is not immediately apparent, but is dependent
+ on the value of two other constraint variables.
+ The constraints generated for 'prod' are not as simple, since a negative
+ factor flips the min and max values.
+ Also, any multiplication between two variables or division by a variable
+ results in a non-linear constraint, which our linear solver is incapable
+ of handling.
+ Therefore, results of such operations are considered unbounded, and the
+ constraints 
+\begin_inset Formula 
+\[
+\left\{ \mbox{q!min}\right\} \le-\infty
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\left\{ \mbox{q!max}\right\} \ge\infty
+\]
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -430,27 +760,79 @@ Array Allocation
 
 \begin_layout Standard
 \begin_inset ERT
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
 
 \backslash
-lstinputlisting[firstline=4,lastline=6]{../tests/testcases/simple3.c}
-lstinputlisting[firstline=6,lastline=9]{../tests/testcases/dynMem2.c}
+lstinputlisting[firstline=4,lastline=6,caption=static array allocation]{../tests/t
+estcases/simple3.c}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=6,lastline=9,caption=dynamic array allocation]{../tests/
+testcases/dynMem2.c}
 \end_layout
 
 \end_inset
+
+Array declarations such as the above supply the 
+\emph on
+alloc
+\emph default
+ value for arrays.
+ Arrays may be statically or dynamically allocated - in both cases the treatment
+ is similar.
+ The code in the examples above would generate the following constraints:
 \end_layout
 
 \begin_layout Standard
-Array declarations such as the above supply the alloc value for arrays. Arrays may be statically or dynamically allocated - in both cases the treatment is similar. The code in example <x> would generate the following constraints:
-\begin_inset
-* buf!alloc!max >= 10, buf!alloc!min <= 10 for the buffer 'buf'
-* dynamic!alloc!max >= i!max, dynamic!alloc!min <= i!min for the return value of the malloc() call.
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!alloc!max}\right\}  & \ge & 10\\
+\left\{ \mbox{buf!alloc!min}\right\}  & \le & 10
+\end{eqnarray*}
+
 \end_inset
-Note that dynamically allocated buffers are distinct from any pointer that may point to it.
-In the case of malloc() calls, the parameter may be a complex int expression, this is handled as far as possible for linear constraints - see section 2.3.
+
+for the buffer '
+\family typewriter
+buf
+\family default
+', and:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{dynamic!alloc!max}\right\}  & \ge & \left\{ \mbox{i!max}\right\} \\
+\left\{ \mbox{dynamic!alloc!min}\right\}  & \le & \left\{ \mbox{i!min}\right\} 
+\end{eqnarray*}
+
+\end_inset
+
+for the return value of the 
+\family typewriter
+malloc()
+\family default
+ call.
+\end_layout
+
+\begin_layout Standard
+In the case of 
+\family typewriter
+malloc()
+\family default
+ calls, the parameter may be a complex int expression, this is handled as
+ far as possible for linear constraints - see section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Linear-Solver"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -461,19 +843,61 @@ name "sub:Buffer-aliasing"
 
 \end_inset
 
-\begin_layout Standard
-Certain statements may result in a buffer alias. This occurs when a pointer is set to point to another pointer or buffer, possibly with an offset (i.e. p = buf or p = buf + 10). 
-An aliasing is translated into the following constraints:
-\begin_inset
-* p!read!max >= buf!read!max - 10
-* p!read!min <= buf!read!min - 10
-* p!write!max <= buf!write!max - 10
-* p!write!min >= buf!write!min - 10
-\end_inset
-The constraints on the read variables ensure that reads on p will be the largest possible read performed on buf. The constraints on the write variables ensure that writes to p will always be be reflected in buf!write!max.
-This method of alias handling also provides a conservative flow-insensitive pointer analysis for first-order pointers, by capturing all possible pointer assignments.
+
 \end_layout
 
+\begin_layout Standard
+Certain statements may result in a buffer alias.
+ This occurs when a pointer is set to point to another pointer or buffer,
+ possibly with an offset (i.e.
+ 
+\family typewriter
+p = buf
+\family default
+ or 
+\family typewriter
+p = buf + 10
+\family default
+).
+ An aliasing is translated into the following constraints:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{p!read!max}\right\}  & \ge & \left\{ \mbox{buf!read!max}\right\} -10\\
+\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!read!min}\right\} -10\\
+\left\{ \mbox{p!write!max}\right\}  & \le & \left\{ \mbox{buf!write!max}\right\} -10\\
+\left\{ \mbox{p!write!min}\right\}  & \ge & \left\{ \mbox{buf!write!min}\right\} -10
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The constraints on the read variables ensure that reads on 
+\family typewriter
+p
+\family default
+ will be the largest possible read performed on 
+\family typewriter
+buf
+\family default
+.
+ The constraints on the write variables ensure that writes to 
+\family typewriter
+p
+\family default
+ will always be be reflected in 
+\family typewriter
+buf!write
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+This method of alias handling also provides a conservative flow-insensitive
+ pointer analysis for first-order pointers, by capturing all possible pointer
+ assignments.
 \end_layout
 
 \begin_layout Subsection
@@ -481,13 +905,50 @@ Direct array access
 \end_layout
 
 \begin_layout Standard
-Arrays are manipulated in code in several fashions, the simplest of which is direct access by index. 
-Consider the statement buf[10] = 'a'. The resulting constraints render down to the expected:
-\begin_inset
-* buf!write!max >= 10
-* buf!write!min <= 10
+Arrays are manipulated in code in several fashions, the simplest of which
+ is direct access by index.
+ Consider the statement: 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[caption=direct access]
+\end_layout
+
+\begin_layout Plain Layout
+
+buf[10] = 'a';
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
 \end_inset
-The constraint generator treats the value stored into buf as any other integer assignment, as described above.
+
+The resulting constraints render down to the expected:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!write!max}\right\}  & \ge & 10\\
+\left\{ \mbox{buf!write!min}\right\}  & \le & 10
+\end{eqnarray*}
+
+\end_inset
+
+The constraint generator treats the value stored into 
+\family typewriter
+buf
+\family default
+ as any other integer assignment, as described above.
 \end_layout
 
 \begin_layout Subsection
@@ -495,7 +956,10 @@ Functions
 \end_layout
 
 \begin_layout Standard
-Buffers are often manipulated through function calls, as parameter or return value. The constrain generator distinguishes between three different types of functions, and each is handled differently.
+Buffers are often manipulated through function calls, as parameter or return
+ value.
+ The constrain generator distinguishes between three different types of
+ functions, and each is handled differently.
 \end_layout
 
 \begin_layout Subsubsection
@@ -504,28 +968,133 @@ Functions With Definition
 
 \begin_layout Standard
 \begin_inset ERT
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
 
 \backslash
-int foo(char *p, int x) {
-  // Do something with p and x
-}
+begin{lstlisting}[caption=user functions]
+\end_layout
 
-int main() {
-  char buf[10];
-  int res = foo(buf, 10);
+\begin_layout Plain Layout
+
+int foo(char *p, int x) {
+\end_layout
+
+\begin_layout Plain Layout
+
+ // Do something with p and x
+\end_layout
+
+\begin_layout Plain Layout
+
 }
 \end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int main() {
+\end_layout
+
+\begin_layout Plain Layout
+
+ char buf[10];
+\end_layout
+
+\begin_layout Plain Layout
+
+ int res = foo(buf, 10);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
 \end_inset
+
+These are functions with the definition available for analysis, usually
+ functions that are defined in the same compilation unit.
+ The constraint generator analyzes these functions in its single llvm pass,
+ and generates constraints which may include its formal parameters and return
+ value.
+ In the example above, the constraints would contain 
+\family typewriter
+p
+\family default
+ and 
+\family typewriter
+x
+\family default
+, with possible constraints on the int return value.
 \end_layout
 
 \begin_layout Standard
-These are functions with the definition available for analysis, usually functions that are defined in the same compilation unit. The constraint generator analyzes these functions in its single llvm pass, and generates constraints which may include its formal parameters and return value. In the example above, the constraints would contain p and x, with possible constraints on the int return value.
-Whenever a call to such a function is encountered, the actual parameters are constricted to the formal parameters. In the example above, the call to foo() would result in p being aliased to buf (as described above), and the constraints x!max >= 10, x!min <= 10. In addition, res is constrained to the return value, resulting in res!max >= foo!max, res!min <= foo!min to be added to the constraint problem.
-This flow-insensitive analysis is conservative, but may result in false buffer overrun warnings. It is possible to add some context sensitivity to this analysis by creating a separate instance of the formal parameters for every function call, and duplicating the constraints for them. Previous work <Ganpathy et. Al> has attempted this and discovered a small reduction in false posiives, at the price of inflating the constraint problem, impacting performance.
+Whenever a call to such a function is encountered, the actual parameters
+ are constricted to the formal parameters.
+ In the example above, the call to 
+\family typewriter
+foo()
+\family default
+ would result in 
+\family typewriter
+p
+\family default
+ being aliased to 
+\family typewriter
+buf
+\family default
+ (as described above), and the constraints 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{x!max}\right\}  & \ge & 10\\
+\left\{ \mbox{x!min}\right\}  & \le & 10
+\end{eqnarray*}
+
+\end_inset
+
+In addition, 
+\family typewriter
+res
+\family default
+ is constrained to the return value, resulting in 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{res!max}\right\}  & \ge & \left\{ \mbox{foo!max}\right\} \\
+\left\{ \mbox{res!min}\right\}  & \le & \left\{ \mbox{foo!min}\right\} 
+\end{eqnarray*}
+
+\end_inset
+
+This flow-insensitive analysis is conservative, but may result in false
+ buffer overrun warnings.
+ It is possible to add some context sensitivity to this analysis by creating
+ a separate instance of the formal parameters for every function call, and
+ duplicating the constraints for them.
+ Previous work 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Ganapathy:2003:BOD:948109.948155"
+
+\end_inset
+
+ has attempted this and discovered a small reduction in false positives,
+ at the price of inflating the constraint problem, impacting performance.
 \end_layout
 
 \begin_layout Subsubsection
@@ -533,38 +1102,103 @@ Known Library Functions
 \end_layout
 
 \begin_layout Standard
-Some functions do not have a definition supplied, but are so frequently used that they must be analyzed. The constraint generator contains a bank of commonly used library functions which manipulate buffers, and models their effect upon their parameters and return value. For example:
+Some functions do not have a definition supplied, but are so frequently
+ used that they must be analyzed.
+ The constraint generator contains a bank of commonly used library functions
+ which manipulate buffers, and models their effect upon their parameters
+ and return value.
+ 
+\begin_inset Newpage clearpage
+\end_inset
 
+For example:
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
+
 \begin_layout Plain Layout
+
+
 \backslash
-lstinputlisting[firstline=4,lastline=7]{../tests/testcases/string1.c}
-\end_layout
-\end_inset
-
-The function strcpy copies its second parameter into the first parameter. Thus, for the example above the following constraints are created:
-\begin_inset
-* buf1!write!max >= str1!read!max
-* buf1!write!min <= str1!read!min
-* buf2!write!max >= str2!read!max
-* buf2!write!min <= str2!read!min
-\end_inset
-The functions which are modeled are mostly from string.h and stdio.h with several others (malloc for example). This is performed in a conservative manner, meaning the worst case scenario is always assumed.
+lstinputlisting[firstline=4,lastline=7,caption=library functions]{../tests/testcas
+es/string1.c}
 \end_layout
 
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+The function strcpy copies its second parameter into the first parameter.
+ Thus, for the example above the following constraints are created:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf1!write!max}\right\}  & \ge & \left\{ \mbox{str1!read!max}\right\} \\
+\left\{ \mbox{buf1!write!min}\right\}  & \le & \left\{ \mbox{str1!read!min}\right\} \\
+\left\{ \mbox{buf2!write!max}\right\}  & \ge & \left\{ \mbox{str2!read!max}\right\} \\
+\left\{ \mbox{buf2!write!min}\right\}  & \le & \left\{ \mbox{str2!read!min}\right\} 
+\end{eqnarray*}
+
+\end_inset
+
+The functions which are modeled are mostly from 
+\family typewriter
+string.h
+\family default
+ and 
+\family typewriter
+stdio.h
+\family default
+ with several others (
+\family typewriter
+malloc
+\family default
+ for example).
+ This is performed in a conservative manner, meaning the worst case scenario
+ is always assumed.
+\end_layout
 
 \begin_layout Subsubsection
 Unknown Functions
 \end_layout
 
 \begin_layout Standard
-Some functions called are neither of the two above cases. For these functions, the constraint generator cannot assume anything about the body of the function. In order for analysis to be conservative, all buffer parameters are considered to be accessed outside of bounds, and any int return value is considered unbounded.
-This is not as great a problem as it may appear. The vast majority of string manipulations is performed by user functions and string.h, stdio.h functions, while the blame system described later on provides a mechanism for detecting irrelevant overruns which result from unknown functions. 
+Some functions called are neither of the two above cases.
+ For these functions, the constraint generator cannot assume anything about
+ the body of the function.
+ In order for analysis to be conservative, all buffer parameters are considered
+ to be accessed outside of bounds, and any int return value is considered
+ unbounded.
+\end_layout
+
+\begin_layout Standard
+This is not as great a problem as it may appear.
+ The vast majority of string manipulations is performed by user functions
+ and 
+\family typewriter
+string.h
+\family default
+, 
+\family typewriter
+stdio.h
+\family default
+ functions, while the blame system described later on provides a mechanism
+ for detecting irrelevant overruns which result from unknown functions.
+ 
 \end_layout
 
 \begin_layout Section
 Linear Solver
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Linear-Solver"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -635,6 +1269,13 @@ Note that we stick to the size and numbering conventions of C, safe access
 
 \begin_layout Subsection
 Handling infeasible problems
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Handling-infeasible-problems"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -650,7 +1291,7 @@ status open
 
 
 \backslash
-begin{lstlisting}
+begin{lstlisting}[caption=increment]
 \end_layout
 
 \begin_layout Plain Layout
@@ -1459,6 +2100,7 @@ status open
 \align center
 \begin_inset Graphics
 	filename ClassDiagram.png
+	lyxscale 20
 	width 95text%
 
 \end_inset
@@ -1492,7 +2134,9 @@ Initial Requirements
 \end_layout
 
 \begin_layout Standard
-We set out to develop Boa by first defining a preliminary set of requirements, and the assumptions required to hold to them. These are as specified in the Introduction section.
+We set out to develop Boa by first defining a preliminary set of requirements,
+ and the assumptions required to hold to them.
+ These are as specified in the Introduction section.
 \end_layout
 
 \begin_layout Section
@@ -1645,12 +2289,6 @@ Example:
 \end_layout
 
 \begin_layout Standard
-
-\emph on
-safe.c:
-\end_layout
-
-\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -1658,7 +2296,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/safe.c}
+lstinputlisting{../tests/testcases/safe.c}[caption=safe.c]
 \end_layout
 
 \end_inset
@@ -1667,12 +2305,6 @@ lstinputlisting{../tests/testcases/safe.c}
 \end_layout
 
 \begin_layout Standard
-
-\emph on
-safe.asserts:
-\end_layout
-
-\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -1680,7 +2312,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/safe.asserts}
+lstinputlisting{../tests/testcases/safe.asserts}[caption=safe.asserts]
 \end_layout
 
 \end_inset
@@ -1974,8 +2606,8 @@ http://llvm.org/
 Low Level Virtual Machine
 \emph default
 ) infratructure.
- Boa would first compile the code into LLVM bytecode, and then generate constrain
-ts according to that bytecode using an 
+ Boa would first compile the code into LLVM bytecode, and then generate
+ constraints according to that bytecode using an 
 \emph on
 LLVM Pass
 \emph default
@@ -2926,8 +3558,8 @@ status open
 
 
 \backslash
-lstinputlisting[firstline=141,lastline=142, firstnumber=141]{../tests/realworld/fi
-ngerd/fingerd.c}
+lstinputlisting[firstline=141,lastline=142, firstnumber=141,caption=fingerd.c]{../t
+ests/realworld/fingerd/fingerd.c}
 \end_layout
 
 \begin_layout Plain Layout
@@ -3095,8 +3727,8 @@ status open
 
 
 \backslash
-lstinputlisting[firstline=198,lastline=204, firstnumber=198]{../tests/realworld/sy
-slog/syslog.c}
+lstinputlisting[firstline=198,lastline=204, firstnumber=198, caption=syslog.c]{../t
+ests/realworld/syslog/syslog.c}
 \end_layout
 
 \end_inset
@@ -3121,8 +3753,8 @@ status open
 
 
 \backslash
-lstinputlisting[firstline=253,lastline=260, firstnumber=253]{../tests/realworld/sy
-slog/syslog.c}
+lstinputlisting[firstline=253,lastline=260, firstnumber=253, caption=syslog.c]{../t
+ests/realworld/syslog/syslog.c}
 \end_layout
 
 \end_inset
