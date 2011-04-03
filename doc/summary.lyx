@@ -1690,8 +1690,8 @@ min
 These constraints ensure that all of the variables which appear in the IIS
  accept their worst case values, thus conserving the soundness of the problem.
  This approch is not as aggresive as it may appear on first glance, since
- most of the infeasibilities Boa encounters are indeed caused by the incrementing
- operator (or similar cases such as 
+ most of the infeasibilities Boa encounters are indeed caused by the incrementin
+g operator (or similar cases such as 
 \emph on
 strcat
 \emph default
