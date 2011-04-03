@@ -159,6 +159,7 @@ class ConstraintGenerator {
   void GenerateDivConstraint(const BinaryOperator* I);
 
   void GenerateCastConstraint(const CastInst* I, const string& blame);
+  void GenerateBitCastConstraint(const CastInst* I);
 
   void GenerateAndConstraint(const BinaryOperator* I);
   void GenerateOrXorConstraint(const Instruction* I);

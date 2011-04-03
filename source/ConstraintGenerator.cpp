@@ -138,8 +138,11 @@ void ConstraintGenerator::VisitInstruction(const Instruction *I, const Function 
   // Exploiting case fall-through.
   case Instruction::IntToPtr:
   case Instruction::PtrToInt:
-  case Instruction::BitCast:
     GenerateCastConstraint(dyn_cast<const CastInst>(I), "Arbitrary cast");
+    break;
+
+  case Instruction::BitCast:
+    GenerateBitCastConstraint(dyn_cast<const CastInst>(I));
     break;
 
   // Other instructions...
@@ -345,6 +348,15 @@ void ConstraintGenerator::GenerateCastConstraint(const CastInst* I, const string
   Integer intLiteral(I);
   GenerateGenericConstraint(intLiteral, I->getOperand(0), VarLiteral::USED, blame,
                             GetInstructionFilename(I));
+}
+
+void ConstraintGenerator::GenerateBitCastConstraint(const CastInst* I) {
+  if (dyn_cast<const PointerType>(I->getDestTy())) {
+    string loc = GetInstructionFilename(I);
+    Pointer pTo(I), pFrom(makePointer(I->getOperand(0)));
+    GenerateBufferAliasConstraint(pFrom, pTo, loc);
+    GenerateCastConstraint(I, "Arbitrary Constraint");
+  }
 }
 
 void ConstraintGenerator::GeneratePointerDerefConstraint(Pointer buf, const string &location) {
