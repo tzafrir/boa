@@ -738,7 +738,7 @@ Note that the range for sum is not immediately apparent, but is dependent
  constraints 
 \begin_inset Formula 
 \[
-\left\{ \mbox{q!min}\right\} \le-\infty
+\left\{ \mbox{quotient!min}\right\} \le-\infty
 \]
 
 \end_inset
@@ -746,7 +746,7 @@ Note that the range for sum is not immediately apparent, but is dependent
 
 \begin_inset Formula 
 \[
-\left\{ \mbox{q!max}\right\} \ge\infty
+\left\{ \mbox{quotient!max}\right\} \ge\infty
 \]
 
 \end_inset
