@@ -369,6 +369,37 @@ Boa is designed as a series of modular components.
  its analysis to the next one.
 \end_layout
 
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename flow.png
+	width 100text%
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Main components and stages
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Itemize
 A C compilation module is compiled using the Clang open-source compiler.
  Clang outputs LLVM bytecode, which provides the benefits of SSA (Single
@@ -422,33 +453,7 @@ reference "sub:Blame-system"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Float figure
-wide false
-sideways false
-status open
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename flow.png
-	width 100text%
-
-\end_inset
-
-
-\begin_inset Caption
-
-\begin_layout Plain Layout
-Main components and stages
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-
+The following sections expand on the different components in the boa framework.
 \end_layout
 
 \begin_layout Section
@@ -836,7 +841,7 @@ reference "sec:Linear-Solver"
 \end_layout
 
 \begin_layout Subsection
-Buffer aliasing
+Buffer Aliasing
 \begin_inset CommandInset label
 LatexCommand label
 name "sub:Buffer-aliasing"
@@ -849,8 +854,7 @@ name "sub:Buffer-aliasing"
 \begin_layout Standard
 Certain statements may result in a buffer alias.
  This occurs when a pointer is set to point to another pointer or buffer,
- possibly with an offset (i.e.
- 
+ possibly with an offset (i.e. 
 \family typewriter
 p = buf
 \family default
@@ -859,17 +863,152 @@ p = buf
 p = buf + 10
 \family default
 ).
- An aliasing is translated into the following constraints:
+ The direct approach towards modeling this aliasing as a linear constraint is to define a single
+ set of constraint variables for each buffer or pointer - 
+\family typewriter
+buf!used!max
+\family default
+ and
+ \family typewriter
+buf!used!min
+\family default
+\end_layout
+ and defining the following constraints:
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{p!read!max}\right\}  & \ge & \left\{ \mbox{buf!read!max}\right\} -10\\
-\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!read!min}\right\} -10\\
-\left\{ \mbox{p!write!max}\right\}  & \le & \left\{ \mbox{buf!write!max}\right\} -10\\
-\left\{ \mbox{p!write!min}\right\}  & \ge & \left\{ \mbox{buf!write!min}\right\} -10
+\left\{ \mbox{p!used!max}\right\}  & \le & \left\{ \mbox{buf!used!max}\right\} -10\\
+\left\{ \mbox{p!used!min}\right\}  & \ge & \left\{ \mbox{buf!used!min}\right\} -10
+\end{eqnarray*}
+
+\end_inset
+ This ensures that any access through 
+ \family typewriter
+p
+\family default
+ will update the access bounds of 
+ \family typewriter
+buf
+\family default
+. However, this simple modeling creates an unwanted side-effect in solving a linear-inequality
+ system. Consider the following code:
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+lstinputlisting[firstline=4,lastline=7,caption=array aliasing]{../tests/testcases/aliasing3.c}
+\end_layout
+
+\end_inset
+ 
+ The pointer 
+\family typewriter
+p
+\family default
+ is aliased to the array  
+ \family typewriter
+buf
+\family default
+. This aliasing should be modeled so that the call to 
+\family typewriter
+strlen
+\family default
+ returns the widest (most conservative) possible bounds of access to 
+\family typewriter
+p
+\family default
+, which is at least as wide as the bounds of 
+\family typewriter
+buf
+\family default
+. Therefore the following constraints must be generated: 
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\} -10\\
+\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} -10\\
 \end{eqnarray*}
 
 \end_inset
 
+\end_layout
+
+\begin_layout Standard
+However, the write into 
+\family typewriter
+p[20]
+\family default
+ should be treated as a (possible) write into 
+\family typewriter
+buf[20]
+\family default
+, resulting in the following constraints: 
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\} -10\\
+\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\} -10\\
+\end{eqnarray*}
+
+\end_inset
+
+\end_layout
+
+\begin_layout Standard
+This combined set of constraints implies an even stronger constraint between the two
+ variables - they are forced to be equal, meaning 
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\} -10\\
+\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\} -10\\
+\end{eqnarray*}
+
+\end_inset
+\end_layout
+
+\begin_layout Standard
+Now consider a common case where the pointer
+ 
+\family typewriter
+p
+\family default
+ points to several different buffers in different contexts. These simplistic constraints demand
+  that all buffers are equal through transitivity. Obviously, this is not good enough.
+\end_layout
+
+\begin_layout Standard
+Instead, as mentioned in section 2.2, buffers and pointers are modeled using two separate
+ sets of constraint variables,  
+\family typewriter
+buf!read!max
+\family default
+, 
+\family typewriter
+buf!read!min
+\family default
+ and 
+\family typewriter
+buf!write!max
+\family default
+, 
+\family typewriter
+buf!write!min
+\family default
+. By trreating read and write operations on buffers separately, this problem can be eliminated.
+ An aliasing is translated into the following constraints:
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{p!read!max}\right\}  & \ge & \left\{ \mbox{buf!read!max}\right\}\\
+\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!read!min}\right\}\\
+\left\{ \mbox{p!write!max}\right\}  & \le & \left\{ \mbox{buf!write!max}\right\}\\
+\left\{ \mbox{p!write!min}\right\}  & \ge & \left\{ \mbox{buf!write!min}\right\}
+\end{eqnarray*}
+
+\end_inset
 
 \end_layout
 
@@ -878,7 +1017,7 @@ The constraints on the read variables ensure that reads on
 \family typewriter
 p
 \family default
- will be the largest possible read performed on 
+ will return the largest possible range of access performed on 
 \family typewriter
 buf
 \family default
@@ -892,6 +1031,22 @@ p
 buf!write
 \family default
 .
+\end_layout
+
+\begin_layout Standard
+Finally, whenever a buffer is added to the constraint problem, the constraints to link the two 
+ sets are added. These are added only for the buffers themselves:
+ 
+\begin_inset Formula 
+\begin{eqnarray*}
+\left\{ \mbox{buf!read!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\}  & \ge 
+ & \left\{ \mbox{buf!write!max}\right\}\\
+\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\}  & \le 
+ & \left\{ \mbox{buf!write!min}\right\}\\
+\end{eqnarray*}
+
+\end_inset
+
 \end_layout
 
 \begin_layout Standard

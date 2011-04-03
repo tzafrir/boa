@@ -3,6 +3,6 @@
 int main() {
   char buf[] = "A string";
   char *p = buf;
-  int i = strlen(p);
+  int len = strlen(p);
   p[20] = '\0';
 }
