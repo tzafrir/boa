@@ -303,9 +303,7 @@ void ConstraintGenerator::GenerateMulConstraint(const BinaryOperator* I) {
   }
   if (constOperand < 0.0) {
     // Multiply by a negative swaps the bounds
-    Expression * t = minOperand;
-    minOperand = maxOperand;
-    maxOperand = t;
+    swap(minOperand, maxOperand);
   }
 
   minOperand->mul(constOperand);
