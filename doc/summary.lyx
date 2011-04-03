@@ -877,25 +877,7 @@ buf!used!max
 \family typewriter
  buf!used!min
 \family default
- and defining the following constraints:
-\begin_inset Formula 
-\begin{eqnarray*}
-\left\{ \mbox{p!used!max}\right\}  & \le & \left\{ \mbox{buf!used!max}\right\} -10\\
-\left\{ \mbox{p!used!min}\right\}  & \ge & \left\{ \mbox{buf!used!min}\right\} -10
-\end{eqnarray*}
-
-\end_inset
-
- This ensures that any access through 
-\family typewriter
-p
-\family default
- will update the access bounds of 
-\family typewriter
-buf
-\family default
-.
- However, this simple modeling creates an unwanted side-effect in solving
+. However, this simple modeling creates an unwanted side-effect in solving
  a linear-inequality system.
  Consider the following code: 
 \begin_inset ERT
@@ -940,8 +922,8 @@ buf
  Therefore the following constraints must be generated: 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\} -10\\
-\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} -10
+\left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\}\\
+\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\}
 \end{eqnarray*}
 
 \end_inset
@@ -961,8 +943,8 @@ buf[20]
 , resulting in the following constraints: 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\} -10\\
-\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\} -10
+\left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\}\\
+\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\}
 \end{eqnarray*}
 
 \end_inset
@@ -975,8 +957,8 @@ This combined set of constraints implies an even stronger constraint between
  the two variables - they are forced to be equal, meaning 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\} -10\\
-\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\} -10
+\left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\}\\
+\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\}
 \end{eqnarray*}
 
 \end_inset
