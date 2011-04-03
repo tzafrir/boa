@@ -369,7 +369,6 @@ Boa is designed as a series of modular components.
  its analysis to the next one.
 \end_layout
 
-
 \begin_layout Standard
 \begin_inset Float figure
 wide false
@@ -854,7 +853,8 @@ name "sub:Buffer-aliasing"
 \begin_layout Standard
 Certain statements may result in a buffer alias.
  This occurs when a pointer is set to point to another pointer or buffer,
- possibly with an offset (i.e. 
+ possibly with an offset (i.e.
+ 
 \family typewriter
 p = buf
 \family default
@@ -863,16 +863,19 @@ p = buf
 p = buf + 10
 \family default
 ).
- The direct approach towards modeling this aliasing as a linear constraint is to define a single
- set of constraint variables for each buffer or pointer - 
+\end_layout
+
+\begin_layout Standard
+The direct approach towards modeling this aliasing as a linear constraint
+ is to define a single set of constraint variables for each buffer or pointer
+ - 
 \family typewriter
 buf!used!max
 \family default
  and
- \family typewriter
-buf!used!min
+\family typewriter
+ buf!used!min
 \family default
-\end_layout
  and defining the following constraints:
 \begin_inset Formula 
 \begin{eqnarray*}
@@ -881,17 +884,19 @@ buf!used!min
 \end{eqnarray*}
 
 \end_inset
+
  This ensures that any access through 
- \family typewriter
+\family typewriter
 p
 \family default
  will update the access bounds of 
- \family typewriter
+\family typewriter
 buf
 \family default
-. However, this simple modeling creates an unwanted side-effect in solving a linear-inequality
- system. Consider the following code:
- 
+.
+ However, this simple modeling creates an unwanted side-effect in solving
+ a linear-inequality system.
+ Consider the following code: 
 \begin_inset ERT
 status open
 
@@ -899,20 +904,26 @@ status open
 
 
 \backslash
-lstinputlisting[firstline=4,lastline=7,caption=array aliasing]{../tests/testcases/aliasing3.c}
+lstinputlisting[firstline=4,lastline=7,caption=array aliasing]{../tests/testcases/
+aliasing3.c}
+\end_layout
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \end_inset
- 
- The pointer 
+
+  The pointer 
 \family typewriter
 p
 \family default
  is aliased to the array  
- \family typewriter
+\family typewriter
 buf
 \family default
-. This aliasing should be modeled so that the call to 
+.
+ This aliasing should be modeled so that the call to 
 \family typewriter
 strlen
 \family default
@@ -924,15 +935,16 @@ p
 \family typewriter
 buf
 \family default
-. Therefore the following constraints must be generated: 
-
+.
+ Therefore the following constraints must be generated: 
 \begin_inset Formula 
 \begin{eqnarray*}
 \left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\} -10\\
-\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} -10\\
+\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} -10
 \end{eqnarray*}
 
 \end_inset
+
 
 \end_layout
 
@@ -946,43 +958,52 @@ p[20]
 buf[20]
 \family default
 , resulting in the following constraints: 
-
 \begin_inset Formula 
 \begin{eqnarray*}
 \left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\} -10\\
-\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\} -10\\
+\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\} -10
 \end{eqnarray*}
 
 \end_inset
 
+
 \end_layout
 
 \begin_layout Standard
-This combined set of constraints implies an even stronger constraint between the two
- variables - they are forced to be equal, meaning 
-
+This combined set of constraints implies an even stronger constraint between
+ the two variables - they are forced to be equal, meaning 
 \begin_inset Formula 
 \begin{eqnarray*}
 \left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\} -10\\
-\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\} -10\\
+\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\} -10
 \end{eqnarray*}
 
 \end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-Now consider a common case where the pointer
- 
+Now consider a common case where the pointer 
 \family typewriter
 p
 \family default
- points to several different buffers in different contexts. These simplistic constraints demand
-  that all buffers are equal through transitivity. Obviously, this is not good enough.
+ points to several different buffers in different contexts.
+ These simplistic constraints demand  that all buffers are equal through
+ transitivity.
+ Obviously, this is not good enough.
 \end_layout
 
 \begin_layout Standard
-Instead, as mentioned in section 2.2, buffers and pointers are modeled using two separate
- sets of constraint variables,  
+Instead, as mentioned in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Constraint-Generator"
+
+\end_inset
+
+, buffers and pointers are modeled using two separate sets of constraint
+ variables,  
 \family typewriter
 buf!read!max
 \family default
@@ -998,17 +1019,20 @@ buf!write!max
 \family typewriter
 buf!write!min
 \family default
-. By trreating read and write operations on buffers separately, this problem can be eliminated.
+.
+ By trreating read and write operations on buffers separately, this problem
+ can be eliminated.
  An aliasing is translated into the following constraints:
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{p!read!max}\right\}  & \ge & \left\{ \mbox{buf!read!max}\right\}\\
-\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!read!min}\right\}\\
-\left\{ \mbox{p!write!max}\right\}  & \le & \left\{ \mbox{buf!write!max}\right\}\\
-\left\{ \mbox{p!write!min}\right\}  & \ge & \left\{ \mbox{buf!write!min}\right\}
+\left\{ \mbox{p!read!max}\right\}  & \ge & \left\{ \mbox{buf!read!max}\right\} \\
+\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!read!min}\right\} \\
+\left\{ \mbox{p!write!max}\right\}  & \le & \left\{ \mbox{buf!write!max}\right\} \\
+\left\{ \mbox{p!write!min}\right\}  & \ge & \left\{ \mbox{buf!write!min}\right\} 
 \end{eqnarray*}
 
 \end_inset
+
 
 \end_layout
 
@@ -1034,18 +1058,17 @@ buf!write
 \end_layout
 
 \begin_layout Standard
-Finally, whenever a buffer is added to the constraint problem, the constraints to link the two 
- sets are added. These are added only for the buffers themselves:
- 
+Finally, whenever a buffer is added to the constraint problem, the constraints
+ to link the two  sets are added.
+ These are added only for the buffers themselves: 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{buf!read!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\}  & \ge 
- & \left\{ \mbox{buf!write!max}\right\}\\
-\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\}  & \le 
- & \left\{ \mbox{buf!write!min}\right\}\\
+\left\{ \mbox{buf!read!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\} \ge\left\{ \mbox{buf!write!max}\right\} \\
+\left\{ \mbox{p!read!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} \le\left\{ \mbox{buf!write!min}\right\} 
 \end{eqnarray*}
 
 \end_inset
+
 
 \end_layout
 
@@ -1262,11 +1285,7 @@ Some functions do not have a definition supplied, but are so frequently
  The constraint generator contains a bank of commonly used library functions
  which manipulate buffers, and models their effect upon their parameters
  and return value.
- 
-\begin_inset Newpage clearpage
-\end_inset
-
-For example:
+ For example:
 \end_layout
 
 \begin_layout Standard
@@ -2032,7 +2051,7 @@ Constraint priorities
 
 \begin_layout Standard
 In order to provide the user with the most relevant blame results, we introduce
- three levels of constraints - 
+ three levels of constraints
 \end_layout
 
 \begin_layout Description
