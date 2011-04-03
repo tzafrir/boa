@@ -500,7 +500,7 @@ stdio.h
  and return value.
  User functions are modeled in a constext-insensitive manner - constraints
  for the function body are generated once for the formal parameters.
- On encountering a function call, boa generates constraints between the
+ On encountering a function call, Boa generates constraints between the
  actual parameters and the formal parameters.
 \end_layout
 
@@ -1493,7 +1493,7 @@ elastic variable
 \begin_inset Formula $e_{i}$
 \end_inset
 
- to each constreaint 
+ to each constraint 
 \begin_inset Formula $q_{i}\in Q$
 \end_inset
 
@@ -1584,7 +1584,7 @@ return
 
 \begin_layout Standard
 The most time consuming part of the process is trying to solve the constraint
- problem (the linear solver use simplex).
+ problem (the linear solver uses Simplex).
  The delete filter tries to solve 
 \begin_inset Formula $n$
 \end_inset
@@ -1688,15 +1688,15 @@ min
 
 \begin_layout Standard
 These constraints ensure that all of the variables which appear in the IIS
- accept thier worst case values, thus conserve the soundness of the problem.
- This approch is not as aggesive as it might look in a first glance, since
- most of the infeasibilities boa encounter indeed caused by the increment
+ accept their worst case values, thus conserving the soundness of the problem.
+ This approch is not as aggresive as it may appear on first glance, since
+ most of the infeasibilities Boa encounters are indeed caused by the incrementing
  operator (or similar cases such as 
 \emph on
 strcat
 \emph default
 ).
- This kind of statements, in flow insensitive analysis, means that the value
+ These kind of statements, in flow insensitive analysis, mean that the value
  (of an integer) or length (of a string) goes to infinity - since we can
  not tell how many times, and under what conditions the command will be
  executed.
@@ -1714,14 +1714,14 @@ name "sub:Blame-system"
 \end_layout
 
 \begin_layout Standard
-In order to make boa useful we aim not only to inform the programmer about
+In order to make Boa useful we aim not only to inform the programmer about
  possible overruns, but also to direct him into the problematic code, which
- made boa generate the warning in the first place.
+ made Boa generate the warning in the first place.
  We call this feature 
 \emph on
 blame, 
 \emph default
-since it allows boa to blame specific operatonios in specific source lines,
+since it allows Boa to blame specific operatonios in specific source lines,
  allowing the programmer to examine each warning quickly and understand
  whether there is a real overrun in the code or the warning is a false alarm.
  
@@ -1862,7 +1862,7 @@ constraints which model the relations between
 \end_inset
 
 .
- These constraints are part of boa's internal implementation (disscused
+ These constraints are part of Boa's internal implementation (disscused
  in details on section 
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -3862,13 +3862,13 @@ ssh
 \begin_layout Standard
 Ssh (Secure Shell) is a program to log into another computer over a network,
  to execute commands in a remote machine.
- Here we will present the results reported by boa upon the major source
+ Here we will present the results reported by Boa upon the major source
  code module of Tatu Yloen's implementation of ssh.
  
 \end_layout
 
 \begin_layout Standard
-When we first tried to analyze ssh using boa, we got 41 possible buffer
+When we first tried to analyze ssh using Boa, we got 41 possible buffer
  overruns reported, out of 94 buffers in the source code.
  Most of these buffers where string literals, which seemed as errors, warnings
  or log messages.
@@ -4038,7 +4038,7 @@ end{boa}
 
 \begin_layout Standard
 \noindent
-The reason boa generate these false alarms is simple - this implementation
+The reason Boa generate these false alarms is simple - this implementation
  of ssh uses four functions for errors, log and debug - 
 \emph on
 fatal, log, error 
@@ -4049,16 +4049,16 @@ debug
 \emph default
 .
  The implementation of these functions is not part of ssh main source module,
- and therefore boa could not scan the implementation of these functions
+ and therefore Boa could not scan the implementation of these functions
  and forced to treat them as unsafe - functions that generate overrun on
  each of the buffers they accept.
 \end_layout
 
 \begin_layout Standard
-Luckily, boa provide the -safe_functions flag, which allows us to declare
+Luckily, Boa provide the -safe_functions flag, which allows us to declare
  specific functions as safe, although the source code is not availble to
- boa.
- Running boa with -safe_functions=log,error,fatal,debug reduce the number
+ Boa.
+ Running Boa with -safe_functions=log,error,fatal,debug reduce the number
  of reported overruns to 17 out of 94.
 \end_layout
 
@@ -4071,7 +4071,7 @@ Whithin the remaining 17 buffer overruns, there still are other false alarms
 process_config_line, perror
 \emph default
 ) but each of these functions appear only once or twice, thus locating and
- removing them from boa's output is equivalent to analyzing any other false
+ removing them from Boa's output is equivalent to analyzing any other false
  alarm manually - and therefore we did count these on the table above.
 \end_layout
 
@@ -4080,11 +4080,11 @@ Conclusions
 \end_layout
 
 \begin_layout Standard
-We have presented boa's abilities to analyze decent amount of real, wide
+We have presented Boa's abilities to analyze decent amount of real, wide
  spread C source code within seconds.
- In all of these cases boa were able to detect and briefly explain the real
+ In all of these cases Boa were able to detect and briefly explain the real
  possible overruns in the source code.
- On the other hand - boa do suffer from neglectable amount of false alarms,
+ On the other hand - Boa do suffer from neglectable amount of false alarms,
  this is part of the nature of sound static analysis as a whole
 \begin_inset Foot
 status collapsed
@@ -4108,12 +4108,12 @@ Do we want to menthion this? (Gai)
 \end_inset
 
 , and more specifically - the nature of flow&context insensitive analysis,
- and the use of integer ranges and other techniques that allows boa's solution
+ and the use of integer ranges and other techniques that allows Boa's solution
  to scale well.
 \end_layout
 
 \begin_layout Standard
-We have also presented several examples to how boa's blame output can be
+We have also presented several examples to how Boa's blame output can be
  efficeintly used to analyze the false alarms, and how repeating false alarms
  caused by the same reason (e.g.
  - unknown function) can be easlily eliminated.
@@ -4125,7 +4125,7 @@ We did not present here some more interesting buffer overrun detections
 \backslash
 0') or buffer overruns caused by integer arithmetics.
  This kind of overruns seems to be much more rear in the real sofware world,
- but boa does cope well with this examples as can be seen by running boa
+ but Boa does cope well with this examples as can be seen by running Boa
  upon the specific ultra-short test cases we have produced for such cases.
 \end_layout
 
