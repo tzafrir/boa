@@ -735,7 +735,7 @@ Note that the range for sum is not immediately apparent, but is dependent
  results in a non-linear constraint, which our linear solver is incapable
  of handling.
  Therefore, results of such operations are considered unbounded, and the
- constraints 
+ constraints generated are:
 \begin_inset Formula 
 \[
 \left\{ \mbox{quotient!min}\right\} \le-\infty
