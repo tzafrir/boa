@@ -1721,7 +1721,7 @@ In order to make Boa useful we aim not only to inform the programmer about
 \emph on
 blame, 
 \emph default
-since it allows Boa to blame specific operatonios in specific source lines,
+since it allows Boa to blame specific operations in specific source lines,
  allowing the programmer to examine each warning quickly and understand
  whether there is a real overrun in the code or the warning is a false alarm.
  
@@ -1736,7 +1736,7 @@ key "citeulike:514510"
 
 \end_inset
 
-) or used third party tool in order to provide the user with all of the
+) or used a third party tool in order to provide the user with all of the
  code references to the suspect buffer (
 \begin_inset CommandInset citation
 LatexCommand cite
