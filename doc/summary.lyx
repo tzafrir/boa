@@ -376,9 +376,10 @@ sideways false
 status open
 
 \begin_layout Plain Layout
+\align center
 \begin_inset Graphics
-	filename flow.png
-	width 100text%
+	filename sequence.png
+	width 52text%
 
 \end_inset
 
