@@ -355,7 +355,7 @@ void ConstraintGenerator::GenerateBitCastConstraint(const CastInst* I) {
     string loc = GetInstructionFilename(I);
     Pointer pTo(I), pFrom(makePointer(I->getOperand(0)));
     GenerateBufferAliasConstraint(pFrom, pTo, loc);
-    GenerateCastConstraint(I, "Arbitrary Constraint");
+    GenerateCastConstraint(I, "Bitcast Constraint");
   }
 }
 
