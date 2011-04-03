@@ -349,7 +349,7 @@ The programmer never uses an uninitialized value.
 \end_layout
 
 \begin_layout Chapter
-boa
+Boa
 \begin_inset CommandInset label
 LatexCommand label
 name "chap:boa"
@@ -1443,13 +1443,49 @@ elastic variable
 \emph on
 strech
 \emph default
- and therefore the infeasibility removed, than we solve the new problem,
- trying to minimize effect of the 
+ and thus make the problem feasible.
+ The elastic variable is simply a new variable, which appears on a single
+ constraint, and is confined to non-negative values.
+ The constraints are of the form - 
+\begin_inset Formula 
+\[
+\sum a_{j}X_{j}\ge c
+\]
+
+\end_inset
+
+And with the elastic variable added - 
+\begin_inset Formula 
+\[
+\sum a_{j}X_{j}+e\ge c
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The elastic variable gives the linear solver one more degree of freedom
+ for each constraint, and therefore makes it feasible.
+ Using the elastic variable (i.e.
+ - assigning it a non-zero value) is reffered to as 
+\emph on
+streching.
+ 
+\emph default
+Once the linear system is feasible we can solve the new problem, but instead
+ of solving it in order to maximize the original target value, we try to
+ minimize the effect of the 
 \emph on
 elastic variables
 \emph default
- and each elastic variable assigned a non-zero value marks a constraint
- which is part on an IIS.
+.
+ In this case the problem is feasible - therefore a solution can be found,
+ and since we direct the linear solver to minimize the values of the elastic
+ variable - each elastic variable assigned a non-zero value marks a constraint
+ which is part on an IIS (i.e.
+ - if it's elastic variable did not exist the problem was infeasible).
  Formally - 
 \end_layout
 
@@ -1583,7 +1619,7 @@ return
 \end_layout
 
 \begin_layout Standard
-The most time consuming part of the process is trying to solve the constraint
+The most time-consuming part of the process is trying to solve the constraint
  problem (the linear solver uses Simplex).
  The delete filter tries to solve 
 \begin_inset Formula $n$
@@ -1755,7 +1791,7 @@ unsafe buffers
 \emph default
 , buffers in which the linear solver detected a possible overrun.
  For each of the unsafe buffers the output is a set of constraints, this
- set should be the minimal nessecary set of constraints for the generation
+ set should be the minimal necessary set of constraints for the generation
  of the overrun.
  
 \end_layout
@@ -1795,12 +1831,12 @@ the value
 \end_inset
 
  in the first solution of the constraint problem.
- That way the problem become infeasible, and removing the infesibility will
- ensure safe only accesses to the buffer left.
+ That way the problem becomes infeasible, and removing the infesibility
+ will ensure safe only accesses to the buffer left.
 \end_layout
 
 \begin_layout Standard
-During the constraint generation proccess we add each constraint a 
+During the constraint generation proccess we add to each constraint a 
 \emph on
 blame string
 \emph default
@@ -1808,8 +1844,8 @@ blame string
 \emph on
  
 \emph default
-contain a brief explanation about the nature of the command caused this
- constraint (e.g.
+contains a brief explanation about the nature of the command that caused
+ this constraint (e.g.
  
 \begin_inset Quotes eld
 \end_inset
@@ -1826,9 +1862,9 @@ add instruction
 \begin_inset Quotes erd
 \end_inset
 
- etc) and it's source location (source file name and line number).
- Once the elastic filter return the set of constraints which cause the infeasibi
-lity (an therefore - cause the overrun) we print the 
+ etc) and its source location (source file name and line number).
+ Once the elastic filter returns the set of constraints which cause the
+ infeasibility (and therefore - cause the overrun) we print the 
 \emph on
 blame strings
 \emph default
@@ -1863,14 +1899,14 @@ constraints which model the relations between
 
 .
  These constraints are part of Boa's internal implementation (disscused
- in details on section 
+ in detail in section 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sub:Buffer-aliasing"
 
 \end_inset
 
-), and does not supply the user with information about his possible buffer
+), and do not supply the user with information about her possible buffer
  overrun.
 \end_layout
 
@@ -1883,19 +1919,19 @@ aliasing
 \begin_inset space ~
 \end_inset
 
-constraints disscussed in details on section 
+constraints disscussed in detail in section 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sub:Buffer-aliasing"
 
 \end_inset
 
-, which usually does not cause an overrun by themselves, but might be very
- important for the user to understand how does writing to a pointer 
+, which usually do not cause an overrun by themselves, but might be very
+ important for the user to understand how writing to a pointer 
 \begin_inset Formula $ptr$
 \end_inset
 
- cause an overrun on buffer 
+ causes an overrun on buffer 
 \begin_inset Formula $buf$
 \end_inset
 
@@ -1952,7 +1988,7 @@ aliasing constraints
 \emph on
 structural constraints
 \emph default
- will not distruct the user from the actual problem in his source code.
+ will not distract the user from the actual problem in her source code.
  A similar approch is taken when we use the elstic filter to turn the initial
  infeasible problem into a feasible problem - in that case we allow the
  elastic filter to remove 
@@ -2262,7 +2298,7 @@ Black Box Testing
 \end_layout
 
 \begin_layout Standard
-Since our entire system is hosted as a Clang plugin, for most purposes 
+Since our entire system is hosted as a Clang plugin, 
 \emph on
 White Box
 \emph default
@@ -2297,7 +2333,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/safe.c}[caption=safe.c]
+lstinputlisting[caption=safe.c]{../tests/testcases/safe.c}
 \end_layout
 
 \end_inset
@@ -2313,7 +2349,7 @@ status open
 
 
 \backslash
-lstinputlisting{../tests/testcases/safe.asserts}[caption=safe.asserts]
+lstinputlisting[caption=safe.asserts]{../tests/testcases/safe.asserts}
 \end_layout
 
 \end_inset
@@ -3201,9 +3237,9 @@ The main factor affecting Boa's runtime is the number of generated constraints,
 Another important factor is the amount of infeasible constraint sets have
  to be removed, but this measure can hardly be predicted simply by looking
  at the source code.
- When Boa run the blame algorithm, another important factor emerge - the
- number of overruns reported, each overrun cause the blame algotihm to solve
- an infeasible problem again, and thus the running time is approximatly
+ When Boa runs the Blame algorithm, another important factor emerges - the
+ number of overruns reported, each overrun causing the blame algorithm to
+ solve an infeasible problem again, and thus the running time is approximately
  multiplied by the number of overruns detected.
 \end_layout
 
@@ -3447,8 +3483,8 @@ socket.h
 \emph on
 socket.h
 \emph default
- functions, but even now the output let the user identify the cause immediatly
- and decide manually wether this call is safe or not.
+ functions, but even now the output lets the user identify the cause immediately
+ and decide manually whether this call is safe or not.
 \begin_inset Note Note
 status open
 
@@ -3659,10 +3695,10 @@ RSA Data Security, Inc.
  MD5
 \emph default
 , the a well known cryptographic hash function.
- Since MD5 is a cryptographic algorithm, the implementation consist of a
- lot of bitwise operations on the input string as well as on the predefined
+ Since MD5 is a cryptographic algorithm, the implementation consists of
+ a lot of bitwise operations on the input string as well as on the predefined
  constant tables.
- Modelling of repeating bitwise operetions precisely using linear equations
+ Modelling of repeating bitwise operations precisely using linear equations
  is somewhat impossible, therefore Boa takes the safe (sound) side and declares
  buffer accesses based on such operations as unsafe.
  
@@ -3672,10 +3708,10 @@ RSA Data Security, Inc.
 Nevertheless, we bring MD5 as an example in order to demonstrate the limitations
  of the linear equations approch for static analysis, and also as an example
  for a code which causes Boa to generate a big amount of constraints per
- source line, and a large number of infeasible constraits sets.
- These challenges caused early prototypes of Boa to run hours before reporting
- a possible overruns in MD5, while the current version fully analyzes and
- blames MD5's possible overruns within seconds.
+ source line, and a large number of infeasible constraint sets.
+ These challenges caused early prototypes of Boa to run for many hours before
+ reporting possible overruns in MD5, while the current version fully analyzes
+ and blames MD5's possible overruns within seconds.
 \end_layout
 
 \begin_layout Subsection
@@ -3683,9 +3719,9 @@ syslog
 \end_layout
 
 \begin_layout Standard
-Syslog is a simple application that write meaasges into unix system log,
+Syslog is a simple application that writes messages into a unix system log,
  and yet another example of a widespread application with a buffer overrun
- vulnerability in it's history.
+ vulnerability in its history.
  The syslog vulnerability was first reported on 1995, since syslog is a
  basic unix subroutine - the vulnerability affected not only syslog itself
  but many other applications, including 
@@ -3716,7 +3752,7 @@ tbuf
 \emph default
  can hold the number of bytes to be copied.
  The solution to the overrun is even more interesting - in order to write
- such messages nevertheless, syslog mentain the buffer overrun - and check
+ such messages nevertheless, syslog mentions the buffer overrun - and checks
  the length of the written string after the hazardous call - 
 \end_layout
 
@@ -3738,12 +3774,12 @@ ests/realworld/syslog/syslog.c}
 \end_layout
 
 \begin_layout Standard
-If an overrun have occoured, syslog set the flag 
+If an overrun have occured, syslog sets the flag 
 \emph on
 panic
 \emph default
- and then after printing the message to log it will abort instead of returning,
- as the comment briefly explain - 
+ and then after printing the message to the log it will abort instead of
+ returning, as the comment briefly explain - 
 \end_layout
 
 \begin_layout Standard
@@ -3764,10 +3800,10 @@ ests/realworld/syslog/syslog.c}
 \end_layout
 
 \begin_layout Standard
-When Boa run on syslog's source code it identifies the possible overrun
- on tbuf, but also report 7 other possible overruns, all of them seems to
- be false alarms.
- Most of the false alarms happen simply because syslog call POSIX library
+When Boa runs on syslog's source code it identifies the possible overrun
+ on tbuf, but also reports 7 other possible overruns, all of them seems
+ to be false alarms.
+ Most of the false alarms happen simply because syslog calls POSIX library
  functions which Boa does not model, for example - 
 \end_layout
 
@@ -3860,8 +3896,8 @@ ssh
 \end_layout
 
 \begin_layout Standard
-Ssh (Secure Shell) is a program to log into another computer over a network,
- to execute commands in a remote machine.
+Ssh (Secure Shell) is a very common program used to log into another computer
+ over a network and to execute commands on a remote machine.
  Here we will present the results reported by Boa upon the major source
  code module of Tatu Yloen's implementation of ssh.
  
@@ -3870,7 +3906,7 @@ Ssh (Secure Shell) is a program to log into another computer over a network,
 \begin_layout Standard
 When we first tried to analyze ssh using Boa, we got 41 possible buffer
  overruns reported, out of 94 buffers in the source code.
- Most of these buffers where string literals, which seemed as errors, warnings
+ Most of these buffers were string literals, which are used as errors, warnings
  or log messages.
  Using the blame feature quickly revealed the reason for this massive amount
  of false alarms - 
@@ -4038,7 +4074,7 @@ end{boa}
 
 \begin_layout Standard
 \noindent
-The reason Boa generate these false alarms is simple - this implementation
+The reason Boa generated these false alarms is simple - this implementation
  of ssh uses four functions for errors, log and debug - 
 \emph on
 fatal, log, error 
@@ -4055,24 +4091,30 @@ debug
 \end_layout
 
 \begin_layout Standard
-Luckily, Boa provide the -safe_functions flag, which allows us to declare
- specific functions as safe, although the source code is not availble to
- Boa.
- Running Boa with -safe_functions=log,error,fatal,debug reduce the number
- of reported overruns to 17 out of 94.
+As a solution to this exact problem, Boa provides the 
+\emph on
+-safe_functions
+\emph default
+ flag, which allows us to declare specific functions as safe, although the
+ source code is not availble to Boa.
+ Running Boa with 
+\emph on
+-safe_functions=log,error,fatal,debug
+\emph default
+ reduced the number of reported overruns to 17 out of 94.
 \end_layout
 
 \begin_layout Standard
-Whithin the remaining 17 buffer overruns, there still are other false alarms
- generated because of ssh functions which are implemented different modules
+Within the remaining 17 buffer overruns, there still are other false alarms
+ generated because of ssh functions which are implemented in different modules
  (e.g.
  
 \emph on
 process_config_line, perror
 \emph default
-) but each of these functions appear only once or twice, thus locating and
- removing them from Boa's output is equivalent to analyzing any other false
- alarm manually - and therefore we did count these on the table above.
+) but each of these functions appears only once or twice, thus locating
+ and removing them from Boa's output is equivalent to analyzing any other
+ false alarm manually - and therefore we did count these on the table above.
 \end_layout
 
 \begin_layout Section
@@ -4082,41 +4124,20 @@ Conclusions
 \begin_layout Standard
 We have presented Boa's abilities to analyze decent amount of real, wide
  spread C source code within seconds.
- In all of these cases Boa were able to detect and briefly explain the real
+ In all of these cases Boa was able to detect and briefly explain the real
  possible overruns in the source code.
- On the other hand - Boa do suffer from neglectable amount of false alarms,
- this is part of the nature of sound static analysis as a whole
-\begin_inset Foot
-status collapsed
-
-\begin_layout Plain Layout
-One can think of a reduction from the halting probelm to almost any static
- analysis taskOne can think of a reduction from the halting probelm to almost
- any static analysis task
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Do we want to menthion this? (Gai)
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-, and more specifically - the nature of flow&context insensitive analysis,
- and the use of integer ranges and other techniques that allows Boa's solution
+ On the other hand - Boa does suffer from neglectable amount of false alarms,
+ which are part of the nature of sound static analysis as a whole, and more
+ specifically - the nature of flow- and context-insensitive analysis, and
+ the use of integer ranges and other techniques that allows Boa's solution
  to scale well.
 \end_layout
 
 \begin_layout Standard
 We have also presented several examples to how Boa's blame output can be
- efficeintly used to analyze the false alarms, and how repeating false alarms
- caused by the same reason (e.g.
- - unknown function) can be easlily eliminated.
+ efficiently used to analyze the false alarms, and how repeating false alarms
+ which are caused by the same reason (e.g.
+ - unknown function) can be easily eliminated.
 \end_layout
 
 \begin_layout Standard
@@ -4124,9 +4145,9 @@ We did not present here some more interesting buffer overrun detections
  - such as off by one (mainly because the programmer did not count C's '
 \backslash
 0') or buffer overruns caused by integer arithmetics.
- This kind of overruns seems to be much more rear in the real sofware world,
- but Boa does cope well with this examples as can be seen by running Boa
- upon the specific ultra-short test cases we have produced for such cases.
+ These kind of overruns seems to be much more rare in the real sofware world,
+ but Boa does cope well with these examples as can be seen by running Boa
+ over the specific atomic test cases we have produced for such cases.
 \end_layout
 
 \begin_layout --Separator--
