@@ -21,6 +21,12 @@ using namespace llvm;
 
 namespace boa {
 
+static void swap(void* a, void* b) {
+  void* temp = a;
+  a = b;
+  b = temp;
+}
+
 void ConstraintGenerator::AddBuffer(const Buffer& buf, const string &location, bool literal) {
   if (!(IgnoreLiterals_ && literal)) {
     // add buffer to problem unless it is a string literal and we ignore literals
@@ -328,9 +334,7 @@ void ConstraintGenerator::GenerateDivConstraint(const BinaryOperator* I) {
 
   if (constOperand < 0.0) {
     // Divide by a negative swaps the bounds
-    Expression * t = minOperand;
-    minOperand = maxOperand;
-    maxOperand = t;
+    swap(&minOperand, &maxOperand);
   }
 
   string loc = GetInstructionFilename(I);

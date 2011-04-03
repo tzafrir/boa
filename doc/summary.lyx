@@ -235,11 +235,17 @@ Project in advanced programming - program analysis (236503)
 \begin_inset VSpace medskip
 \end_inset
 
-Computer science department, Technion - Israel institute of technology
+Computer Science Department, Technion - Israel Institute of Technology
 \end_layout
 
 \begin_layout Chapter
 Introduction
+\end_layout
+
+\begin_layout Standard
+The C programming language is riddled with security vulnerablitilies, the most prominent of which is the risk of buffer overruns. Programs written in C are widely used today, many of them with legacy code. There are two possible methods to try and detect buffer overruns - static and dynamic analysis.
+Dynamic analysis attempts to intercept access outside the bounds of an array during runtime. While this can be effective with the use of rigorous testing with high coverage to discover potential overruns, this method does not supply a sound analysis, and some buffer overruns may be undetected. In addition, runtime checking of array boundaries may be used to prevent buffer overruns, but incurs a performance cost.
+Static analysis attempts to detect overruns by analyzing the source code. This does not require any changes to the code or runtime environment, and can be implemented soundly (no false negatives). However, a precise analysis is not scalable, and some simplifications must be made, at the cost of possible false positives (false overrun indication). 
 \end_layout
 
 \begin_layout Section
@@ -247,9 +253,81 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Given a C program that performs buffer manipulations, statically identify
- whether the program may perform array access out of the array bounds.
+Implement a static buffer overrun analyzer for the C programming language. The tool must conform to the following requirements:
+
+\begin_layout Itemize
+Provide analysis over any valid
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+We define 
+\size normal
+\emph on
+Valid C
+\emph default
+ code as any code that is compiled by 
+\emph on
+gcc
+\emph default
+ with the 
+\emph on
+-Wall
+\emph default
+ flag without any warnings.
 \end_layout
+
+\end_inset
+
+ C code as is, without requiring the programmer to provide any meta information.
+\end_layout
+
+\begin_layout Itemize
+Provide 
+\emph on
+Soundness
+\emph default
+: Report 100% of the buffer overruns in the code, with no 
+\emph on
+False Negatives
+\emph default
+ reported.
+\end_layout
+
+\begin_layout Itemize
+Provide output in a machine readable format that is also easily readable
+ by humans.
+\end_layout
+
+\begin_layout Itemize
+Minimize false positives.
+\end_layout
+
+\begin_layout Section
+Assumptions
+\end_layout
+
+\begin_layout Standard
+In order to achieve these requirements we also defined several assumptions
+ on the input code:
+\end_layout
+
+\begin_layout Itemize
+The programmer knows that the C string library requires that a string must
+ end with the NULL terminating character '
+\backslash
+0', and will never mutate the last byte of a buffer in a way that will cause
+ an overrun.
+\end_layout
+
+\begin_layout Itemize
+The programmer never uses an uninitialized value.
+\begin_inset Note Note
+status open
+
+\end_inset
+\end_layout
+
 
 \begin_layout Chapter
 boa
@@ -263,7 +341,7 @@ name "chap:boa"
 \end_layout
 
 \begin_layout Section
-Overview
+Tool Overview
 \end_layout
 
 \begin_layout Standard
@@ -293,7 +371,25 @@ Main components and stages
 
 \end_inset
 
+Boa is designed as a series of modular components. Each component receives input from the previous component, and passes on its analysis to the next one.
+\begin_layout Itemize
+A C compilation module is compiled using the Clang open-source compiler. Clang outputs LLVM bytecode, which provides the benefits of SSA (Single Static Assignment) and a manageable intruction set.
+\end_layout
+\begin_layout Itemize
+The constraint generator performs a single LLVM pass over the bytecode. During this pass, program statements are translated into linear constraints over constraint variables (section 2.2). In addition, the constraint generator collects a set of the buffers in the code, for use by the following components.
+\end_layout
+\begin_layout Itemize
+The linear solver performs
+\emph on
+ taint analysis
+\emph default
+ on the set of constraints, removing any illegal constraints (section 2.3.1). Then the constraints are solved, and buffers with potential overruns are reported.
+\end_layout
+\begin_layout Itemize
+The linear solver also offers a blame system, through which reported overruns may be root-caused. By reporting the set of statements which caused the overrun to be reported, the report may be validated as a possible overrun, or dismissed as a false positive.
+\end_layout
 
+The following sections describe the components in more detail.
 \end_layout
 
 \begin_layout Section
@@ -323,17 +419,13 @@ int a = 10, b = 20;
 int sum, prod, quotient;
 sum = a + b;
 prod = -3 * sum;
-q = prod / a;
+q = 2 / a;
 
-The constraints generated for 'sum' are still relatively simple: 'sum!max >= a!max + b!max', 'sum!min <= a!min + b!min'. Note that the range for sum is not immediately apparent, but is dependent on the value of two other constraint variables. The constraints generated for 'prod' are not as simple, since a negative factor flips the min and max values. Also, any multiplication between two variables or division by a variable results in a non-linear constraint, which our linear solver is incapable of handling. Therefore, results of such operations are considered unbounded, and the constraints q!min <= \inf and q!max >= \inf are created for example<x>. 
+The constraints generated for 'sum' are still relatively simple: 'sum!max >= a!max + b!max', 'sum!min <= a!min + b!min'. Note that the range for sum is not immediately apparent, but is dependent on the value of two other constraint variables. The constraints generated for 'prod' are not as simple, since a negative factor flips the min and max values. Also, any multiplication between two variables or division by a variable results in a non-linear constraint, which our linear solver is incapable of handling. Therefore, results of such operations are considered unbounded, and the constraints q!min <= -\inf and q!max >= \inf are created for example<x>. 
 \end_layout
 
 \begin_layout Subsection
-Direct array access
-\end_layout
-
-\begin_layout Standard
-
+Array Allocation 
 \end_layout
 
 \begin_layout Standard
@@ -344,32 +436,21 @@ status collapsed
 
 
 \backslash
-lstinputlisting[firstline=4,lastline=5]{../tests/testcases/simple3.c}
+lstinputlisting[firstline=4,lastline=6]{../tests/testcases/simple3.c}
+lstinputlisting[firstline=6,lastline=9]{../tests/testcases/dynMem2.c}
 \end_layout
 
 \end_inset
-
-
-\end_layout
-
-\begin_layout Subsection
-String manipulation functions
 \end_layout
 
 \begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-lstinputlisting[firstline=1,lastline=15]{../tests/testcases/string1.c}
-\end_layout
-
+Array declarations such as the above supply the alloc value for arrays. Arrays may be statically or dynamically allocated - in both cases the treatment is similar. The code in example <x> would generate the following constraints:
+\begin_inset
+* buf!alloc!max >= 10, buf!alloc!min <= 10 for the buffer 'buf'
+* dynamic!alloc!max >= i!max, dynamic!alloc!min <= i!min for the return value of the malloc() call.
 \end_inset
-
-
+Note that dynamically allocated buffers are distinct from any pointer that may point to it.
+In the case of malloc() calls, the parameter may be a complex int expression, this is handled as far as possible for linear constraints - see section 2.3.
 \end_layout
 
 \begin_layout Subsection
@@ -380,7 +461,106 @@ name "sub:Buffer-aliasing"
 
 \end_inset
 
+\begin_layout Standard
+Certain statements may result in a buffer alias. This occurs when a pointer is set to point to another pointer or buffer, possibly with an offset (i.e. p = buf or p = buf + 10). 
+An aliasing is translated into the following constraints:
+\begin_inset
+* p!read!max >= buf!read!max - 10
+* p!read!min <= buf!read!min - 10
+* p!write!max <= buf!write!max - 10
+* p!write!min >= buf!write!min - 10
+\end_inset
+The constraints on the read variables ensure that reads on p will be the largest possible read performed on buf. The constraints on the write variables ensure that writes to p will always be be reflected in buf!write!max.
+This method of alias handling also provides a conservative flow-insensitive pointer analysis for first-order pointers, by capturing all possible pointer assignments.
+\end_layout
 
+\end_layout
+
+\begin_layout Subsection
+Direct array access
+\end_layout
+
+\begin_layout Standard
+Arrays are manipulated in code in several fashions, the simplest of which is direct access by index. 
+Consider the statement buf[10] = 'a'. The resulting constraints render down to the expected:
+\begin_inset
+* buf!write!max >= 10
+* buf!write!min <= 10
+\end_inset
+The constraint generator treats the value stored into buf as any other integer assignment, as described above.
+\end_layout
+
+\begin_layout Subsection
+Functions
+\end_layout
+
+\begin_layout Standard
+Buffers are often manipulated through function calls, as parameter or return value. The constrain generator distinguishes between three different types of functions, and each is handled differently.
+\end_layout
+
+\begin_layout Subsubsection
+Functions With Definition
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+int foo(char *p, int x) {
+  // Do something with p and x
+}
+
+int main() {
+  char buf[10];
+  int res = foo(buf, 10);
+}
+\end_layout
+\end_inset
+\end_layout
+
+\begin_layout Standard
+These are functions with the definition available for analysis, usually functions that are defined in the same compilation unit. The constraint generator analyzes these functions in its single llvm pass, and generates constraints which may include its formal parameters and return value. In the example above, the constraints would contain p and x, with possible constraints on the int return value.
+Whenever a call to such a function is encountered, the actual parameters are constricted to the formal parameters. In the example above, the call to foo() would result in p being aliased to buf (as described above), and the constraints x!max >= 10, x!min <= 10. In addition, res is constrained to the return value, resulting in res!max >= foo!max, res!min <= foo!min to be added to the constraint problem.
+This flow-insensitive analysis is conservative, but may result in false buffer overrun warnings. It is possible to add some context sensitivity to this analysis by creating a separate instance of the formal parameters for every function call, and duplicating the constraints for them. Previous work <Ganpathy et. Al> has attempted this and discovered a small reduction in false posiives, at the price of inflating the constraint problem, impacting performance.
+\end_layout
+
+\begin_layout Subsubsection
+Known Library Functions
+\end_layout
+
+\begin_layout Standard
+Some functions do not have a definition supplied, but are so frequently used that they must be analyzed. The constraint generator contains a bank of commonly used library functions which manipulate buffers, and models their effect upon their parameters and return value. For example:
+
+\begin_inset ERT
+status open
+\begin_layout Plain Layout
+\backslash
+lstinputlisting[firstline=4,lastline=7]{../tests/testcases/string1.c}
+\end_layout
+\end_inset
+
+The function strcpy copies its second parameter into the first parameter. Thus, for the example above the following constraints are created:
+\begin_inset
+* buf1!write!max >= str1!read!max
+* buf1!write!min <= str1!read!min
+* buf2!write!max >= str2!read!max
+* buf2!write!min <= str2!read!min
+\end_inset
+The functions which are modeled are mostly from string.h and stdio.h with several others (malloc for example). This is performed in a conservative manner, meaning the worst case scenario is always assumed.
+\end_layout
+
+
+\begin_layout Subsubsection
+Unknown Functions
+\end_layout
+
+\begin_layout Standard
+Some functions called are neither of the two above cases. For these functions, the constraint generator cannot assume anything about the body of the function. In order for analysis to be conservative, all buffer parameters are considered to be accessed outside of bounds, and any int return value is considered unbounded.
+This is not as great a problem as it may appear. The vast majority of string manipulations is performed by user functions and string.h, stdio.h functions, while the blame system described later on provides a mechanism for detecting irrelevant overruns which result from unknown functions. 
 \end_layout
 
 \begin_layout Section
@@ -1020,7 +1200,7 @@ Constraint priorities
 
 \begin_layout Standard
 In order to provide the user with the most relevant blame results, we introduce
- three levels of constrainst - 
+ three levels of constraints - 
 \end_layout
 
 \begin_layout Description
@@ -1086,7 +1266,7 @@ Normal
 \begin_inset space ~
 \end_inset
 
-constrainst are any other constraints, involving integer arithmetics, library
+constraints are any other constraints, involving integer arithmetics, library
  function calls etc.
 \end_layout
 
@@ -1123,7 +1303,7 @@ normal constraints
 \emph default
 , and than run the elastic filter again, allowing it to choose 
 \emph on
-aliasing constrainst
+aliasing constraints
 \emph default
  as well.
  That way we ensure that the most relelvant blame results will appear first,
@@ -1312,91 +1492,7 @@ Initial Requirements
 \end_layout
 
 \begin_layout Standard
-We set out to develop Boa by first defining a preliminary set of requirements:
-\end_layout
-
-\begin_layout Itemize
-Provide analysis over any valid
-\begin_inset Foot
-status collapsed
-
-\begin_layout Plain Layout
-We define 
-\size normal
-\emph on
-Valid C
-\emph default
- code as any code that is compiled by 
-\emph on
-gcc
-\emph default
- with the 
-\emph on
--Wall
-\emph default
- flag without any warnings.
-\end_layout
-
-\end_inset
-
- C code as is, without requiring the programmer to provide any meta information.
-\end_layout
-
-\begin_layout Itemize
-Provide 
-\emph on
-Soundness
-\emph default
-: Report 100% of the buffer overruns in the code, with no 
-\emph on
-False Negatives
-\emph default
- reported.
-\end_layout
-
-\begin_layout Itemize
-Provide output in a machine readable format that is also easily readable
- by humans.
-\end_layout
-
-\begin_layout --Separator--
-
-\end_layout
-
-\begin_layout Standard
-We also had a goal of minimizing false positives, for which we couldn't
- define a measurable requirement at the initial stage.
-\end_layout
-
-\begin_layout Section
-Lenient Assumptions
-\end_layout
-
-\begin_layout Standard
-In order to achieve these requirements we also defined lenient assumption
- on the input code:
-\end_layout
-
-\begin_layout Itemize
-The programmer knows that the C string library requires that a string must
- end with the NULL terminating character '
-\backslash
-0', and will never mutate the last byte of a buffer in a way that will cause
- an overrun.
-\end_layout
-
-\begin_layout Itemize
-The programmer never uses an uninitialized value.
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-TODO(tzafrir): Find more assumptions we used, if any.
-\end_layout
-
-\end_inset
-
-
+We set out to develop Boa by first defining a preliminary set of requirements, and the assumptions required to hold to them. These are as specified in the Introduction section.
 \end_layout
 
 \begin_layout Section
@@ -1878,8 +1974,8 @@ http://llvm.org/
 Low Level Virtual Machine
 \emph default
 ) infratructure.
- Boa would first compile the code into LLVM bitcode, and then generate constrain
-ts according to that bitcode using an 
+ Boa would first compile the code into LLVM bytecode, and then generate constrain
+ts according to that bytecode using an 
 \emph on
 LLVM Pass
 \emph default
@@ -1915,7 +2011,7 @@ Additional Requirements
 \end_layout
 
 \begin_layout Standard
-As work on Boa progressed and enough bitcode instructions were properly
+As work on Boa progressed and enough bytecode instructions were properly
  handled, we could begin testing against code snippets from real world code.
  It soon became clear that it is not enough to notify the programmer which
  buffers are overrun, and Boa should also supply the programmer with information
@@ -2011,7 +2107,7 @@ target "https://github.com/tzafrir/boa"
 \end_layout
 
 \begin_layout Section
-Performence
+Performance
 \end_layout
 
 \begin_layout Standard
@@ -3347,7 +3443,7 @@ process_config_line, perror
 \end_layout
 
 \begin_layout Section
-Conclusins
+Conclusions
 \end_layout
 
 \begin_layout Standard
