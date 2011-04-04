@@ -275,81 +275,41 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Implement a static buffer overrun analyzer for the C programming language.
- The tool must conform to the following requirements:
+Given a C program that performs buffer manipulations, statically (at compile
+ time) identify whether the program may perform array access out of the
+ array bounds.
+ 
 \end_layout
 
-\begin_layout Itemize
-Provide analysis over any valid
+\begin_layout Standard
+Boa should operate C code as is, without requiring the programmer to provide
+ any meta information.
+ The provided analysis must be 
+\emph on
+sound
+\emph default
+ - report 100% of the possible buffer overruns in the code, with no 
+\emph on
+false negatives
+\emph default
+
 \begin_inset Foot
-status collapsed
+status open
 
 \begin_layout Plain Layout
-We define 
-\size normal
-\emph on
-Valid C
-\emph default
- code as any code that is compiled by 
-\emph on
-gcc
-\emph default
- with the 
-\emph on
--Wall
-\emph default
- flag without any warnings.
+False negative is a buffer which Boa report to be safe while, under certain
+ scenario, the program might access the buffer out of bounds.
 \end_layout
 
 \end_inset
 
- C code as is, without requiring the programmer to provide any meta information.
-\end_layout
-
-\begin_layout Itemize
-Provide 
+ reported, while minimizing the amount of 
 \emph on
-Soundness
+false positives
 \emph default
-: Report 100% of the buffer overruns in the code, with no 
-\emph on
-False Negatives
-\emph default
- reported.
-\end_layout
-
-\begin_layout Itemize
-Provide output in a machine readable format that is also easily readable
- by humans.
-\end_layout
-
-\begin_layout Itemize
-Minimize false positives.
-\end_layout
-
-\begin_layout Itemize
-Provide machine readable information about the source code instructions
- that cause a specific overrun, which is also easily readable by humans.
-\end_layout
-
-\begin_layout Itemize
-Model 100% of the functions in 
-\emph on
-string.h
-\emph default
- and 
-\emph on
-stdio.h
-\emph default
- such that all safe accesses will not be marked as unsafe, and all unsafe
- uses of library functions will mark the involved buffers as having overruns.
-\end_layout
-
-\begin_layout Itemize
-Provide blame information per unsafe library functions such that if an unsafe
- function is used, the blame information will explicitly contain a warning
- against that specific function and will provide the source location of
- the unsafe function call.
+.
+ Finally, the output should provide brief information about the source code
+ instructions that cause each reported overrun.
 \end_layout
 
 \begin_layout Section
@@ -902,7 +862,8 @@ buf!used!max
 \family typewriter
  buf!used!min
 \family default
-. However, this simple modeling creates an unwanted side-effect in solving
+.
+ However, this simple modeling creates an unwanted side-effect in solving
  a linear-inequality system.
  Consider the following code: 
 \begin_inset ERT
@@ -947,8 +908,8 @@ buf
  Therefore the following constraints must be generated: 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\}\\
-\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\}
+\left\{ \mbox{p!used!max}\right\}  & \ge & \left\{ \mbox{buf!used!max}\right\} \\
+\left\{ \mbox{p!used!min}\right\}  & \le & \left\{ \mbox{buf!used!min}\right\} 
 \end{eqnarray*}
 
 \end_inset
@@ -968,8 +929,8 @@ buf[20]
 , resulting in the following constraints: 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\}\\
-\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\}
+\left\{ \mbox{buf!used!max}\right\}  & \ge & \left\{ \mbox{p!used!max}\right\} \\
+\left\{ \mbox{buf!used!min}\right\}  & \le & \left\{ \mbox{p!used!min}\right\} 
 \end{eqnarray*}
 
 \end_inset
@@ -982,8 +943,8 @@ This combined set of constraints implies an even stronger constraint between
  the two variables - they are forced to be equal, meaning 
 \begin_inset Formula 
 \begin{eqnarray*}
-\left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\}\\
-\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\}
+\left\{ \mbox{buf!used!max}\right\}  & = & \left\{ \mbox{p!used!max}\right\} \\
+\left\{ \mbox{buf!used!min}\right\}  & = & \left\{ \mbox{p!used!min}\right\} 
 \end{eqnarray*}
 
 \end_inset
@@ -2876,8 +2837,8 @@ http://llvm.org/
 Low Level Virtual Machine
 \emph default
 ) infratructure.
- Boa would first compile the code into LLVM bitcode, and then generate
- constraints according to that bitcode using an 
+ Boa would first compile the code into LLVM bitcode, and then generate constrain
+ts according to that bitcode using an 
 \emph on
 LLVM Pass
 \emph default
