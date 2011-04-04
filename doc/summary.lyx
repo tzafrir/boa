@@ -327,6 +327,31 @@ Provide output in a machine readable format that is also easily readable
 Minimize false positives.
 \end_layout
 
+\begin_layout Itemize
+Provide machine readable information about the source code instructions
+ that cause a specific overrun, which is also easily readable by humans.
+\end_layout
+
+\begin_layout Itemize
+Model 100% of the functions in 
+\emph on
+string.h
+\emph default
+ and 
+\emph on
+stdio.h
+\emph default
+ such that all safe accesses will not be marked as unsafe, and all unsafe
+ uses of library functions will mark the involved buffers as having overruns.
+\end_layout
+
+\begin_layout Itemize
+Provide blame information per unsafe library functions such that if an unsafe
+ function is used, the blame information will explicitly contain a warning
+ against that specific function and will provide the source location of
+ the unsafe function call.
+\end_layout
+
 \begin_layout Section
 Assumptions
 \end_layout
@@ -2328,9 +2353,60 @@ Initial Requirements
 \end_layout
 
 \begin_layout Standard
-We set out to develop Boa by first defining a preliminary set of requirements,
- and the assumptions required to hold to them.
- These are as specified in the Introduction section.
+We set out to develop Boa by first defining a preliminary set of requirements:
+\end_layout
+
+\begin_layout Itemize
+Provide analysis over any valid
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+We define 
+\size normal
+\emph on
+Valid C
+\emph default
+ code as any code that is compiled by 
+\emph on
+gcc
+\emph default
+ with the 
+\emph on
+-Wall
+\emph default
+ flag without any warnings.
+\end_layout
+
+\end_inset
+
+ C code as is, without requiring the programmer to provide any meta information.
+\end_layout
+
+\begin_layout Itemize
+Provide 
+\emph on
+Soundness
+\emph default
+: Report 100% of the buffer overruns in the code, with no 
+\emph on
+False Negatives
+\emph default
+ reported.
+\end_layout
+
+\begin_layout Itemize
+Provide output in a machine readable format that is also easily readable
+ by humans.
+\end_layout
+
+\begin_layout Itemize
+Minimize false positives.
+\end_layout
+
+\begin_layout Standard
+These requirements were defined over lenient assumptions as specified in
+ the Introduction section.
 \end_layout
 
 \begin_layout Section
