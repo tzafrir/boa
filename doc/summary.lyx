@@ -402,12 +402,12 @@ Main components and stages
 
 \begin_layout Itemize
 A C compilation module is compiled using the Clang open-source compiler.
- Clang outputs LLVM bytecode, which provides the benefits of SSA (Single
+ Clang outputs LLVM bitcode, which provides the benefits of SSA (Single
  Static Assignment) and a manageable intruction set.
 \end_layout
 
 \begin_layout Itemize
-The constraint generator performs a single LLVM pass over the bytecode.
+The constraint generator performs a single LLVM pass over the bitcode.
  During this pass, program statements are translated into linear constraints
  over constraint variables (section 
 \begin_inset CommandInset ref
@@ -2800,8 +2800,8 @@ http://llvm.org/
 Low Level Virtual Machine
 \emph default
 ) infratructure.
- Boa would first compile the code into LLVM bytecode, and then generate
- constraints according to that bytecode using an 
+ Boa would first compile the code into LLVM bitcode, and then generate
+ constraints according to that bitcode using an 
 \emph on
 LLVM Pass
 \emph default
@@ -2837,7 +2837,7 @@ Additional Requirements
 \end_layout
 
 \begin_layout Standard
-As work on Boa progressed and enough bytecode instructions were properly
+As work on Boa progressed and enough bitcode instructions were properly
  handled, we could begin testing against code snippets from real world code.
  It soon became clear that it is not enough to notify the programmer which
  buffers are overrun, and Boa should also supply the programmer with information
