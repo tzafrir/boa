@@ -265,9 +265,8 @@ Dynamic analysis attempts to intercept access outside the bounds of an array
 Static analysis attempts to detect overruns by analyzing the source code.
  This does not require any changes to the code or runtime environment, and
  can be implemented soundly (no false negatives).
- However, a precise analysis is not scalable, and some simplifications must
- be made, at the cost of possible false positives (false overrun indication).
- 
+ A precise analysis requires symbolic execution of all possible paths, and
+ scales poorly on even moderately sized modules.
 \end_layout
 
 \begin_layout Section
@@ -282,8 +281,8 @@ Given a C program that performs buffer manipulations, statically (at compile
 \end_layout
 
 \begin_layout Standard
-Boa should operate C code as is, without requiring the programmer to provide
- any meta information.
+Boa should operate on C code as is, without requiring the programmer to
+ provide any meta information.
  The provided analysis must be 
 \emph on
 sound
@@ -465,7 +464,7 @@ i++
 ' (this is elaborated in Section 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sec:Constraint-Generator"
+reference "sec:Linear-Solver"
 
 \end_inset
 
