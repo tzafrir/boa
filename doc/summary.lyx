@@ -274,9 +274,8 @@ Goal
 \end_layout
 
 \begin_layout Standard
-Given a C program that performs buffer manipulations, statically (at compile
- time) identify whether the program may perform array access out of the
- array bounds.
+Given a C program that performs buffer manipulations, statically identify
+ whether the program may perform array access out of the array bounds.
  
 \end_layout
 
@@ -296,8 +295,12 @@ false negatives
 status open
 
 \begin_layout Plain Layout
-False negative is a buffer which Boa report to be safe while, under certain
- scenario, the program might access the buffer out of bounds.
+A 
+\emph on
+False Negative
+\emph default
+ is a buffer which Boa reports to be safe while the program might access
+ the buffer out of bounds.
 \end_layout
 
 \end_inset
